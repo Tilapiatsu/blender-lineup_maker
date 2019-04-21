@@ -11,6 +11,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import bpy
+from .OP_import_files import *
+from .UI_properties_pannel import *
+
 bl_info = {
     "name" : "Lineup Maker",
     "author" : "Tilapiatsu",
@@ -21,8 +25,38 @@ bl_info = {
     "category" : "Generic"
 }
 
+classes = (
+    LM_OP_ImportFiles,
+    LM_PT_main
+)
+
 def register():
-    ...
+    bpy.types.Scene.lm_asset_path = bpy.props.StringProperty(
+                                    name="Assets Path",
+                                    subtype='DIR_PATH',
+                                    default="",
+                                    update = None,
+                                    description = 'Path to the folder containing the assets'      
+                                    )
+    bpy.types.Scene.lm_naming_convention = bpy.props.StringProperty(
+                                    name="Naming Convetion",
+                                    subtype='NONE',
+                                    default="prefix_<PROJECT>_<TEAM>_<ASSET_NAME>_<INCR>_<GENDER>_suffix",
+                                    update = None,
+                                    description = 'Naming Convention'      
+                                    )                          
+    for cls in classes:
+        print('register :', cls.bl_label)
+        bpy.utils.register_class(cls)
+    
+    
+
 
 def unregister():
-    ...
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
+    
+    del bpy.types.Scene.lm_asset_path 
+
+if __name__ == "__main__":
+    register()
