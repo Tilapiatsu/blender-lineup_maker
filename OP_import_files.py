@@ -69,6 +69,7 @@ class LM_OP_ImportFiles(bpy.types.Operator):
         curr_asset_collection = create_asset_collection(context, name)
         set_active_collection(context, curr_asset_collection.name)
 
+        print('Lineup Maker : Importing asset "{}"'.format(name))
         if ext.lower() == '.fbx':
             bpy.ops.import_scene.fbx(filepath=filepath, filter_glob='*.fbx;', axis_forward='-Z', axis_up='Y')
         
@@ -76,7 +77,7 @@ class LM_OP_ImportFiles(bpy.types.Operator):
         curr_asset = context.scene.lm_asset_list.add()
         curr_asset.name = name
         curr_asset.file_name = name
-        curr_asset.last_update = time.time()
+        curr_asset.last_update = path.getmtime(filepath)
 
         for o in curr_asset_collection.objects:
             curr_asset.mesh_name += '{},'.format(o.name)
@@ -88,8 +89,20 @@ class LM_OP_ImportFiles(bpy.types.Operator):
         set_active_collection(context, curr_asset_collection.name)
 
         curr_asset = context.scene.lm_asset_list[name]
-        if curr_asset.last_update < 10000.0:
-            print('UPDATE')
+        if curr_asset.last_update < path.getmtime(filepath):
+            print('Lineup Maker : Updating asset "{}" : {}'.format(name, time.ctime(curr_asset.last_update)))
+            print('Lineup Maker : Updating file "{}" : {}'.format(name, time.ctime(path.getmtime(filepath))))
+
+            bpy.ops.object.select_all(action='DESELECT')
+            for o in curr_asset_collection.objects:
+                o.select_set(True)
+
+            bpy.ops.object.delete()
+            del curr_asset
+
+            self.import_asset(context, filepath)
+
+
 
 class LM_Asset_List(bpy.types.PropertyGroup):
     file_name = bpy.props.StringProperty(name="File Name")

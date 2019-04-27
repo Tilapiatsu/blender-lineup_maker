@@ -13,9 +13,12 @@ class LM_PT_main(bpy.types.Panel):
         layout = self.layout
         col = layout.column(align=True)
         row = col.row(align=True)
-        row.prop(scn, 'lm_asset_path', text = 'Asset Path')
         if path.exists(assetPath):
-            row.label(name='', icon = 'WORLD_DATA')
+            icon = "DOWNARROW_HLT"
+        else:
+            icon = "BLANK1"
+        row.prop(scn, 'lm_asset_path', text = 'Asset Path', icon=icon)
+        
         col.prop(scn, 'lm_naming_convention', text = 'Naming Convention')
         col.operator("scene.lm_importfiles", icon='IMPORT', text="Import all assets")
 
