@@ -81,6 +81,8 @@ class LM_OP_ImportFiles(bpy.types.Operator):
 
         for o in curr_asset_collection.objects:
             curr_asset.mesh_name += '{},'.format(o.name)
+            print(o.material_slots)
+            print(dir(o.material_slots))
         
     
     def update_asset(self, context, filepath):
