@@ -27,7 +27,8 @@ bl_info = {
 
 classes = (
     LM_OP_ImportFiles,
-    LM_PT_main
+    LM_PT_main,
+    LM_Asset_List
 )
 
 def register():
@@ -44,19 +45,25 @@ def register():
                                     default="prefix_<PROJECT>_<TEAM>_<ASSET_NAME>_<INCR>_<GENDER>_suffix",
                                     update = None,
                                     description = 'Naming Convention'      
-                                    )                          
+                                    )
+    
     for cls in classes:
-        print('register :', cls.bl_label)
         bpy.utils.register_class(cls)
+    
+    bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
     
     
 
 
 def unregister():
+    del bpy.types.Scene.lm_asset_list
+
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
     
     del bpy.types.Scene.lm_asset_path 
+    del bpy.types.Scene.lm_naming_convention  
+    
 
 if __name__ == "__main__":
     register()

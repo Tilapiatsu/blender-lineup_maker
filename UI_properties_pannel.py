@@ -9,7 +9,6 @@ class LM_PT_main(bpy.types.Panel):
     def draw(self, context):
         scn = context.scene
         assetPath = bpy.path.abspath(scn.lm_asset_path)
-        print(assetPath)
         layout = self.layout
         col = layout.column(align=True)
         row = col.row(align=True)
