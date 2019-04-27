@@ -1,5 +1,5 @@
 import bpy
-import os
+import os,time
 from os import path
 from . import variables as V
 
@@ -37,6 +37,8 @@ class LM_OP_ImportFiles(bpy.types.Operator):
     bl_label = "Lineup Maker: Import all files from source folder"
     bl_options = {'REGISTER', 'UNDO'}
 
+    compatible_format = V.LM_COMPATIBLE_IMPORT_FORMAT.values()
+
     def execute(self, context):
         folder_src = bpy.path.abspath(context.scene.lm_asset_path)
 
@@ -53,21 +55,43 @@ class LM_OP_ImportFiles(bpy.types.Operator):
                 for f in files:
                     name,ext = path.splitext(path.basename(f))
 
-                    curr_asset_collection = create_asset_collection(context, name)
-                    set_active_collection(context, curr_asset_collection.name)
+                    if name not in bpy.data.collections:
+                        self.import_asset(context, f)
+                        set_active_collection(context, asset_collection.name)
+                    else:
+                        self.update_asset(context, f)
+                        set_active_collection(context, asset_collection.name)
 
-                    if ext.lower() == '.fbx':
-                        bpy.ops.import_scene.fbx(filepath=f, filter_glob='*.fbx;', axis_forward='-Z', axis_up='Y')
-                    
-                    # register the current asset in scene variable
-                    curr_asset = context.scene.lm_asset_list.add()
-                    curr_asset.fileName = name
-
-                    for o in curr_asset_collection.objects:
-                        curr_asset.meshName += '{},'.format(o.name)
-                    set_active_collection(context, asset_collection.name)
         return {'FINISHED'}
+    
+    def import_asset(self, context, filepath):
+        name,ext = path.splitext(path.basename(filepath))
+        curr_asset_collection = create_asset_collection(context, name)
+        set_active_collection(context, curr_asset_collection.name)
+
+        if ext.lower() == '.fbx':
+            bpy.ops.import_scene.fbx(filepath=filepath, filter_glob='*.fbx;', axis_forward='-Z', axis_up='Y')
+        
+        # register the current asset in scene variable
+        curr_asset = context.scene.lm_asset_list.add()
+        curr_asset.name = name
+        curr_asset.file_name = name
+        curr_asset.last_update = time.time()
+
+        for o in curr_asset_collection.objects:
+            curr_asset.mesh_name += '{},'.format(o.name)
+        
+    
+    def update_asset(self, context, filepath):
+        name,ext = path.splitext(path.basename(filepath))
+        curr_asset_collection = bpy.data.collections[name]
+        set_active_collection(context, curr_asset_collection.name)
+
+        curr_asset = context.scene.lm_asset_list[name]
+        if curr_asset.last_update < 10000.0:
+            print('UPDATE')
 
 class LM_Asset_List(bpy.types.PropertyGroup):
-    fileName = bpy.props.StringProperty(name="File Name")
-    meshName = bpy.props.StringProperty(name="Mesh Name", default="")
+    file_name = bpy.props.StringProperty(name="File Name")
+    mesh_name = bpy.props.StringProperty(name="Mesh Name", default="")
+    last_update = bpy.props.FloatProperty(name="last_update")

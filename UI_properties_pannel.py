@@ -1,4 +1,5 @@
 import bpy
+from os import path
 
 class LM_PT_main(bpy.types.Panel):          
     bl_label = "Lineup Maker"
@@ -13,6 +14,8 @@ class LM_PT_main(bpy.types.Panel):
         col = layout.column(align=True)
         row = col.row(align=True)
         row.prop(scn, 'lm_asset_path', text = 'Asset Path')
+        if path.exists(assetPath):
+            row.label(name='', icon = 'WORLD_DATA')
         col.prop(scn, 'lm_naming_convention', text = 'Naming Convention')
         col.operator("scene.lm_importfiles", icon='IMPORT', text="Import all assets")
 
