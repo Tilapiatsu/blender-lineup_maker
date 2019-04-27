@@ -28,6 +28,9 @@ bl_info = {
 classes = (
     LM_OP_ImportFiles,
     LM_PT_main,
+    LM_Material_List,
+    LM_Mesh_List,
+    LM_Texture_List,
     LM_Asset_List
 )
 
