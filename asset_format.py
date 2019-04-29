@@ -103,7 +103,7 @@ class BpyAsset(object):
         else:
             curr_asset_collection = bpy.data.collections[self.asset_name]
 
-        H.set_active_collection(self.context, curr_asset_collection.name)
+        H.set_active_collection(self.context, self.asset_name)
 
         if self.asset_name not in self.context.scene.lm_asset_list:
             self.remove_objects()
