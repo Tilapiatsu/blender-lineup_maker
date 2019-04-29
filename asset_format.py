@@ -111,16 +111,22 @@ class BpyAsset(object):
         else:
             curr_asset = self.context.scene.lm_asset_list[self.asset_name]
 
+            need_update = False
+
             for f in self.meshes:
                 if curr_asset.last_update < path.getmtime(f):
-                    print('Lineup Maker : Updating asset "{}" : {}'.format(name, time.ctime(curr_asset.last_update)))
-                    print('Lineup Maker : Updating file "{}" : {}'.format(name, time.ctime(path.getmtime(f))))
+                    need_update = True
+                    break
 
-                    self.remove_objects()
-                    self.context.scene.update()
-                    self.import_mesh(update=True)
-                else:
-                    print('Lineup Maker : Asset "{}" is already up to date'.format(name))
+            if need_update:
+                print('Lineup Maker : Updating asset "{}" : {}'.format(name, time.ctime(curr_asset.last_update)))
+                print('Lineup Maker : Updating file "{}" : {}'.format(name, time.ctime(path.getmtime(f))))
+
+                self.remove_objects()
+                self.context.scene.update()
+                self.import_mesh(update=True)
+            else:
+                print('Lineup Maker : Asset "{}" is already up to date'.format(name))
 
     def import_texture(self):
         pass
