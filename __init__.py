@@ -64,9 +64,9 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
     
+    del bpy.types.Scene.lm_naming_convention
     del bpy.types.Scene.lm_asset_path 
-    del bpy.types.Scene.lm_naming_convention  
-    
+      
 
 if __name__ == "__main__":
     register()
