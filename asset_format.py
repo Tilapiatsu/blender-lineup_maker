@@ -43,12 +43,9 @@ class BpyAsset(object):
     def import_mesh(self, update=False):
         name,ext = path.splitext(path.basename(self.meshes[0]))
 
-        if self.asset_name not in bpy.data.collections:
-            curr_asset_collection = H.create_asset_collection(self.context, self.asset_name)
-        else:
-            curr_asset_collection = bpy.data.collections[self.asset_name]
+        curr_asset_collection = H.create_asset_collection(self.context, self.asset_name)
 
-        H.set_active_collection(self.context, curr_asset_collection.name)
+        H.set_active_collection(self.context, self.asset_name)
 
         for i,f in enumerate(self.meshes):
             name,ext = path.splitext(path.basename(f))
@@ -97,18 +94,16 @@ class BpyAsset(object):
 
     @check_length
     def update_mesh(self):
-        name,ext = path.splitext(path.basename(self.meshes[0]))
-        if self.asset_name not in bpy.data.collections:
-            curr_asset_collection = H.create_asset_collection(self.context, self.asset_name)
-        else:
-            curr_asset_collection = bpy.data.collections[self.asset_name]
+        file = path.basename(self.meshes[0])
+        name,ext = path.splitext(file)
 
+        H.create_asset_collection(self.context, self.asset_name)
         H.set_active_collection(self.context, self.asset_name)
 
         if self.asset_name not in self.context.scene.lm_asset_list:
             self.remove_objects()
             self.import_mesh(update=True)
-        else:
+        else: # Update
             curr_asset = self.context.scene.lm_asset_list[self.asset_name]
 
             need_update = False
@@ -119,12 +114,14 @@ class BpyAsset(object):
                     break
 
             if need_update:
-                print('Lineup Maker : Updating asset "{}" : {}'.format(name, time.ctime(curr_asset.last_update)))
-                print('Lineup Maker : Updating file "{}" : {}'.format(name, time.ctime(path.getmtime(f))))
-
+                print('Lineup Maker : Updating asset "{}" : {}'.format(self.asset_name, time.ctime(curr_asset.last_update)))
+                print('Lineup Maker : Updating file "{}" : {}'.format(file, time.ctime(path.getmtime(f))))
+                
                 self.remove_objects()
                 self.context.scene.update()
                 self.import_mesh(update=True)
+                # Dirty fix to avoid bad mesh naming when updating asset
+                self.rename_objects()
             else:
                 print('Lineup Maker : Asset "{}" is already up to date'.format(name))
 
@@ -161,11 +158,35 @@ class BpyAsset(object):
 
 
     @check_asset_exist
-    def print_asset_object_name(self):
+    def print_asset_objects_name(self):
+        names = self.get_objects_name()
+        for n in names:
+            print(n)
+
+    @check_asset_exist
+    def get_objects_name(self):
+        names = []
         curr_asset_collection = bpy.data.collections[self.asset_name]
         for o in curr_asset_collection.all_objects:
-            print(o.name)
+            names.append(o.name)
+        
+        return names
+    @check_asset_exist
+    def rename_objects(self):
+        curr_asset_collection = bpy.data.collections[self.asset_name]
+        separator = '.'
+        for o in curr_asset_collection.all_objects:
+            splited_name = o.name.split(separator)[:-1]
+            name = ''
+            for i,split in enumerate(splited_name):
+                name = name + split
+                if i < len(splited_name) - 1:
+                    name = name + separator
+            o.name = name
 
 class BpyAssetFBX(BpyAsset):
     def __init__(self, context, meshes, textures):
         super(BpyAssetFBX, self).__init__(context, meshes, textures)
+
+class TextureSet(object):
+    pass
