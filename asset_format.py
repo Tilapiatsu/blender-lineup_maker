@@ -1,6 +1,7 @@
 import bpy
 from . import variables as V
 from . import helper as H
+from . import preferences as P
 from os import path
 import time
 import sys
@@ -126,7 +127,10 @@ class BpyAsset(object):
                 print('Lineup Maker : Asset "{}" is already up to date'.format(name))
 
     def import_texture(self):
-        pass
+        print(P.get_prefs().textureSet_albedo_keyword)
+        print(P.get_prefs().textureSet_normal_keyword)
+        print(P.get_prefs().textureSet_roughness_keyword)
+        print(P.get_prefs().textureSet_metalic_keyword)
     
     def update_texture(self):
         pass
