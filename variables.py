@@ -6,3 +6,13 @@ LM_COMPATIBLE_MESH_FORMAT = {".fbx":(bpy.ops.import_scene.fbx, {'filter_glob':'*
                                 ".obj":(bpy.ops.import_scene.obj, {'filter_glob':'*.obj;*.mtl', 'axis_forward':'-Z', 'axis_up':'Y'})}
 LM_COMPATIBLE_TEXTURE_FORMAT = {".png":(),
                                     ".tga":()}
+
+LM_NAMING_CONVENTION_KEYWORDS = ['project',
+                                'team',
+                                'category',
+                                'incr',
+                                'gender',
+                                'plugname',
+                                'tincr',
+                                'matid',
+                                'channel']

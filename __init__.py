@@ -44,14 +44,29 @@ def register():
                                     update = None,
                                     description = 'Path to the folder containing the assets'      
                                     )
-    bpy.types.Scene.lm_naming_convention = bpy.props.StringProperty(
-                                    name="Naming Convetion",
+
+    bpy.types.Scene.lm_asset_naming_convention = bpy.props.StringProperty(
+                                    name="Asset Naming Convetion",
                                     subtype='NONE',
-                                    default="prefix_<PROJECT>_<TEAM>_<ASSET_NAME>_<INCR>_<GENDER>_suffix",
+                                    default="<PROJECT>_<TEAM>_<CATEGORY>_<INCR>_<GENDER>",
+                                    update = None,
+                                    description = 'Naming Convention'      
+                                    )
+    bpy.types.Scene.lm_mesh_naming_convention = bpy.props.StringProperty(
+                                    name="Mesh Naming Convetion",
+                                    subtype='NONE',
+                                    default="<ASSETNAME>_<PLUGNAME>_suffix",
                                     update = None,
                                     description = 'Naming Convention'      
                                     )
     
+    bpy.types.Scene.lm_texture_naming_convention = bpy.props.StringProperty(
+                                    name="Texture Naming Convetion",
+                                    subtype='NONE',
+                                    default="<ASSETNAME>_<TINCR>_<MATID>_<CHANNEL>_suffix",
+                                    update = None,
+                                    description = 'Naming Convention'
+                                    )
     for cls in classes:
         bpy.utils.register_class(cls)
     
@@ -66,7 +81,9 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
     
-    del bpy.types.Scene.lm_naming_convention
+    del bpy.types.Scene.lm_texture_naming_convention
+    del bpy.types.Scene.lm_mesh_naming_convention
+    del bpy.types.Scene.lm_asset_naming_convention
     del bpy.types.Scene.lm_asset_path 
       
 

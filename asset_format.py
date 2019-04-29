@@ -8,11 +8,15 @@ import sys
 
 class BpyAsset(object):
     def __init__(self, context, meshes, textures):
+        self.separator = '_'
         self.context = context
         self.asset_name = self.get_asset_name(meshes)
         self.asset_root = self.get_asset_root(meshes)
         self.meshes = meshes
         self.textures = textures
+        self.texture_set = {}
+
+        self.naming_convention = self.get_naming_convention()
         
     # Decorators
     def check_asset_exist(func):
@@ -136,6 +140,38 @@ class BpyAsset(object):
         pass
 
     # Helper
+
+    def store_texture_set():
+        pass
+    
+    def get_naming_convention(self):
+        asset_name = H.slice(self.asset_name)
+        asset_naming_convention = self.context.scene.lm_asset_naming_convention
+        mesh_naming_convention = self.context.scene.lm_mesh_naming_convention
+        texture_naming_convention = self.context.scene.lm_texture_naming_convention
+
+        asset_keywords = H.slice(asset_naming_convention)
+        mesh_keywords = H.slice(mesh_naming_convention)
+        texture_keywords = H.slice(texture_naming_convention)
+        
+        naming_convention = {}
+        
+        i = 0
+        for k in asset_keywords:
+            if k in V.LM_NAMING_CONVENTION_KEYWORDS:
+                naming_convention[k] = asset_name[i]
+                i = i + 1
+
+        # for i,k in enumerate(mesh_keywords):
+        #     if k in V.LM_NAMING_CONVENTION_KEYWORDS:
+        #         mesh_naming_convention[k] = asset_name[i]
+
+        # for i,k in enumerate(texture_keywords):
+        #     if k in V.LM_NAMING_CONVENTION_KEYWORDS:
+        #         texture_naming_convention[k] = asset_name[i]
+
+        return naming_convention
+
     def get_asset_name(self, meshes):
         return path.basename(path.dirname(meshes[0]))
     

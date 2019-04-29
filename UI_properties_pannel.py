@@ -19,6 +19,8 @@ class LM_PT_main(bpy.types.Panel):
             icon = "BLANK1"
         row.prop(scn, 'lm_asset_path', text = 'Asset Path', icon=icon)
         
-        col.prop(scn, 'lm_naming_convention', text = 'Naming Convention')
+        col.prop(scn, 'lm_asset_naming_convention', text = 'Asset Naming Convention')
+        col.prop(scn, 'lm_mesh_naming_convention', text = 'Mesh Naming Convention')
+        col.prop(scn, 'lm_texture_naming_convention', text = 'Texture Naming Convention')
         col.operator("scene.lm_importfiles", icon='IMPORT', text="Import all assets")
 
