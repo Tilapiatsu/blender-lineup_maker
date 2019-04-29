@@ -63,7 +63,7 @@ def register():
     bpy.types.Scene.lm_texture_naming_convention = bpy.props.StringProperty(
                                     name="Texture Naming Convetion",
                                     subtype='NONE',
-                                    default="<ASSETNAME>_<TINCR>_<MATID>_<CHANNEL>_suffix",
+                                    default="<ASSETNAME>_<TINCR>_<MATID>_suffix",
                                     update = None,
                                     description = 'Naming Convention'
                                     )
