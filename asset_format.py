@@ -153,7 +153,7 @@ class BpyAsset(object):
         asset_keywords = H.slice(asset_naming_convention)
         
         naming_convention = {}
-        
+        naming_convention['path'] = self.asset_name
         i = 0
         for k in asset_keywords:
             if k in V.LM_NAMING_CONVENTION_KEYWORDS:
@@ -177,6 +177,7 @@ class BpyAsset(object):
             m = m.replace(lod, '')
             m_length = len(m_naming)
 
+            naming_convention[i]['file'] = m
             naming_convention[i]['lod'] = lod
 
             j = 0
@@ -212,6 +213,7 @@ class BpyAsset(object):
             t = t.replace(channel, '')
             t_length = len(t_naming)
 
+            naming_convention[i]['file'] = t
             naming_convention[i]['channel'] = channel
 
             j = 0
@@ -289,6 +291,16 @@ class BpyAsset(object):
                 P.get_prefs().textureSet_roughness_keyword,
                 P.get_prefs().textureSet_metalic_keyword
                 ]
+    
+    @property
+    def asset(self):
+        if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
+            for m in self.mesh_naming_convention:
+                pass
+
+        else:
+            print('Lineup Maker : Asset "{}" is not valid'.format(self.asset_name))
+
 
 class BpyAssetFBX(BpyAsset):
     def __init__(self, context, meshes, textures):
