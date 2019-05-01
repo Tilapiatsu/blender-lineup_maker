@@ -19,6 +19,8 @@ class BpyAsset(object):
         self.asset_naming_convention = self.get_asset_naming_convention()
         self.mesh_naming_convention = self.get_mesh_naming_convention()
         self.texture_naming_convention = self.get_texture_naming_convention()
+
+        self.asset = None
         
     # Decorators
     def check_asset_exist(func):
@@ -55,11 +57,15 @@ class BpyAsset(object):
         H.set_active_collection(self.context, self.asset_name)
 
         for i,f in enumerate(self.meshes):
+            file = path.basename(f)
             name,ext = path.splitext(path.basename(f))
 
             # Import asset
             if ext.lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys():
-                print('Lineup Maker : Importing mesh "{}"'.format(name))
+                if update:
+                    print('Lineup Maker : Updating file "{}" : {}'.format(file, time.ctime(path.getmtime(f))))
+                else:
+                    print('Lineup Maker : Importing mesh "{}"'.format(name))
                 compatible_format = V.LM_COMPATIBLE_MESH_FORMAT[ext.lower()]
                 kwargs = {}
                 kwargs.update({'filepath':f})
@@ -78,11 +84,8 @@ class BpyAsset(object):
             
             curr_asset.last_update = path.getmtime(f)
 
-            if update:
-                curr_mesh_list = curr_asset.mesh_list[i]
-            else:
-                curr_mesh_list = curr_asset.mesh_list.add()
-                curr_mesh_list.file_path = f
+            curr_mesh_list = curr_asset.mesh_list.add()
+            curr_mesh_list.file_path = f
 
             for o in curr_asset_collection.objects:
                 curr_mesh_list.mesh_name = o.name
@@ -97,46 +100,41 @@ class BpyAsset(object):
                     curr_mesh_material_list = curr_mesh_list.material_list.add()
                     curr_mesh_material_list.material_name = m.material.name
                     curr_mesh_material_list.material = m.material
+            
+            self.asset = self.get_asset()
     
 
     @check_length
     def update_mesh(self):
-        file = path.basename(self.meshes[0])
-        name,ext = path.splitext(file)
-
         H.create_asset_collection(self.context, self.asset_name)
         H.set_active_collection(self.context, self.asset_name)
 
-        if self.asset_name not in self.context.scene.lm_asset_list:
+        curr_asset = self.context.scene.lm_asset_list[self.asset_name]
+
+        need_update = False
+
+        for f in self.meshes:
+            if curr_asset.last_update < path.getmtime(f):
+                need_update = True
+                break
+
+        if need_update:
+            print('Lineup Maker : Updating asset "{}" : {}'.format(self.asset_name, time.ctime(curr_asset.last_update)))
+
             self.remove_objects()
+            self.context.scene.update()
             self.import_mesh(update=True)
-        else: # Update
-            curr_asset = self.context.scene.lm_asset_list[self.asset_name]
-
-            need_update = False
-
-            for f in self.meshes:
-                if curr_asset.last_update < path.getmtime(f):
-                    need_update = True
-                    break
-
-            if need_update:
-                print('Lineup Maker : Updating asset "{}" : {}'.format(self.asset_name, time.ctime(curr_asset.last_update)))
-                print('Lineup Maker : Updating file "{}" : {}'.format(file, time.ctime(path.getmtime(f))))
-                
-                self.remove_objects()
-                self.context.scene.update()
-                self.import_mesh(update=True)
-                # Dirty fix to avoid bad mesh naming when updating asset
-                self.rename_objects()
-            else:
-                print('Lineup Maker : Asset "{}" is already up to date'.format(name))
+            # Dirty fix to avoid bad mesh naming when updating asset
+            self.rename_objects()
+        else:
+            print('Lineup Maker : Asset "{}" is already up to date'.format(self.asset_name))
 
     def import_texture(self):
-        print(P.get_prefs().textureSet_albedo_keyword)
-        print(P.get_prefs().textureSet_normal_keyword)
-        print(P.get_prefs().textureSet_roughness_keyword)
-        print(P.get_prefs().textureSet_metalic_keyword)
+        # print(P.get_prefs().textureSet_albedo_keyword)
+        # print(P.get_prefs().textureSet_normal_keyword)
+        # print(P.get_prefs().textureSet_roughness_keyword)
+        # print(P.get_prefs().textureSet_metalic_keyword)
+        pass
     
     def update_texture(self):
         pass
@@ -153,7 +151,7 @@ class BpyAsset(object):
         asset_keywords = H.slice(asset_naming_convention)
         
         naming_convention = {}
-        naming_convention['path'] = self.asset_name
+        naming_convention['assetname'] = self.asset_name
         i = 0
         for k in asset_keywords:
             if k in V.LM_NAMING_CONVENTION_KEYWORDS:
@@ -174,17 +172,20 @@ class BpyAsset(object):
             
 
             lod = m_naming.pop()
+
+            naming_convention[i]['name'] = m
+            naming_convention[i]['file'] = self.meshes[i]
+            naming_convention[i]['lod'] = lod
+            naming_convention[i]['gender'] = H.slice(self.asset_name).pop()
+
             m = m.replace(lod, '')
             m_length = len(m_naming)
-
-            naming_convention[i]['file'] = m
-            naming_convention[i]['lod'] = lod
 
             j = 0
             for k in mesh_keywords:
                 if k in V.LM_NAMING_CONVENTION_KEYWORDS:
                     if k == 'assetname':
-                        naming_convention[i][k] = self.asset_name
+                        naming_convention[i][k] = self.asset_name[:-len(naming_convention[i]['gender'])-1]
                         m = m.replace(self.asset_name, '')
                         m_naming = H.slice(m)
                         m_length = len(m_naming)
@@ -195,7 +196,7 @@ class BpyAsset(object):
         return naming_convention
 
 
-    def get_texture_naming_convention(self):
+    def get_texture_naming_convention(self): # Need to group by material
         texture_naming_convention = self.context.scene.lm_texture_naming_convention
         texture_keywords = H.slice(texture_naming_convention)
 
@@ -210,17 +211,20 @@ class BpyAsset(object):
             
             
             channel = t_naming.pop()
+
+            naming_convention[i]['name'] = t
+            naming_convention[i]['file'] = self.textures[i]
+            naming_convention[i]['channel'] = channel
+            naming_convention[i]['gender'] = H.slice(self.asset_name).pop()
+
             t = t.replace(channel, '')
             t_length = len(t_naming)
-
-            naming_convention[i]['file'] = t
-            naming_convention[i]['channel'] = channel
 
             j = 0
             for k in texture_keywords:
                 if k in V.LM_NAMING_CONVENTION_KEYWORDS:
                     if k == 'assetname':
-                        naming_convention[i][k] = self.asset_name
+                        naming_convention[i][k] = self.asset_name[:-len(naming_convention[i]['gender'])-1]
                         t = t.replace(self.asset_name, '')
                         t_naming = H.slice(t)
                         t_length = len(t_naming)
@@ -282,24 +286,70 @@ class BpyAsset(object):
                     name = name + separator
             o.name = name
     
+    def compare_naming_conventions(self, n1, n2):
+        if n1[1] in n1[0].keys() and n2[1] in n2[0].keys():
+            return n1[0][n1[1]] == n2[0][n2[1]]
+        else:
+            if n1[1] in V.LM_NAMING_CONVENTION_KEYWORDS_COMMON or n2[1] in V.LM_NAMING_CONVENTION_KEYWORDS_COMMON:
+                return False
+            else:
+                return True
+
+    def matching_gender(self, g1, g2):
+        for gg1 in g1:
+            for gg2 in g2:
+                if gg1 == gg2:
+                    return True
+        else:
+            return False
+
     # Properties
     @property
     def texture_channels(self):
         return [
-                P.get_prefs().textureSet_albedo_keyword,
-                P.get_prefs().textureSet_normal_keyword,
-                P.get_prefs().textureSet_roughness_keyword,
-                P.get_prefs().textureSet_metalic_keyword
+                P.get_prefs().textureSet_albedo_keyword.lower(),
+                P.get_prefs().textureSet_normal_keyword.lower(),
+                P.get_prefs().textureSet_roughness_keyword.lower(),
+                P.get_prefs().textureSet_metalic_keyword.lower()
                 ]
     
-    @property
-    def asset(self):
+
+    def get_asset(self):
         if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
+            asset = {}
             for m in self.mesh_naming_convention:
-                pass
+                mesh = m['file']
+                materials = {}
+
+                for mat in self.context.scene.lm_asset_list[self.asset_name].material_list:
+                    texture_set = {}
+                    for t in self.texture_naming_convention:
+                        
+                        matching_asset = True
+                        if not self.matching_gender(m['gender'], t['gender']):
+                            matching_asset = False
+                        else:
+                            if not self.compare_naming_conventions((m, 'assetname'),(t, 'assetname')):
+                                matching_asset = False
+                                break
+                            
+
+                        if matching_asset:
+                            # condition is not completely fine
+                            if not self.compare_naming_conventions((m, 'plugname'),(t, 'matid')):
+                                continue
+
+                            if t['channel'] in self.texture_channels:
+                                texture_set[t['channel']] = t['file']
+
+
+                asset[m['name']] = (mesh, texture_set)
+            
+            return asset
 
         else:
             print('Lineup Maker : Asset "{}" is not valid'.format(self.asset_name))
+            return None
 
 
 class BpyAssetFBX(BpyAsset):

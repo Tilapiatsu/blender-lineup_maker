@@ -34,17 +34,25 @@ class LM_OP_ImportFiles(bpy.types.Operator):
                 mesh_files = [path.join(subfolder, f) for f in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys()]
                 texture_files = [path.join(subfolder, t) for t in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, t)) and path.splitext(t)[1].lower() in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
                 asset_name = path.basename(subfolder)
-                for f in mesh_files:
-                    curr_asset = A.BpyAsset(context, mesh_files, texture_files)
-                    if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
-                        curr_asset.import_asset()
-                        H.set_active_collection(context, asset_collection.name)
-                    else:
-                        curr_asset.update_asset()
-                        H.set_active_collection(context, asset_collection.name)
+                curr_asset = A.BpyAsset(context, mesh_files, texture_files)
+                
+                if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
+                    curr_asset.import_asset()
+                    H.set_active_collection(context, asset_collection.name)
+                else:
+                    curr_asset.update_asset()
+                    H.set_active_collection(context, asset_collection.name)
+                
+                print(curr_asset.asset)
+
 
         return {'FINISHED'}
     
+    def import_update_loop(self, context, function, mesh_files, asset_collection):
+        for f in mesh_files:
+            function()
+            H.set_active_collection(context, asset_collection.name)
+
     def import_asset(self, context, mesh_path, texturepath):
         name,ext = path.splitext(path.basename(mesh_path))
         curr_asset_collection = H.create_asset_collection(context, name)
