@@ -7,8 +7,7 @@ LM_COMPATIBLE_MESH_FORMAT = {".fbx":(bpy.ops.import_scene.fbx, {'filter_glob':'*
 LM_COMPATIBLE_TEXTURE_FORMAT = {".png":(),
                                     ".tga":()}
 
-LM_NAMING_CONVENTION_KEYWORDS_COMMON = ['assetname',
-                                        'project',
+LM_NAMING_CONVENTION_KEYWORDS_COMMON = ['project',
                                         'team',
                                         'category',
                                         'incr',
@@ -17,4 +16,4 @@ LM_NAMING_CONVENTION_KEYWORDS_MESH = ['plugname']
 LM_NAMING_CONVENTION_KEYWORDS_TEXTURE = ['tincr',
                                         'matid']
 
-LM_NAMING_CONVENTION_KEYWORDS = LM_NAMING_CONVENTION_KEYWORDS_COMMON + LM_NAMING_CONVENTION_KEYWORDS_MESH + LM_NAMING_CONVENTION_KEYWORDS_TEXTURE
+LM_NAMING_CONVENTION_KEYWORDS = LM_NAMING_CONVENTION_KEYWORDS_COMMON + LM_NAMING_CONVENTION_KEYWORDS_MESH + LM_NAMING_CONVENTION_KEYWORDS_TEXTURE + ['assetname']

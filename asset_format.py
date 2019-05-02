@@ -88,17 +88,17 @@ class BpyAsset(object):
             curr_mesh_list.file_path = f
 
             for o in curr_asset_collection.objects:
-                curr_mesh_list.mesh_name = o.name
+                curr_mesh_list.mesh_name = o.name.lower()
                 curr_mesh_list.mesh = o
 
                 for m in o.material_slots:
                     if m.name not in curr_asset.material_list:
                         material_list = curr_asset.material_list.add()
-                        material_list.material_name = m.material.name
+                        material_list.name = m.material.name.lower()
                         material_list.material = m.material
 
                     curr_mesh_material_list = curr_mesh_list.material_list.add()
-                    curr_mesh_material_list.material_name = m.material.name
+                    curr_mesh_material_list.name = m.material.name
                     curr_mesh_material_list.material = m.material
             
             self.asset = self.get_asset()
@@ -138,7 +138,98 @@ class BpyAsset(object):
     
     def update_texture(self):
         pass
+        
 
+    def feed_material(self, material, texture_set):
+        nodes = material.node_tree.nodes
+
+        shader = nodes.get("Principled BSDF")
+
+        return shader
+
+    def create_exposure_node(world):
+        # create a group
+        exposure_group = bpy.data.node_groups.new('Exposure', 'ShaderNodeTree')
+        
+        position = (0, 0)
+        incr = 200
+        # create group inputs
+        group_inputs = exposure_group.nodes.new('NodeGroupInput')
+        group_inputs.location = position
+        exposure_group.inputs.new('NodeSocketColor', 'Color')
+        exposure_group.inputs.new('NodeSocketFloat', 'Exposure')
+        exposure_group.inputs[1].default_value = 1
+        exposure_group.inputs[1].min_value = 0
+
+        position = (position[0] + incr, position[1])
+
+        # create three math nodes in a group
+        node_pow = exposure_group.nodes.new('ShaderNodeMath')
+        node_pow.operation = 'POWER'
+        node_pow.inputs[1].default_value = 2
+        node_pow.location = position
+
+        position = (position[0] + incr, position[1])
+
+        node_separate = exposure_group.nodes.new('ShaderNodeSeparateRGB')
+        node_separate.location = position
+
+        position = (position[0] + incr, position[1])
+
+        node_x = exposure_group.nodes.new('ShaderNodeMath')
+        node_x.operation = 'MULTIPLY'
+        node_x.label = 'X'
+        node_x.location = position
+
+        position = (position[0], position[1] + incr)
+
+        node_y = exposure_group.nodes.new('ShaderNodeMath')
+        node_y.operation = 'MULTIPLY'
+        node_y.label = 'Y'
+        node_y.location = position
+
+        position = (position[0], position[1] + incr)
+
+        node_z = exposure_group.nodes.new('ShaderNodeMath')
+        node_z.operation = 'MULTIPLY'
+        node_z.label = 'Z'
+        node_z.location = position
+
+        position = (position[0] + incr, position[1] - incr)
+
+        node_combine = exposure_group.nodes.new('ShaderNodeCombineRGB')
+        node_combine.location = position
+
+        position = (position[0] + incr, position[1])
+
+        # create group outputs
+        group_outputs = exposure_group.nodes.new('NodeGroupOutput')
+        group_outputs.location = position
+
+        exposure_group.outputs.new('NodeSocketColor', 'Output')
+
+        # link nodes together
+        exposure_group.links.new(node_x.inputs[1], node_pow.outputs[0])
+        exposure_group.links.new(node_y.inputs[1], node_pow.outputs[0])
+        exposure_group.links.new(node_z.inputs[1], node_pow.outputs[0])
+
+        exposure_group.links.new(node_x.inputs[0], node_separate.outputs[0])
+        exposure_group.links.new(node_y.inputs[0], node_separate.outputs[1])
+        exposure_group.links.new(node_z.inputs[0], node_separate.outputs[2])
+        
+        exposure_group.links.new(node_x.outputs[0], node_combine.inputs[0])
+        exposure_group.links.new(node_y.outputs[0], node_combine.inputs[1])
+        exposure_group.links.new(node_z.outputs[0], node_combine.inputs[2])
+
+        # link inputs
+        exposure_group.links.new(group_inputs.outputs['Color'], node_separate.inputs[0])
+        exposure_group.links.new(group_inputs.outputs['Exposure'], node_pow.inputs[0])
+
+
+        #link output
+        exposure_group.links.new(node_combine.outputs[0], group_outputs.inputs['Output'])
+        
+        return exposure_group
     # Helper
 
     def store_texture_set():
