@@ -1,4 +1,5 @@
 import bpy
+from . import preferences as P
 
 LM_MASTER_COLLECTION = "Master Collection"
 LM_ASSET_COLLECTION = "Assets_Collection"
@@ -7,15 +8,26 @@ LM_COMPATIBLE_MESH_FORMAT = {".fbx":(bpy.ops.import_scene.fbx, {'filter_glob':'*
 LM_COMPATIBLE_TEXTURE_FORMAT = {".png":(),
                                     ".tga":()}
 
-LM_NAMING_CONVENTION_KEYWORDS_COMMON = ['project',
-                                        'team',
-                                        'category',
-                                        'incr',
-                                        'gender']
-LM_NAMING_CONVENTION_KEYWORDS_MESH = ['plugname']
-LM_NAMING_CONVENTION_KEYWORDS_TEXTURE = ['tincr',
-                                        'matid']
+LM_CHANNELS = [] if P.get_prefs() is None else [P.get_prefs().textureSet_albedo_keyword,
+                P.get_prefs().textureSet_normal_keyword,
+                P.get_prefs().textureSet_roughness_keyword,
+                P.get_prefs().textureSet_metalic_keyword]
 
-LM_NAMING_CONVENTION_KEYWORDS = LM_NAMING_CONVENTION_KEYWORDS_COMMON + LM_NAMING_CONVENTION_KEYWORDS_MESH + LM_NAMING_CONVENTION_KEYWORDS_TEXTURE + ['assetname']
+LM_NAMING_CONVENTION_KEYWORDS_COMMON = {'project':[],
+                                        'team':[],
+                                        'category':[],
+                                        'incr':[],
+                                        'gender':['M', 'F', 'MF', 'U']}
+LM_NAMING_CONVENTION_KEYWORDS_MESH = {'plugname':[]}
+LM_NAMING_CONVENTION_KEYWORDS_TEXTURE = {'tincr':[],
+                                        'matid':[],
+                                        'channel':LM_CHANNELS}
+
+LM_NAMING_CONVENTION_KEYWORDS = {}
+
+LM_NAMING_CONVENTION_KEYWORDS.update(LM_NAMING_CONVENTION_KEYWORDS_COMMON)
+LM_NAMING_CONVENTION_KEYWORDS.update(LM_NAMING_CONVENTION_KEYWORDS_MESH)
+LM_NAMING_CONVENTION_KEYWORDS.update(LM_NAMING_CONVENTION_KEYWORDS_TEXTURE)
+LM_NAMING_CONVENTION_KEYWORDS.update({'assetname':[]})
 
 LM_SEPARATORS = '_.-'

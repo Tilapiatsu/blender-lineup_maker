@@ -238,106 +238,58 @@ class BpyAsset(object):
         pass
     
     def get_asset_naming_convention(self):
-        asset_name = H.slice(self.asset_name)
-        asset_naming_convention = self.context.scene.lm_asset_naming_convention
-
+        asset_convention = self.context.scene.lm_asset_naming_convention
         
-        asset_name = N.NamingConvention(self.asset_name, asset_naming_convention)
-        asset_name.slice()
+        asset_naming_convention = N.NamingConvention(self.asset_name, asset_convention)
+        naming_convention = asset_naming_convention.naming_convention
 
-        asset_keywords = H.slice(asset_naming_convention)
-        
-        naming_convention = {}
         naming_convention['assetname'] = self.asset_name
-        i = 0
-        for k in asset_keywords:
-            if k in V.LM_NAMING_CONVENTION_KEYWORDS:
-                naming_convention[k] = asset_name[i]
-                i = i + 1
 
         return naming_convention
     
     def get_mesh_naming_convention(self):
-        mesh_naming_convention = self.context.scene.lm_mesh_naming_convention
-        mesh_keywords = H.slice(mesh_naming_convention)
+        mesh_convention = self.context.scene.lm_mesh_naming_convention
         naming_convention = []
 
         mesh_names = [path.basename(path.splitext(t)[0]) for t in self.meshes]
         for i,m in enumerate(mesh_names):
-            naming_convention.append({})
-            m_naming = H.slice(m)
-            
-
-            lod = m_naming.pop()
-
-            naming_convention[i]['name'] = m
-            naming_convention[i]['file'] = self.meshes[i]
-            naming_convention[i]['lod'] = lod
-            naming_convention[i]['gender'] = H.slice(self.asset_name).pop()
-
-            m = m.replace(lod, '')
-            m_length = len(m_naming)
-
-            j = 0
-            for k in mesh_keywords:
-                if k in V.LM_NAMING_CONVENTION_KEYWORDS:
-                    if k == 'assetname':
-                        naming_convention[i][k] = self.asset_name[:-len(naming_convention[i]['gender'])-1]
-                        m = m.replace(self.asset_name, '')
-                        m_naming = H.slice(m)
-                        m_length = len(m_naming)
-                    elif j < m_length - 1:
-                        naming_convention[i][k] = m_naming[j]
-                    j = j + 1
+            mesh_naming_convention = N.NamingConvention(m, mesh_convention)
+            naming_convention.append(mesh_naming_convention.naming_convention)
 
         return naming_convention
 
 
     def get_texture_naming_convention(self):
-        texture_naming_convention = self.context.scene.lm_texture_naming_convention
-        texture_keywords = H.slice(texture_naming_convention)
-        
+        texture_convention = self.context.scene.lm_texture_naming_convention
+
         naming_convention = {}
 
         for mesh_name,textures in self.textures.items():
             texture_names = [path.basename(path.splitext(t)[0]) for t in textures]
 
-            mesh_naming_convention = self.create_texture_basename_dict(mesh_name, texture_names=texture_names)
+            texture_naming_convention = {}
 
             for i,t in enumerate(texture_names):
-                t_naming = H.slice(t)
-                basename = self.get_texture_basename(t)
+                t_naming_convention = N.NamingConvention(t, texture_convention).naming_convention
                 
-                channel = t_naming.pop()
+                basename = t_naming_convention.pop(t_naming_convention['channel'])
 
-                mesh_naming_convention[basename]['gender'] = H.slice(self.asset_name).pop()
+                texture_naming_convention[basename].append(t_naming_convention.naming_convention)
 
                 chan = {'name':t, 'file':self.textures[mesh_name][i]}
 
-                if 'channels' in mesh_naming_convention[basename].keys():
-                    if len(mesh_naming_convention[basename]['channels'].keys()):
-                        mesh_naming_convention[basename]['channels'][channel] = chan
+                if 'channels' in texture_naming_convention[basename].keys():
+                    if len(texture_naming_convention[basename]['channels'].keys()):
+                        texture_naming_convention[basename]['channels'][channel] = chan
                     else:
-                        mesh_naming_convention[basename]['channels'] = {channel:chan}
+                        texture_naming_convention[basename]['channels'] = {channel:chan}
                 else:
-                    mesh_naming_convention[basename]['channels'] = {channel:chan}
+                    texture_naming_convention[basename]['channels'] = {channel:chan}
 
                 t = t.replace(channel, '')
                 t_length = len(t_naming)
-
-                j = 0
-                for k in texture_keywords:
-                    if k in V.LM_NAMING_CONVENTION_KEYWORDS:
-                        if k == 'assetname':
-                            mesh_naming_convention[basename][k] = self.asset_name[:-len(mesh_naming_convention[basename]['gender'])-1]
-                            t = t.replace(self.asset_name, '')
-                            t_naming = H.slice(t)
-                            t_length = len(t_naming)
-                        elif j < t_length - 1:
-                            mesh_naming_convention[basename][k] = t_naming[j]
-                        j = j + 1
             
-            naming_convention[mesh_name] = mesh_naming_convention
+            naming_convention[mesh_name] = texture_naming_convention
         
         return naming_convention
 
@@ -350,18 +302,6 @@ class BpyAsset(object):
     @check_asset_exist
     def select_asset(self):
         bpy.data.collections[self.asset_name].select_set(True)
-
-    def get_texture_basename(self, texture_name):
-        t_naming = H.slice(texture_name)
-        t_naming.pop()
-
-        basename = ''
-        for j,tt in enumerate(t_naming):
-            basename = basename + tt
-            if j<len(t_naming) - 1:
-                basename = basename + self.separator
-         
-        return basename
 
     def create_texture_basename_dict(self, mesh_name, texture_names=None):
         if texture_names is None:
@@ -443,12 +383,9 @@ class BpyAsset(object):
                 P.get_prefs().textureSet_roughness_keyword.lower(),
                 P.get_prefs().textureSet_metalic_keyword.lower()
                 ]
-    
+
 
     def get_asset(self):
-        N.NamingConvention()
-
-    def get_asset_old(self):
         if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
             asset = {}
             for m in self.mesh_naming_convention:
