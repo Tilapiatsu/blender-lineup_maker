@@ -430,7 +430,7 @@ class BpyAsset(object):
 
     # Properties
     @property
-    def texture_channels(self):
+    def texture_channel_names(self):
         return [
                 P.get_prefs().textureSet_albedo_keyword.lower(),
                 P.get_prefs().textureSet_normal_keyword.lower(),
@@ -462,7 +462,7 @@ class BpyAsset(object):
                             continue
 
                         for channel_name in t['channels'].keys():
-                            if channel_name in self.texture_channels:
+                            if channel_name in self.texture_channel_names:
                                 texture_set[basename][channel_name] = t['channels'][channel_name]['file']
   
                 asset[m['name']] = (mesh, texture_set)

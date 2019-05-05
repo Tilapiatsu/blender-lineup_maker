@@ -29,7 +29,6 @@ class LM_Preferences(bpy.types.AddonPreferences):
     textureSet_roughness_keyword: bpy.props.StringProperty(name="Roughness", default="Roughness")
     textureSet_metalic_keyword: bpy.props.StringProperty(name="Metalic", default="Metalic")
 
-
     # HIDDEN
     tabs: bpy.props.EnumProperty(name="Tabs", items=preferences_tabs, default="GENERAL")
 
