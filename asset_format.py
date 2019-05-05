@@ -2,9 +2,11 @@ import bpy
 from . import variables as V
 from . import helper as H
 from . import preferences as P
+from . import naming_convention as N
 from os import path
 import time
 import sys
+import re
 
 class BpyAsset(object):
     def __init__(self, context, meshes, textures):
@@ -101,7 +103,7 @@ class BpyAsset(object):
                     curr_mesh_material_list.name = m.material.name
                     curr_mesh_material_list.material = m.material
             
-            self.asset = self.get_asset()
+        self.asset = self.get_asset()
     
 
     @check_length
@@ -238,6 +240,10 @@ class BpyAsset(object):
     def get_asset_naming_convention(self):
         asset_name = H.slice(self.asset_name)
         asset_naming_convention = self.context.scene.lm_asset_naming_convention
+
+        
+        asset_name = N.NamingConvention(self.asset_name, asset_naming_convention)
+        asset_name.slice()
 
         asset_keywords = H.slice(asset_naming_convention)
         
@@ -440,6 +446,9 @@ class BpyAsset(object):
     
 
     def get_asset(self):
+        N.NamingConvention()
+
+    def get_asset_old(self):
         if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
             asset = {}
             for m in self.mesh_naming_convention:
