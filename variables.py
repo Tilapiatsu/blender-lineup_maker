@@ -18,6 +18,7 @@ LM_NAMING_CONVENTION_KEYWORDS_COMMON = {'project':[],
                                         'category':[],
                                         'incr':[],
                                         'gender':['m', 'f', 'mf', 'u']}
+
 LM_NAMING_CONVENTION_KEYWORDS_MESH = {'plugname':[]}
 LM_NAMING_CONVENTION_KEYWORDS_TEXTURE = {'tincr':[],
                                         'matid':[],

@@ -27,6 +27,13 @@ class NamingConvention(object):
 
     
     def slice(self):
+        def assign_value(ckws, value, return_dict, word):
+            if len(ckws):
+                if value in ckws:
+                    return_dict[word] = value
+            else:
+                return_dict[word] = value
+
         # person = {'first': 'Jean-Luc', 'last': 'Picard'}
         # string = '{p[first]} {p[last]}'.format(p=person)
         # <PROJECT>_<TEAM>_<CATEGORY>_<INCR>_<GENDER>
@@ -34,37 +41,33 @@ class NamingConvention(object):
 
         if len(self.ext):
             naming_convention['ext'] = self.ext
+
+        word_pattern = re.compile(r'[{0}]?([a-zA-Z0-9]+)[{0}]?'.format(V.LM_SEPARATORS), re.IGNORECASE)
         keyword_pattern = re.compile(r'[{0}]?<([a-zA-Z0-9]+)>[{0}]?'.format(V.LM_SEPARATORS), re.IGNORECASE)
+        not_keyword_pattern = re.compile(r'(?<=[{0}])([a-zA-Z0-9]+)|([a-zA-Z0-9]+)(?=[{0}])'.format(V.LM_SEPARATORS), re.IGNORECASE)
+        
         name_pattern = re.compile(r'[{0}]?([a-zA-Z0-9]+)[{0}]?'.format(V.LM_SEPARATORS))
         
+        words = word_pattern.finditer(self.convention)
         keywords = keyword_pattern.finditer(self.convention)
+        not_keyword = not_keyword_pattern.finditer(self.convention)
         names = name_pattern.finditer(self.name)
-        
+
         name_grp = [n.group(1) for n in names]
 
-        for k in keywords:
-            print(k.group(1))
-        
-        for n in names:
-            print(n.group(1))
+        for i,word in enumerate(words):
+            w = word.group(1).lower()
+            for ckw,ckws in V.LM_NAMING_CONVENTION_KEYWORDS.items():
+                if w == ckw: # word is a keyword
+                    if w in V.LM_NAMING_CONVENTION_KEYWORDS_MESH.keys():
+                        if w not in self.get_other_ckws(V.LM_NAMING_CONVENTION_KEYWORDS_MESH, w):
+                            assign_value(ckws, name_grp[i], naming_convention, w)
+                    elif w in V.LM_NAMING_CONVENTION_KEYWORDS_TEXTURE.keys():
+                        if w not in self.get_other_ckws(V.LM_NAMING_CONVENTION_KEYWORDS_TEXTURE, w):
+                            assign_value(ckws, name_grp[i], naming_convention, w)
+                else:
+                    naming_convention[w] = w
 
-        for i,k in enumerate(keywords):
-            kw = k.group(1).lower()
-            for ckn,ckws in V.LM_NAMING_CONVENTION_KEYWORDS.items():
-                if kw == ckn:
-                    if kw in V.LM_NAMING_CONVENTION_KEYWORDS_MESH.keys():
-                        naming_convention[kw] = name_grp[i]
-                    elif kw in V.LM_NAMING_CONVENTION_KEYWORDS_TEXTURE.keys():
-                        if name_grp[i] != 'channel':
-                            if name_grp[i] not in V.LM_NAMING_CONVENTION_KEYWORDS_TEXTURE['channel']:
-                                naming_convention[kw] = name_grp[i]
-                        else:
-                            naming_convention[kw] = name_grp[i]
-                    elif len(ckws):
-                        if name_grp[i] in ckws:
-                            naming_convention[kw] = name_grp[i]
-                    else:
-                        naming_convention[kw] = name_grp[i]
             naming_convention['name'].append(name_grp[i])
 
         return naming_convention
@@ -82,3 +85,11 @@ class NamingConvention(object):
             new_naming['fullname'] = item_pattern.sub(r'\0')
 
         self.naming_convention = new_naming
+
+    def get_other_ckws(self, ckw_dict, current_key):
+        other_ckws = []
+        for ckw, ckws in ckw_dict.items():
+            if ckw != current_key:
+                other_ckws = other_ckws + ckws
+
+        return other_ckws
