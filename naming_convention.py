@@ -42,12 +42,26 @@ class NamingConvention(object):
         
         name_grp = [n.group(1) for n in names]
 
+        for k in keywords:
+            print(k.group(1))
+        
+        for n in names:
+            print(n.group(1))
+
         for i,k in enumerate(keywords):
             kw = k.group(1).lower()
             for ckn,ckws in V.LM_NAMING_CONVENTION_KEYWORDS.items():
                 if kw == ckn:
-                    if len(ckws):
-                        if kw in ckws:
+                    if kw in V.LM_NAMING_CONVENTION_KEYWORDS_MESH.keys():
+                        naming_convention[kw] = name_grp[i]
+                    elif kw in V.LM_NAMING_CONVENTION_KEYWORDS_TEXTURE.keys():
+                        if name_grp[i] != 'channel':
+                            if name_grp[i] not in V.LM_NAMING_CONVENTION_KEYWORDS_TEXTURE['channel']:
+                                naming_convention[kw] = name_grp[i]
+                        else:
+                            naming_convention[kw] = name_grp[i]
+                    elif len(ckws):
+                        if name_grp[i] in ckws:
                             naming_convention[kw] = name_grp[i]
                     else:
                         naming_convention[kw] = name_grp[i]
