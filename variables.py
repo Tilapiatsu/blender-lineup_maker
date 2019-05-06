@@ -9,9 +9,9 @@ LM_COMPATIBLE_TEXTURE_FORMAT = {".png":(),
                                     ".tga":()}
 
 LM_CHANNELS = [] if P.get_prefs() is None else [P.get_prefs().textureSet_albedo_keyword,
-                P.get_prefs().textureSet_normal_keyword,
-                P.get_prefs().textureSet_roughness_keyword,
-                P.get_prefs().textureSet_metalic_keyword]
+                                                P.get_prefs().textureSet_normal_keyword,
+                                                P.get_prefs().textureSet_roughness_keyword,
+                                                P.get_prefs().textureSet_metalic_keyword]
 
 LM_NAMING_CONVENTION_KEYWORDS_COMMON = {'project':[],
                                         'team':[],
