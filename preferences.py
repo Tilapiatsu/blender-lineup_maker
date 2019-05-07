@@ -21,6 +21,8 @@ def get_name():
 def get_prefs():
     return bpy.context.preferences.addons[get_name()].preferences
 
+
+
 class LM_Preferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
@@ -28,6 +30,7 @@ class LM_Preferences(bpy.types.AddonPreferences):
     textureSet_normal_keyword: bpy.props.StringProperty(name="Normal", default="Normal")
     textureSet_roughness_keyword: bpy.props.StringProperty(name="Roughness", default="Roughness")
     textureSet_metalic_keyword: bpy.props.StringProperty(name="Metalic", default="Metalic")
+
 
     # HIDDEN
     tabs: bpy.props.EnumProperty(name="Tabs", items=preferences_tabs, default="GENERAL")

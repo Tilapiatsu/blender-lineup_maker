@@ -33,7 +33,6 @@ class NamingConvention(object):
         if self._words is None:
             word_pattern = re.compile(r'[{0}]?(<([a-zA-Z0-9]+)(\?)?>)[{0}]?|[{0}]?([^<][a-zA-Z0-9]+[^>])[{0}]?'.format(V.LM_SEPARATORS), re.IGNORECASE)
             self._words = word_pattern.finditer(self.convention)
-
         return self._words
 
         
@@ -42,14 +41,17 @@ class NamingConvention(object):
         if self._names is None:
             name_pattern = re.compile(r'[{0}]?([a-zA-Z0-9]+)[{0}]?'.format(V.LM_SEPARATORS), re.IGNORECASE)
             self._names = name_pattern.finditer(self.name)
-
+        
         return self._names
 
 
     def slice_name(self):
         def assign_value(ckws, value, return_dict, word):
             if word in ckws.keys():
-                if value in ckws[word]:
+                if len(ckws[word]):
+                    if value in ckws[word]:
+                        return_dict[word] = value
+                else:
                     return_dict[word] = value
             else:
                 return_dict[word] = value
@@ -59,7 +61,7 @@ class NamingConvention(object):
         names = [n.group(1) for n in self.names]
         name_length = len(names)
         for i,w in enumerate(self.words):
-            if i <= name_length:
+            if i < name_length:
                 if w.group(4): # Hardcoded
                     if names[i] == w.group(4):
                         naming_convention['hardcoded'].append(w.group(4))
@@ -74,7 +76,6 @@ class NamingConvention(object):
                     else: # Keyword
                         naming_convention = assign_value(V.LM_NAMING_CONVENTION_KEYWORDS, names[i], naming_convention, w.group(2).lower())
                 naming_convention['name'].append(names[i])
-                print(w.group(1), w.group(2), w.group(3), w.group(4))
             else:
                 naming_convention['match'] = False
                 break

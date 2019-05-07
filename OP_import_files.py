@@ -126,3 +126,13 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     material_list = bpy.props.CollectionProperty(type=LM_Material_List)
     texture_list = bpy.props.CollectionProperty(type=LM_Texture_List)
 
+class LM_TextureChannels(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty()
+
+
+class LM_TextureSet_UIList(bpy.types.UIList):
+    bl_idname = "LM_TextureSet"
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        row = layout.split(factor=0.7)
+        row.label(text=item.name)

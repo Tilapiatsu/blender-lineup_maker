@@ -33,7 +33,9 @@ classes = (
     LM_Material_List,
     LM_Mesh_List,
     LM_Texture_List,
-    LM_Asset_List
+    LM_Asset_List,
+    LM_TextureChannels,
+    LM_TextureSet_UIList
 )
 
 def register():
@@ -71,11 +73,13 @@ def register():
         bpy.utils.register_class(cls)
     
     bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
+    bpy.types.Scene.lm_texture_channels =  bpy.props.CollectionProperty(type=LM_TextureChannels)
     
     
 
 
 def unregister():
+    del bpy.types.Scene.lm_texture_channels
     del bpy.types.Scene.lm_asset_list
 
     for cls in reversed(classes):
