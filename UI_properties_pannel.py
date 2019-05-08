@@ -54,10 +54,49 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         layout = self.layout
 
         col = layout.column(align=True)
-        
+        col.label(text='Shader Name')
         row = col.row()
+        
+        rows = len(scn.lm_shaders) if len(scn.lm_shaders) > 4 else 4
+        row.template_list('LM_UL_shaders', '', scn, 'lm_shaders', scn, 'lm_shader_idx', rows=rows)
+        c = row.column(align=True)
+        c.operator("scene.lm_move_shader", text="", icon='TRIA_UP').direction = "UP"
+        c.operator("scene.lm_move_shader", text="", icon='TRIA_DOWN').direction = "DOWN"
+
+        c.separator()
+        c.operator("scene.lm_clear_shaders", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_remove_shader", text="", icon='X')
+        c.separator()
+        c.operator("scene.lm_rename_shader", text="", icon='OUTLINER_DATA_FONT')
+
+        col.prop(scn, 'lm_shader_name')
+
+        c.separator()
+
+        col = layout.column(align=True)
+        col.label(text='Channel Name')
+        row = col.row()
+        
+        rows = len(scn.lm_channels) if len(scn.lm_channels) > 4 else 4
+        row.template_list('LM_UL_channels', '', scn, 'lm_channels', scn, 'lm_channel_idx', rows=rows)
+        c = row.column(align=True)
+        c.operator("scene.lm_move_channel", text="", icon='TRIA_UP').direction = "UP"
+        c.operator("scene.lm_move_channel", text="", icon='TRIA_DOWN').direction = "DOWN"
+
+        c.separator()
+        c.operator("scene.lm_clear_channels", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_remove_channel", text="", icon='X')
+        c.separator()
+        c.operator("scene.lm_rename_channel", text="", icon='OUTLINER_DATA_FONT')
+
+        col.prop(scn, 'lm_channel_name')
+
+        c.separator()
+        col.label(text='Texture Name')
+        row = col.row()
+        
         rows = len(scn.lm_texture_channels) if len(scn.lm_texture_channels) > 4 else 4
-        row.template_list('LM_UL_append_textureset', '', scn, 'lm_texture_channels', scn, 'lm_texture_channel_idx', rows=rows)
+        row.template_list('LM_UL_texturesets', '', scn, 'lm_texture_channels', scn, 'lm_texture_channel_idx', rows=rows)
         c = row.column(align=True)
         c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_UP').direction = "UP"
         c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_DOWN').direction = "DOWN"

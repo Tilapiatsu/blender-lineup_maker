@@ -16,7 +16,9 @@ from .OP_import_files import *
 from .UI_properties_pannel import *
 from .preferences import *
 from .properties import *
-from .OP_ui_list import *
+from .OP_ui_list_texture import *
+from .OP_ui_list_channel import *
+from .OP_ui_list_shader import *
 
 bl_info = {
     "name" : "Lineup Maker",
@@ -39,11 +41,23 @@ classes = (
     LM_Texture_List,
     LM_Asset_List,
     LM_TextureChannels,
+    LM_Channels,
+    LM_Shaders,
     LM_TextureSet_UIList,
-    LM_UI_Move,
-    LM_UI_Rename,
-    LM_UI_Clear,
-    LM_UI_Remove
+    LM_Channel_UIList,
+    LM_Shader_UIList,
+    LM_UI_MoveChannel,
+    LM_UI_RenameChannel,
+    LM_UI_ClearChannel,
+    LM_UI_RemoveChannel,
+    LM_UI_MoveShader,
+    LM_UI_RenameShader,
+    LM_UI_ClearShader,
+    LM_UI_RemoveShader,
+    LM_UI_MoveTexture,
+    LM_UI_RenameTexture,
+    LM_UI_ClearTexture,
+    LM_UI_RemoveTexture
 )
 
 def update_textureChannelName(self, context):
@@ -53,14 +67,49 @@ def update_textureChannelName(self, context):
         return
 
     else:
-        if scn.lm_texture_channel_name and scn.lm_texture_channel_name not in scn.lm_texture_channels:
+        if scn.lm_texture_channel_name and scn.lm_texture_channel_name not in scn.lm_texture_channels and len(scn.lm_channels) and len(scn.lm_shaders):
             tc = scn.lm_texture_channels.add()
             tc.name = scn.lm_texture_channel_name
+            tc.channel = scn.lm_channels[scn.lm_channel_idx].name
+            tc.shader = scn.lm_shaders[scn.lm_shader_idx].name
 
             scn.lm_texture_channel_idx = len(scn.lm_texture_channels) - 1
 
         scn.lm_avoid_update = True
         scn.lm_texture_channel_name = ""
+
+def update_channelName(self, context):
+    scn = context.scene
+    if scn.lm_avoid_update:
+        scn.lm_avoid_update = False
+        return
+
+    else:
+        if scn.lm_channel_name and scn.lm_channel_name not in scn.lm_channels and len(scn.lm_shaders):
+            c = scn.lm_channels.add()
+            c.name = scn.lm_channel_name
+            c.shader = scn.lm_shaders[scn.lm_shader_idx].name
+
+            scn.lm_channel_idx = len(scn.lm_texture_channels) - 1
+
+        scn.lm_avoid_update = True
+        scn.lm_channel_name = ""
+
+def update_shaderName(self, context):
+    scn = context.scene
+    if scn.lm_avoid_update:
+        scn.lm_avoid_update = False
+        return
+
+    else:
+        if scn.lm_shader_name and scn.lm_shader_name not in scn.lm_shaders:
+            c = scn.lm_shaders.add()
+            c.name = scn.lm_shader_name
+
+            scn.lm_shader_idx = len(scn.lm_shaders) - 1
+
+        scn.lm_avoid_update = True
+        scn.lm_shader_name = ""
 
 def register():
     bpy.types.Scene.lm_asset_path = bpy.props.StringProperty(
@@ -94,20 +143,30 @@ def register():
                                     description = 'Naming Convention'
                                     )
     bpy.types.Scene.lm_avoid_update = bpy.props.BoolProperty()
+
     bpy.types.Scene.lm_texture_channel_idx = bpy.props.IntProperty()
+    bpy.types.Scene.lm_channel_idx = bpy.props.IntProperty()
+    bpy.types.Scene.lm_shader_idx = bpy.props.IntProperty()
 
     bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_textureChannelName)
+    bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channelName)
+    bpy.types.Scene.lm_shader_name = bpy.props.StringProperty(name="Add Shader", update=update_shaderName)
 
     for cls in classes:
         bpy.utils.register_class(cls)
     
     bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
+
     bpy.types.Scene.lm_texture_channels =  bpy.props.CollectionProperty(type=LM_TextureChannels)
+    bpy.types.Scene.lm_channels =  bpy.props.CollectionProperty(type=LM_Channels)
+    bpy.types.Scene.lm_shaders =  bpy.props.CollectionProperty(type=LM_Shaders)
     
     
 
 
 def unregister():
+    del bpy.types.Scene.lm_shaders
+    del bpy.types.Scene.lm_channels
     del bpy.types.Scene.lm_texture_channels
     del bpy.types.Scene.lm_asset_list
 
@@ -115,6 +174,10 @@ def unregister():
         bpy.utils.unregister_class(cls)
     
     del bpy.types.Scene.lm_avoid_update
+    del bpy.types.Scene.lm_shader_name
+    del bpy.types.Scene.lm_shader_idx
+    del bpy.types.Scene.lm_channel_name
+    del bpy.types.Scene.lm_channel_idx
     del bpy.types.Scene.lm_texture_channel_name
     del bpy.types.Scene.lm_texture_channel_idx
     del bpy.types.Scene.lm_texture_naming_convention
