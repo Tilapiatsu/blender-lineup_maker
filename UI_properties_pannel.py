@@ -7,26 +7,28 @@ class LM_PT_main(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = 'Lineup Maker'
 
-    def update_textureChannelName(self, context):
-        if self.avoid_update:
-            self.avoid_update = False
-            return
+    # def update_textureChannelName(self, context):
+    #     if self.avoid_update:
+    #         self.avoid_update = False
+    #         return
 
-        else:
-            if self.textureChannelName and self.textureChannelName not in context.scene.lm_texture_channels:
-                tc = context.scene.lm_texture_channels.add()
-                tc.name = self.textureChannelName
+    #     else:
+    #         if self.textureChannelName and self.textureChannelName not in context.scene.lm_texture_channels:
+    #             tc = context.scene.lm_texture_channels.add()
+    #             tc.name = self.textureChannelName
 
-                self.textureChannelIDX = len(context.scene.lm_texture_channels) - 1
+    #             self.textureChannelIDX = len(context.scene.lm_texture_channels) - 1
 
-            self.avoid_update = True
-            self.textureChannelName = ""
+    #         self.avoid_update = True
+    #         self.textureChannelName = ""
+    
+    # PROPERTIES
 
-    textureChannelName: bpy.props.StringProperty(name="Add Texture Channel", update=update_textureChannelName)
-    textureChannelsIDX: bpy.props.IntProperty()
+    # textureChannelName: bpy.props.StringProperty(name="Add Texture Channel", update=update_textureChannelName)
+    # textureChannelsIDX: bpy.props.IntProperty()
 
     # HIDDEN
-    avoid_update: bpy.props.BoolProperty(default=False)
+    # avoid_update: bpy.props.BoolProperty(default=False)
     
     def draw(self, context):
         scn = context.scene
@@ -36,11 +38,8 @@ class LM_PT_main(bpy.types.Panel):
         # TEXTURESET SETUP
         col = layout.column(align=True)
         rows = len(scn.lm_texture_channels) if len(scn.lm_texture_channels) > 8 else 8
-        print(scn.lm_texture_channels)
-        print(len(scn.lm_texture_channels))
-        print(self.textureChannelsIDX)
-        col.template_list('LM_TextureSet_UIList', '', scn, 'lm_texture_channels', self, 'textureChannelsIDX', rows=rows)
-        col.prop(self, 'textureChannelName')
+        col.template_list('LM_TextureSet_UIList', '', scn, 'lm_texture_channels', scn, 'lm_texture_channels_idx', rows=rows)
+        col.prop(scn, 'lm_texture_channel_name')
 
         # NAMING CONVENTION SETUP
         col = layout.column(align=True)

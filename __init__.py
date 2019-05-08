@@ -38,6 +38,22 @@ classes = (
     LM_TextureSet_UIList
 )
 
+def update_textureChannelName(self, context):
+    scn = context.scene
+    if scn.lm_avoid_update:
+        scn.lm_avoid_update = False
+        return
+
+    else:
+        if scn.lm_texture_channel_name and scn.lm_texture_channel_name not in scn.lm_texture_channels:
+            tc = scn.lm_texture_channels.add()
+            tc.name = scn.lm_texture_channel_name
+
+            scn.lm_texture_channels_idx = len(scn.lm_texture_channels) - 1
+
+        scn.lm_avoid_update = True
+        scn.lm_texture_channel_name = ""
+
 def register():
     bpy.types.Scene.lm_asset_path = bpy.props.StringProperty(
                                     name="Assets Path",
@@ -69,6 +85,11 @@ def register():
                                     update = None,
                                     description = 'Naming Convention'
                                     )
+    bpy.types.Scene.lm_avoid_update = bpy.props.BoolProperty()
+    bpy.types.Scene.lm_texture_channels_idx = bpy.props.IntProperty()
+
+    bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_textureChannelName)
+
     for cls in classes:
         bpy.utils.register_class(cls)
     
@@ -85,6 +106,9 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
     
+    del bpy.types.Scene.lm_avoid_update
+    del bpy.types.Scene.lm_texture_channel_name
+    del bpy.types.Scene.lm_texture_channels_idx
     del bpy.types.Scene.lm_texture_naming_convention
     del bpy.types.Scene.lm_mesh_naming_convention
     del bpy.types.Scene.lm_asset_naming_convention

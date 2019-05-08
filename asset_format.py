@@ -419,10 +419,3 @@ class BpyAsset(object):
             print('Lineup Maker : Asset "{}" is not valid'.format(self.asset_name))
             return None
 
-
-class BpyAssetFBX(BpyAsset):
-    def __init__(self, context, meshes, textures):
-        super(BpyAssetFBX, self).__init__(context, meshes, textures)
-
-class TextureSet(object):
-    pass
