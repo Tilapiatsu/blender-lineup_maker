@@ -37,6 +37,15 @@ class LM_TextureChannels(bpy.types.PropertyGroup):
     channel : bpy.props.StringProperty()
     shader: bpy.props.StringProperty()
 
+class LM_Keywords(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty()
+
+class LM_KeywordValues(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty()
+    keyword: bpy.props.StringProperty()
+
+# UI List
+
 class LM_Shader_UIList(bpy.types.UIList):
     bl_idname = "LM_UL_shaders"
 
@@ -57,3 +66,17 @@ class LM_TextureSet_UIList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
         row.label(text='{} - {} : {}'.format(item.shader, item.channel, item.name))
+
+class LM_Keywords_UIList(bpy.types.UIList):
+    bl_idname = "LM_UL_keywords"
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        row = layout.split(factor=0.7)
+        row.label(text='{}'.format(item.name))
+
+class LM_KeywordValues_UIList(bpy.types.UIList):
+    bl_idname = "LM_UL_keyword_values"
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        row = layout.split(factor=0.7)
+        row.label(text='{} : {}'.format(item.keyword, item.name))

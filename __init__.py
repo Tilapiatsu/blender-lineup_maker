@@ -19,6 +19,8 @@ from .properties import *
 from .OP_ui_list_texture import *
 from .OP_ui_list_channel import *
 from .OP_ui_list_shader import *
+from .OP_ui_list_keyword import *
+from .OP_ui_list_keyword_value import *
 
 bl_info = {
     "name" : "Lineup Maker",
@@ -43,9 +45,21 @@ classes = (
     LM_TextureChannels,
     LM_Channels,
     LM_Shaders,
+    LM_Keywords,
+    LM_KeywordValues,
     LM_TextureSet_UIList,
     LM_Channel_UIList,
     LM_Shader_UIList,
+    LM_Keywords_UIList,
+    LM_KeywordValues_UIList,
+    LM_UI_MoveKeyword,
+    LM_UI_RenameKeyword,
+    LM_UI_ClearKeyword,
+    LM_UI_RemoveKeyword,
+    LM_UI_MoveKeywordValue,
+    LM_UI_RenameKeywordValue,
+    LM_UI_ClearKeywordValue,
+    LM_UI_RemoveKeywordValue,
     LM_UI_MoveChannel,
     LM_UI_RenameChannel,
     LM_UI_ClearChannel,
@@ -60,14 +74,25 @@ classes = (
     LM_UI_RemoveTexture
 )
 
-def update_textureChannelName(self, context):
+def update_texture_channel_name(self, context):
+    def is_valid_textureChannelName(scn):
+        valid = False
+        if scn.lm_texture_channel_name and len(scn.lm_channels):
+            if not len(scn.lm_texture_channels):
+                return True
+            curr_channel_textures = [c.name for c in scn.lm_texture_channels if c.channel == scn.lm_channels[scn.lm_channel_idx].name]
+            if scn.lm_texture_channel_name not in curr_channel_textures:
+                return True
+                    
+        return valid
+
     scn = context.scene
     if scn.lm_avoid_update:
         scn.lm_avoid_update = False
         return
 
     else:
-        if scn.lm_texture_channel_name and scn.lm_texture_channel_name not in scn.lm_texture_channels and len(scn.lm_channels) and len(scn.lm_shaders):
+        if is_valid_textureChannelName(scn):
             tc = scn.lm_texture_channels.add()
             tc.name = scn.lm_texture_channel_name
             tc.channel = scn.lm_channels[scn.lm_channel_idx].name
@@ -78,14 +103,25 @@ def update_textureChannelName(self, context):
         scn.lm_avoid_update = True
         scn.lm_texture_channel_name = ""
 
-def update_channelName(self, context):
+def update_channel_name(self, context):
+    def is_valid_channelName(scn):
+        valid = False
+        if scn.lm_channel_name and len(scn.lm_shaders):
+            if not len(scn.lm_channels):
+                return True
+            curr_shader_channels = [c.name for c in scn.lm_channels if c.shader == scn.lm_shaders[scn.lm_shader_idx].name]
+            if scn.lm_channel_name not in curr_shader_channels:
+                return True
+        
+        return valid
+
     scn = context.scene
     if scn.lm_avoid_update:
         scn.lm_avoid_update = False
         return
 
     else:
-        if scn.lm_channel_name and scn.lm_channel_name not in scn.lm_channels and len(scn.lm_shaders):
+        if is_valid_channelName(scn):
             c = scn.lm_channels.add()
             c.name = scn.lm_channel_name
             c.shader = scn.lm_shaders[scn.lm_shader_idx].name
@@ -95,7 +131,7 @@ def update_channelName(self, context):
         scn.lm_avoid_update = True
         scn.lm_channel_name = ""
 
-def update_shaderName(self, context):
+def update_shader_name(self, context):
     scn = context.scene
     if scn.lm_avoid_update:
         scn.lm_avoid_update = False
@@ -110,6 +146,50 @@ def update_shaderName(self, context):
 
         scn.lm_avoid_update = True
         scn.lm_shader_name = ""
+
+def update_keyword_value(self, context):
+    def is_valid_keyword_value(scn):
+        valid = False
+        if scn.lm_keyword_value and len(scn.lm_keywords):
+            if not len(scn.lm_keywords):
+                return True
+            curr_keyword_values = [k.name for k in scn.lm_keyword_values if k.keyword == scn.lm_keywords[scn.lm_keyword_idx].name]
+            if scn.lm_keyword_value not in curr_keyword_values:
+                return True
+        
+        return valid
+
+    scn = context.scene
+    if scn.lm_avoid_update:
+        scn.lm_avoid_update = False
+        return
+
+    else:
+        if is_valid_keyword_value(scn):
+            c = scn.lm_keyword_values.add()
+            c.name = scn.lm_keyword_value
+            c.keyword = scn.lm_keywords[scn.lm_keyword_idx].name
+
+            scn.lm_keyword_value_idx = len(scn.lm_keyword_values) - 1
+
+        scn.lm_avoid_update = True
+        scn.lm_keyword_value = ""
+
+def update_keyword_name(self, context):
+    scn = context.scene
+    if scn.lm_avoid_update:
+        scn.lm_avoid_update = False
+        return
+
+    else:
+        if scn.lm_keyword_name and scn.lm_keyword_name not in scn.lm_keywords:
+            c = scn.lm_keywords.add()
+            c.name = scn.lm_keyword_name
+
+            scn.lm_keyword_idx = len(scn.lm_keywords) - 1
+
+        scn.lm_avoid_update = True
+        scn.lm_keyword_name = ""
 
 def register():
     bpy.types.Scene.lm_asset_path = bpy.props.StringProperty(
@@ -142,15 +222,22 @@ def register():
                                     update = None,
                                     description = 'Naming Convention'
                                     )
+
     bpy.types.Scene.lm_avoid_update = bpy.props.BoolProperty()
+
+    bpy.types.Scene.lm_keyword_idx = bpy.props.IntProperty()
+    bpy.types.Scene.lm_keyword_value_idx = bpy.props.IntProperty()
+
+    bpy.types.Scene.lm_keyword_name = bpy.props.StringProperty(name="Add Keyword", update=update_keyword_name)
+    bpy.types.Scene.lm_keyword_value = bpy.props.StringProperty(name="Add Keyword Value", update=update_keyword_value)
 
     bpy.types.Scene.lm_texture_channel_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_channel_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_shader_idx = bpy.props.IntProperty()
 
-    bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_textureChannelName)
-    bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channelName)
-    bpy.types.Scene.lm_shader_name = bpy.props.StringProperty(name="Add Shader", update=update_shaderName)
+    bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_texture_channel_name)
+    bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
+    bpy.types.Scene.lm_shader_name = bpy.props.StringProperty(name="Add Shader", update=update_shader_name)
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -160,11 +247,17 @@ def register():
     bpy.types.Scene.lm_texture_channels =  bpy.props.CollectionProperty(type=LM_TextureChannels)
     bpy.types.Scene.lm_channels =  bpy.props.CollectionProperty(type=LM_Channels)
     bpy.types.Scene.lm_shaders =  bpy.props.CollectionProperty(type=LM_Shaders)
+
+    bpy.types.Scene.lm_keywords =  bpy.props.CollectionProperty(type=LM_Keywords)
+    bpy.types.Scene.lm_keyword_values =  bpy.props.CollectionProperty(type=LM_KeywordValues)
+    
     
     
 
 
 def unregister():
+    del bpy.types.Scene.lm_keyword_values
+    del bpy.types.Scene.lm_keywords
     del bpy.types.Scene.lm_shaders
     del bpy.types.Scene.lm_channels
     del bpy.types.Scene.lm_texture_channels
@@ -174,6 +267,8 @@ def unregister():
         bpy.utils.unregister_class(cls)
     
     del bpy.types.Scene.lm_avoid_update
+    del bpy.types.Scene.lm_keyword_name
+    del bpy.types.Scene.lm_keyword_value
     del bpy.types.Scene.lm_shader_name
     del bpy.types.Scene.lm_shader_idx
     del bpy.types.Scene.lm_channel_name

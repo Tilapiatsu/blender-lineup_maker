@@ -30,10 +30,47 @@ class LM_PT_NamingConvention(bpy.types.Panel):
 
     def draw(self, context):
         scn = context.scene
-        assetPath = bpy.path.abspath(scn.lm_asset_path)
         layout = self.layout
 
         col = layout.column(align=True)
+        col.label(text='Keywords')
+        row = col.row()
+        
+        rows = len(scn.lm_keywords) if len(scn.lm_keywords) > 2 else 2
+        row.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
+        c = row.column(align=True)
+        c.operator("scene.lm_move_keyword", text="", icon='TRIA_UP').direction = "UP"
+        c.operator("scene.lm_move_keyword", text="", icon='TRIA_DOWN').direction = "DOWN"
+
+        c.separator()
+        c.operator("scene.lm_clear_keywords", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_remove_keyword", text="", icon='X')
+        c.separator()
+        c.operator("scene.lm_rename_keyword", text="", icon='OUTLINER_DATA_FONT')
+
+        col.prop(scn, 'lm_keyword_name')
+
+        c.separator()
+
+        col = layout.column(align=True)
+        col.label(text='Keyword Value')
+        row = col.row()
+        
+        rows = len(scn.lm_keyword_values) if len(scn.lm_keyword_values) > 4 else 4
+        row.template_list('LM_UL_keyword_values', '', scn, 'lm_keyword_values', scn, 'lm_keyword_value_idx', rows=rows)
+        c = row.column(align=True)
+        c.operator("scene.lm_move_keyword_value", text="", icon='TRIA_UP').direction = "UP"
+        c.operator("scene.lm_move_keyword_value", text="", icon='TRIA_DOWN').direction = "DOWN"
+
+        c.separator()
+        c.operator("scene.lm_clear_keyword_values", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_remove_keyword_value", text="", icon='X')
+        c.separator()
+        c.operator("scene.lm_rename_keyword_value", text="", icon='OUTLINER_DATA_FONT')
+
+        col.prop(scn, 'lm_keyword_value')
+
+        c.separator()
         # NAMING CONVENTION SETUP
         col = layout.column(align=True)
         
@@ -57,7 +94,7 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         col.label(text='Shader Name')
         row = col.row()
         
-        rows = len(scn.lm_shaders) if len(scn.lm_shaders) > 4 else 4
+        rows = len(scn.lm_shaders) if len(scn.lm_shaders) > 2 else 2
         row.template_list('LM_UL_shaders', '', scn, 'lm_shaders', scn, 'lm_shader_idx', rows=rows)
         c = row.column(align=True)
         c.operator("scene.lm_move_shader", text="", icon='TRIA_UP').direction = "UP"
