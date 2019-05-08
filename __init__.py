@@ -31,6 +31,8 @@ bl_info = {
 classes = (
     LM_Preferences,
     LM_OP_ImportFiles,
+    LM_PT_NamingConvention,
+    LM_PT_TextureSetSettings,
     LM_PT_main,
     LM_Material_List,
     LM_Mesh_List,
