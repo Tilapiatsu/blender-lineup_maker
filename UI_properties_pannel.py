@@ -37,8 +37,19 @@ class LM_PT_main(bpy.types.Panel):
 
         # TEXTURESET SETUP
         col = layout.column(align=True)
+        row = col.row()
         rows = len(scn.lm_texture_channels) if len(scn.lm_texture_channels) > 4 else 4
-        col.template_list('LM_UL_append_textureset', '', scn, 'lm_texture_channels', scn, 'lm_texture_channels_idx', rows=rows)
+        row.template_list('LM_UL_append_textureset', '', scn, 'lm_texture_channels', scn, 'lm_texture_channel_idx', rows=rows)
+        c = row.column(align=True)
+        c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_UP').direction = "UP"
+        c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_DOWN').direction = "DOWN"
+
+        c.separator()
+        c.operator("scene.lm_clear_texture_channels", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_remove_texture_channel", text="", icon='X')
+        c.separator()
+        c.operator("scene.lm_rename_texture_channel", text="", icon='OUTLINER_DATA_FONT')
+
         col.prop(scn, 'lm_texture_channel_name')
 
         # NAMING CONVENTION SETUP

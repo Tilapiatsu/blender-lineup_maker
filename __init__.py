@@ -16,6 +16,7 @@ from .OP_import_files import *
 from .UI_properties_pannel import *
 from .preferences import *
 from .properties import *
+from .OP_ui_list import *
 
 bl_info = {
     "name" : "Lineup Maker",
@@ -36,7 +37,11 @@ classes = (
     LM_Texture_List,
     LM_Asset_List,
     LM_TextureChannels,
-    LM_TextureSet_UIList
+    LM_TextureSet_UIList,
+    LM_UI_Move,
+    LM_UI_Rename,
+    LM_UI_Clear,
+    LM_UI_Remove
 )
 
 def update_textureChannelName(self, context):
@@ -50,7 +55,7 @@ def update_textureChannelName(self, context):
             tc = scn.lm_texture_channels.add()
             tc.name = scn.lm_texture_channel_name
 
-            scn.lm_texture_channels_idx = len(scn.lm_texture_channels) - 1
+            scn.lm_texture_channel_idx = len(scn.lm_texture_channels) - 1
 
         scn.lm_avoid_update = True
         scn.lm_texture_channel_name = ""
@@ -87,7 +92,7 @@ def register():
                                     description = 'Naming Convention'
                                     )
     bpy.types.Scene.lm_avoid_update = bpy.props.BoolProperty()
-    bpy.types.Scene.lm_texture_channels_idx = bpy.props.IntProperty()
+    bpy.types.Scene.lm_texture_channel_idx = bpy.props.IntProperty()
 
     bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_textureChannelName)
 
@@ -109,7 +114,7 @@ def unregister():
     
     del bpy.types.Scene.lm_avoid_update
     del bpy.types.Scene.lm_texture_channel_name
-    del bpy.types.Scene.lm_texture_channels_idx
+    del bpy.types.Scene.lm_texture_channel_idx
     del bpy.types.Scene.lm_texture_naming_convention
     del bpy.types.Scene.lm_mesh_naming_convention
     del bpy.types.Scene.lm_asset_naming_convention
