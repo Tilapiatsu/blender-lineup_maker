@@ -15,6 +15,7 @@ import bpy
 from .OP_import_files import *
 from .UI_properties_pannel import *
 from .preferences import *
+from .properties import *
 
 bl_info = {
     "name" : "Lineup Maker",

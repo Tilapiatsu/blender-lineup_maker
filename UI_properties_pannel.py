@@ -37,8 +37,8 @@ class LM_PT_main(bpy.types.Panel):
 
         # TEXTURESET SETUP
         col = layout.column(align=True)
-        rows = len(scn.lm_texture_channels) if len(scn.lm_texture_channels) > 8 else 8
-        col.template_list('LM_TextureSet_UIList', '', scn, 'lm_texture_channels', scn, 'lm_texture_channels_idx', rows=rows)
+        rows = len(scn.lm_texture_channels) if len(scn.lm_texture_channels) > 4 else 4
+        col.template_list('LM_UL_append_textureset', '', scn, 'lm_texture_channels', scn, 'lm_texture_channels_idx', rows=rows)
         col.prop(scn, 'lm_texture_channel_name')
 
         # NAMING CONVENTION SETUP
