@@ -21,6 +21,7 @@ from .OP_ui_list_channel import *
 from .OP_ui_list_shader import *
 from .OP_ui_list_keyword import *
 from .OP_ui_list_keyword_value import *
+from .OP_ui_naming_convention import *
 
 bl_info = {
     "name" : "Lineup Maker",
@@ -71,7 +72,8 @@ classes = (
     LM_UI_MoveTexture,
     LM_UI_RenameTexture,
     LM_UI_ClearTexture,
-    LM_UI_RemoveTexture
+    LM_UI_RemoveTexture,
+    LM_UI_AddAssetKeyword
 )
 
 def update_texture_channel_name(self, context):
@@ -225,16 +227,21 @@ def register():
 
     bpy.types.Scene.lm_avoid_update = bpy.props.BoolProperty()
 
+    bpy.types.Scene.lm_separator = bpy.props.StringProperty(name="Separator")
+    bpy.types.Scene.lm_optionnal_asset_keyword = bpy.props.BoolProperty(default=False)
+    bpy.types.Scene.lm_optionnal_mesh_keyword = bpy.props.BoolProperty(default=False)
+    bpy.types.Scene.lm_optionnal_texture_keyword = bpy.props.BoolProperty(default=False)
+
     bpy.types.Scene.lm_keyword_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_keyword_value_idx = bpy.props.IntProperty()
 
     bpy.types.Scene.lm_keyword_name = bpy.props.StringProperty(name="Add Keyword", update=update_keyword_name)
     bpy.types.Scene.lm_keyword_value = bpy.props.StringProperty(name="Add Keyword Value", update=update_keyword_value)
-
+    
     bpy.types.Scene.lm_texture_channel_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_channel_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_shader_idx = bpy.props.IntProperty()
-
+    
     bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_texture_channel_name)
     bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
     bpy.types.Scene.lm_shader_name = bpy.props.StringProperty(name="Add Shader", update=update_shader_name)
@@ -267,6 +274,10 @@ def unregister():
         bpy.utils.unregister_class(cls)
     
     del bpy.types.Scene.lm_avoid_update
+    del bpy.types.Scene.lm_separator
+    del bpy.types.Scene.lm_optionnal_asset_keyword
+    del bpy.types.Scene.lm_optionnal_mesh_keyword
+    del bpy.types.Scene.lm_optionnal_texture_keyword
     del bpy.types.Scene.lm_keyword_name
     del bpy.types.Scene.lm_keyword_value
     del bpy.types.Scene.lm_shader_name
