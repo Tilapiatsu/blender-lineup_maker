@@ -75,7 +75,10 @@ classes = (
     LM_UI_RemoveTexture,
     LM_UI_AddAssetKeyword,
     LM_UI_AddMeshKeyword,
-    LM_UI_AddTextureKeyword
+    LM_UI_AddTextureKeyword,
+    LM_UI_RemoveAssetKeyword,
+    LM_UI_RemoveMeshKeyword,
+    LM_UI_RemoveTextureKeyword
 )
 
 def update_texture_channel_name(self, context):
@@ -207,14 +210,12 @@ def register():
     bpy.types.Scene.lm_asset_naming_convention = bpy.props.StringProperty(
                                     name="Asset Naming Convetion",
                                     subtype='NONE',
-                                    default="<PROJECT>_<TEAM>_<CATEGORY>_<INCR>_<GENDER>",
                                     update = None,
                                     description = 'Naming Convention'      
                                     )
     bpy.types.Scene.lm_mesh_naming_convention = bpy.props.StringProperty(
                                     name="Mesh Naming Convetion",
                                     subtype='NONE',
-                                    default="<ASSETNAME>_<PLUGNAME>_suffix",
                                     update = None,
                                     description = 'Naming Convention'      
                                     )
@@ -222,7 +223,6 @@ def register():
     bpy.types.Scene.lm_texture_naming_convention = bpy.props.StringProperty(
                                     name="Texture Naming Convetion",
                                     subtype='NONE',
-                                    default="<ASSETNAME>_<TINCR>_<MATID>_suffix",
                                     update = None,
                                     description = 'Naming Convention'
                                     )
