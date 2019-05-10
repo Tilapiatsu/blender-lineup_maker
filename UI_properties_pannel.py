@@ -76,13 +76,32 @@ class LM_PT_NamingConvention(bpy.types.Panel):
 
         col.prop(scn, 'lm_separator', text = 'Separator')
 
-        row = col.row()
-        row.operator("scene.lm_add_asset_keyword", text="Add selected keyword to asset naming convention", icon='ADD')
-        row.prop(scn, 'lm_optionnal_asset_keyword', text='Optionnal Keyword')
+        b = col.box()
+        b.label(text='Asset Naming Convention')
+        br = b.row(align=True)
+        br.operator("scene.lm_add_asset_keyword", text='', icon='ADD')
+        br.prop(scn, 'lm_optionnal_asset_keyword', text='Optionnal Keyword')
+        
+        b.prop(scn, 'lm_asset_naming_convention', text='')
+        col.separator()
 
-        col.prop(scn, 'lm_asset_naming_convention', text = 'Asset Naming Convention')
-        col.prop(scn, 'lm_mesh_naming_convention', text = 'Mesh Naming Convention')
-        col.prop(scn, 'lm_texture_naming_convention', text = 'Texture Naming Convention')
+        b = col.box()
+        b.label(text='Mesh Naming Convention')
+        br = b.row(align=True)
+        br.operator("scene.lm_add_mesh_keyword", text='', icon='ADD')
+        br.prop(scn, 'lm_optionnal_mesh_keyword', text='Optionnal Keyword')
+
+        b.prop(scn, 'lm_mesh_naming_convention', text='')
+        col.separator()
+
+        b = col.box()
+        b.label(text='Texture Naming Convention')
+        br = b.row(align=True)
+        br.operator("scene.lm_add_texture_keyword", text='', icon='ADD')
+        br.prop(scn, 'lm_optionnal_texture_keyword', text='Optionnal Keyword')
+
+        b.prop(scn, 'lm_texture_naming_convention', text='')
+        col.separator()
 
 class LM_PT_TextureSetSettings(bpy.types.Panel):
     bl_label = "TextureSet Settings"

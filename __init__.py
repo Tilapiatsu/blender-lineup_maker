@@ -73,7 +73,9 @@ classes = (
     LM_UI_RenameTexture,
     LM_UI_ClearTexture,
     LM_UI_RemoveTexture,
-    LM_UI_AddAssetKeyword
+    LM_UI_AddAssetKeyword,
+    LM_UI_AddMeshKeyword,
+    LM_UI_AddTextureKeyword
 )
 
 def update_texture_channel_name(self, context):
