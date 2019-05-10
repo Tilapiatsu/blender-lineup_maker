@@ -6,7 +6,10 @@ from . import variables as V
 from . import preferences as P
 
 class NamingConvention(object):
-    def __init__(self, name, convention):
+    def __init__(self, context, name, convention):
+        self.context = context
+        self.scn = context.scene
+        self.param = V.GetParam(self.scn).param
         self.fullname = name
         self.name, self.ext = path.splitext(name)
 
@@ -31,7 +34,7 @@ class NamingConvention(object):
     @property
     def words(self):
         if self._words is None:
-            word_pattern = re.compile(r'[{0}]?(<([a-zA-Z0-9]+)(\?)?>)[{0}]?|[{0}]?([^<][a-zA-Z0-9]+[^>])[{0}]?'.format(V.LM_SEPARATORS), re.IGNORECASE)
+            word_pattern = re.compile(r'[{0}]?(<([a-zA-Z0-9]+)(\?)?>)[{0}]?|[{0}]?([^<][a-zA-Z0-9]+[^>])[{0}]?'.format(self.param['lm_separator']), re.IGNORECASE)
             self._words = word_pattern.finditer(self.convention)
         return self._words
 
@@ -39,7 +42,7 @@ class NamingConvention(object):
     @property
     def names(self):
         if self._names is None:
-            name_pattern = re.compile(r'[{0}]?([a-zA-Z0-9]+)[{0}]?'.format(V.LM_SEPARATORS), re.IGNORECASE)
+            name_pattern = re.compile(r'[{0}]?([a-zA-Z0-9]+)[{0}]?'.format(self.param['lm_separator']), re.IGNORECASE)
             self._names = name_pattern.finditer(self.name)
         
         return self._names
@@ -71,60 +74,14 @@ class NamingConvention(object):
                         break
                 else:
                     if w.group(3): # Optionnal
-                        if w.group(2).lower not in self.get_other_ckws(V.LM_NAMING_CONVENTION_KEYWORDS, w.group(2).lower()):
-                            naming_convention = assign_value(V.LM_NAMING_CONVENTION_KEYWORDS, names[i], naming_convention, w.group(2).lower())
+                        if w.group(2).lower not in self.get_other_ckws(self.param['lm_keyword_values'], w.group(2).lower()):
+                            naming_convention = assign_value(self.param['lm_keyword_values'], names[i], naming_convention, w.group(2).lower())
                     else: # Keyword
-                        naming_convention = assign_value(V.LM_NAMING_CONVENTION_KEYWORDS, names[i], naming_convention, w.group(2).lower())
+                        naming_convention = assign_value(self.param['lm_keyword_values'], names[i], naming_convention, w.group(2).lower())
                 naming_convention['name'].append(names[i])
             else:
                 naming_convention['match'] = False
                 break
-        return naming_convention
-
-    def slice(self):
-        def assign_value(ckws, value, return_dict, word):
-            if len(ckws):
-                if value in ckws:
-                    return_dict[word] = value
-            else:
-                return_dict[word] = value
-
-        # person = {'first': 'Jean-Luc', 'last': 'Picard'}
-        # string = '{p[first]} {p[last]}'.format(p=person)
-        # <PROJECT>_<TEAM>_<CATEGORY>_<INCR>_<GENDER>
-        naming_convention = {'name':[], 'fullname': self.fullname}
-
-        if len(self.ext):
-            naming_convention['ext'] = self.ext
-
-        word_pattern = re.compile(r'[{0}]?([a-zA-Z0-9]+)[{0}]?'.format(V.LM_SEPARATORS), re.IGNORECASE)
-        keyword_pattern = re.compile(r'[{0}]?<([a-zA-Z0-9]+)>[{0}]?'.format(V.LM_SEPARATORS), re.IGNORECASE)
-        not_keyword_pattern = re.compile(r'(?<=[{0}])([a-zA-Z0-9]+)|([a-zA-Z0-9]+)(?=[{0}])'.format(V.LM_SEPARATORS), re.IGNORECASE)
-        
-        name_pattern = re.compile(r'[{0}]?([a-zA-Z0-9]+)[{0}]?'.format(V.LM_SEPARATORS))
-        
-        words = word_pattern.finditer(self.convention)
-        keywords = keyword_pattern.finditer(self.convention)
-        not_keyword = not_keyword_pattern.finditer(self.convention)
-        names = name_pattern.finditer(self.name)
-
-        name_grp = [n.group(1) for n in names]
-
-        for i,word in enumerate(words):
-            w = word.group(1).lower()
-            for ckw,ckws in V.LM_NAMING_CONVENTION_KEYWORDS.items():
-                if w == ckw: # word is a keyword
-                    if w in V.LM_NAMING_CONVENTION_KEYWORDS_MESH.keys():
-                        if w not in self.get_other_ckws(V.LM_NAMING_CONVENTION_KEYWORDS_MESH, w):
-                            assign_value(ckws, name_grp[i], naming_convention, w)
-                    elif w in V.LM_NAMING_CONVENTION_KEYWORDS_TEXTURE.keys():
-                        if w not in self.get_other_ckws(V.LM_NAMING_CONVENTION_KEYWORDS_TEXTURE, w):
-                            assign_value(ckws, name_grp[i], naming_convention, w)
-                else:
-                    naming_convention[w] = w
-
-            naming_convention['name'].append(name_grp[i])
-
         return naming_convention
 
     def pop(self, item):
@@ -135,7 +92,7 @@ class NamingConvention(object):
         if item in new_naming:
             new_naming.pop()
         
-        item_pattern = re.compile(r'[{0}]?({1})[{0}]?'.format(V.LM_SEPARATORS, item), re.IGNORECASE)
+        item_pattern = re.compile(r'[{0}]?({1})[{0}]?'.format(self.param['lm_separator'], item), re.IGNORECASE)
         if len(item_pattern.finditer(new_naming['fullname'])):
             new_naming['fullname'] = item_pattern.sub(r'\0')
 

@@ -12,6 +12,8 @@ class BpyAsset(object):
     def __init__(self, context, meshes, textures):
         self.separator = '_'
         self.context = context
+        self.scn = context.scene
+        self.param = V.GetParam(self.scn).param
         self.asset_name = self.get_asset_name(meshes)
         self.asset_root = self.get_asset_root(meshes)
         self.meshes = meshes
@@ -240,7 +242,7 @@ class BpyAsset(object):
     def get_asset_naming_convention(self):
         asset_convention = self.context.scene.lm_asset_naming_convention
         
-        asset_naming_convention = N.NamingConvention(self.asset_name, asset_convention)
+        asset_naming_convention = N.NamingConvention(self.context, self.asset_name, asset_convention)
         naming_convention = asset_naming_convention.naming_convention
 
         naming_convention['assetname'] = self.asset_name
@@ -253,7 +255,7 @@ class BpyAsset(object):
 
         mesh_names = [path.basename(path.splitext(t)[0]) for t in self.meshes]
         for i,m in enumerate(mesh_names):
-            mesh_naming_convention = N.NamingConvention(m, mesh_convention)
+            mesh_naming_convention = N.NamingConvention(self.context, m, mesh_convention)
             naming_convention.append(mesh_naming_convention.naming_convention)
 
         return naming_convention
@@ -270,7 +272,7 @@ class BpyAsset(object):
             texture_naming_convention = {}
 
             for i,t in enumerate(texture_names):
-                t_naming_convention = N.NamingConvention(t, texture_convention).naming_convention
+                t_naming_convention = N.NamingConvention(self.context, t, texture_convention).naming_convention
                 
                 basename = t_naming_convention.pop(t_naming_convention['channel'])
 
