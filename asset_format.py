@@ -240,7 +240,7 @@ class BpyAsset(object):
         pass
     
     def get_asset_naming_convention(self):
-        asset_convention = self.context.scene.lm_asset_naming_convention
+        asset_convention = self.param['lm_asset_naming_convention']
         
         asset_naming_convention = N.NamingConvention(self.context, self.asset_name, asset_convention)
         naming_convention = asset_naming_convention.naming_convention

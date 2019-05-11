@@ -60,6 +60,7 @@ class NamingConvention(object):
                 return_dict[word] = value
             
             return return_dict
+            
         naming_convention = {'name':[], 'fullname': self.fullname, 'hardcoded':[], 'match':True}
         names = [n.group(1) for n in self.names]
         name_length = len(names)
