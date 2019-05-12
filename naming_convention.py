@@ -93,7 +93,7 @@ class NamingConvention(object):
 		return self._keywords
 
 	def slice_name(self):
-		def assign_value(ckws, value, return_dict, word, optionnal):
+		def assign_value(ckws, value, return_dict, word, optionnal, count):
 			assigned = False
 			if word in ckws.keys():
 				if len(ckws[word]):
@@ -127,7 +127,9 @@ class NamingConvention(object):
 						assigned = True
 					else: # Optionnal
 						# Need to check count of remaining word, and choose the most relevent
-						pass
+						if count - 1 == len(return_dict['name']):
+							return_dict[word] = value
+							assigned = True
 						
 			
 			return return_dict, assigned
@@ -156,11 +158,11 @@ class NamingConvention(object):
 						break
 				else:
 					if optionnal is None: # Keyword
-						naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal)
+						naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, i)
 
 					else: # Optionnal
 						if keyword.lower() not in self.get_other_ckws(self.keywords, keyword.lower()):
-							naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal)
+							naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, i)
 				
 				if assigned is False:
 					i = i - 1
