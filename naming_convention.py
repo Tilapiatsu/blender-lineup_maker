@@ -152,9 +152,9 @@ class NamingConvention(object):
 					i = i - 1
 				else:
 					naming_convention['name'].append(names[i])
-			else:
-				naming_convention['match'] = False
-				break
+			# else:
+			# 	naming_convention['match'] = False
+			# 	break
 			i = i + 1
 
 		return naming_convention

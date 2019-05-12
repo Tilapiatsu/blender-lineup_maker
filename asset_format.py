@@ -20,9 +20,9 @@ class BpyAsset(object):
         self.textures = textures
         self.texture_set = {}
 
-        self.asset_naming_convention = self.get_asset_naming_convention()
-        self.mesh_naming_convention = self.get_mesh_naming_convention()
-        self.texture_naming_convention = self.get_texture_naming_convention()
+        self._asset_naming_convention = None
+        self._mesh_naming_convention = None
+        self._texture_naming_convention = None
 
         self.asset = None
         
@@ -53,6 +53,7 @@ class BpyAsset(object):
         self.update_mesh()
         self.update_texture()
 
+    @check_length
     def import_mesh(self, update=False):
         name,ext = path.splitext(path.basename(self.meshes[0]))
 
@@ -74,6 +75,8 @@ class BpyAsset(object):
                 kwargs = {}
                 kwargs.update({'filepath':f})
                 kwargs.update(compatible_format[1])
+                
+                # run Import Command
                 compatible_format[0](**kwargs)
             else:
                 print('Lineup Maker : Skipping file "{}"\n     Incompatible format'.format(f))
@@ -107,7 +110,6 @@ class BpyAsset(object):
             
         self.asset = self.get_asset()
     
-
     @check_length
     def update_mesh(self):
         H.create_asset_collection(self.context, self.asset_name)
@@ -250,7 +252,7 @@ class BpyAsset(object):
         return naming_convention
     
     def get_mesh_naming_convention(self):
-        mesh_convention = self.context.scene.lm_mesh_naming_convention
+        mesh_convention = self.param['lm_mesh_naming_convention']
         naming_convention = []
 
         mesh_names = [path.basename(path.splitext(t)[0]) for t in self.meshes]
@@ -260,9 +262,8 @@ class BpyAsset(object):
 
         return naming_convention
 
-
     def get_texture_naming_convention(self):
-        texture_convention = self.context.scene.lm_texture_naming_convention
+        texture_convention = self.param['lm_texture_naming_convention']
 
         naming_convention = {}
 
@@ -386,6 +387,26 @@ class BpyAsset(object):
                 P.get_prefs().textureSet_metalic_keyword.lower()
                 ]
 
+    @property
+    def asset_naming_convention(self):
+        if self._asset_naming_convention is None:
+            self._asset_naming_convention = self.get_asset_naming_convention()
+        
+        return self._asset_naming_convention
+    
+    @property
+    def mesh_naming_convention(self):
+        if self._mesh_naming_convention is None:
+            self._mesh_naming_convention = self.get_mesh_naming_convention()
+        
+        return self._mesh_naming_convention
+    
+    @property
+    def texture_naming_convention(self):
+        if self._texture_naming_convention is None:
+            self._texture_naming_convention = self.get_texture_naming_convention()
+        
+        return self._texture_naming_convention
 
     def get_asset(self):
         if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
