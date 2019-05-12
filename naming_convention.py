@@ -162,7 +162,7 @@ class NamingConvention(object):
 	def pop(self, item):
 		new_naming = self.naming_convention
 		if item in new_naming['name']:
-			new_naming['name'].pop()
+			new_naming['name'].remove('item')
 		
 		if item in new_naming:
 			new_naming.pop()
