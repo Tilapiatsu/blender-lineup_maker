@@ -6,7 +6,7 @@ from . import variables as V
 from . import preferences as P
 
 class NamingConvention(object):
-	def __init__(self, context, name, convention):
+	def __init__(self, context, name,  convention, filepath=None):
 		self.context = context
 		self.scn = context.scene
 		self.param = V.GetParam(self.scn).param
@@ -17,7 +17,8 @@ class NamingConvention(object):
 			self.ext = self.ext.lower()
 		if self.name:
 			self.name = self.name.lower()
-
+		
+		self.filepath = filepath
 		self.convention = convention
 		self._naming_convention = None
 		self._words = None
@@ -32,6 +33,14 @@ class NamingConvention(object):
 			self._naming_convention = self.slice_name()
 
 		return self._naming_convention
+
+	@naming_convention.setter
+	def naming_convention(self, naming_convention):
+		if isinstance(naming_convention, dict):
+			self._naming_convention = naming_convention
+
+		else:
+			print('"{}" need to be a dict'.format(naming_convention))
 
 	@property
 	def words(self):
@@ -91,7 +100,7 @@ class NamingConvention(object):
 					if value in ckws[word]:
 						return_dict[word] = value
 						assigned = True
-					elif '#' in ckws[word][0]:
+					elif '#' in ckws[word][0]: # Numeric
 						pattern = re.compile(r'([a-zA-Z]?)([#]+)([a-zA-Z]?)', re.IGNORECASE)
 						matches = pattern.finditer(ckws[word][0])
 
@@ -113,16 +122,21 @@ class NamingConvention(object):
 								assigned = True
 								break
 				else:
-					if optionnal is None:
+					if optionnal is None: # Not Optionnal
 						return_dict[word] = value
 						assigned = True
-					else:
+					else: # Optionnal
+						# Need to check count of remaining word, and choose the most relevent
 						pass
 						
 			
 			return return_dict, assigned
 			
 		naming_convention = {'name':[], 'fullname': self.fullname, 'hardcoded':[], 'match':True}
+
+		if self.filepath:
+			naming_convention.update({'file':self.filepath})
+		
 		names = [n.group(1) for n in self.names]
 		name_length = len(names)
 		i = 0
@@ -159,19 +173,35 @@ class NamingConvention(object):
 
 		return naming_convention
 
-	def pop(self, item):
+	def pop_name(self, item, duplicate=True):
 		new_naming = self.naming_convention
-		if item in new_naming['name']:
-			new_naming['name'].remove('item')
-		
-		if item in new_naming:
-			new_naming.pop()
-		
-		item_pattern = re.compile(r'[{0}]?({1})[{0}]?'.format(self.param['lm_separator'], item), re.IGNORECASE)
-		if len(item_pattern.finditer(new_naming['fullname'])):
-			new_naming['fullname'] = item_pattern.sub(r'\0')
+		if item not in new_naming['fullname']:
+			print('Lineup Maker : Naming Convention : Word "{}" is not in the filename {}'.format(item, new_naming['fullname']))
+			return
 
-		self.naming_convention = new_naming
+		if item in new_naming['name']:
+			new_naming['name'].remove(item)
+		
+		key_to_del = False
+		for key,value in new_naming.items():
+			if value == item:
+				key_to_del = key
+				break
+
+		if key_to_del:
+			del new_naming[key]
+
+		item_pattern = re.compile(r'[{0}]?({1})[{0}]?'.format(self.param['lm_separator'], item), re.IGNORECASE)
+		matches = item_pattern.finditer(new_naming['fullname'])
+
+		for m in matches:
+			new_naming['fullname'] = new_naming['fullname'].replace(m.group(0), '')
+
+		if duplicate:
+			return new_naming
+		else:
+			self.naming_convention = new_naming
+			return None
 
 	def get_other_ckws(self, ckw_dict, current_key):
 		other_ckws = []

@@ -45,9 +45,7 @@ class LM_OP_ImportFiles(bpy.types.Operator):
                 else:
                     curr_asset.update_asset()
                     H.set_active_collection(context, asset_collection.name)
-                
-                print(curr_asset.asset)
-                
+
                 for mat in context.scene.lm_asset_list[curr_asset.asset_name].material_list:
                     for mesh_name in curr_asset.asset.keys():
                         curr_asset.feed_material(mat.material, curr_asset.asset[mesh_name][1][mat.name])

@@ -257,7 +257,7 @@ class BpyAsset(object):
 
         mesh_names = [path.basename(path.splitext(t)[0]) for t in self.meshes]
         for i,m in enumerate(mesh_names):
-            mesh_naming_convention = N.NamingConvention(self.context, m, mesh_convention)
+            mesh_naming_convention = N.NamingConvention(self.context, m, mesh_convention, self.meshes[i])
             naming_convention.append(mesh_naming_convention.naming_convention)
 
         return naming_convention
@@ -273,11 +273,13 @@ class BpyAsset(object):
             texture_naming_convention = {}
 
             for i,t in enumerate(texture_names):
-                t_naming_convention = N.NamingConvention(self.context, t, texture_convention).naming_convention
+                t_naming_convention = N.NamingConvention(self.context, t, texture_convention)
                 
-                basename = t_naming_convention.pop(t_naming_convention['channel'])
+                channel = t_naming_convention.naming_convention['channel']
+                basename = t_naming_convention.pop_name(t_naming_convention.naming_convention['channel'])['fullname'].lower()
 
-                texture_naming_convention[basename].append(t_naming_convention.naming_convention)
+                if basename not in texture_naming_convention.keys():
+                    texture_naming_convention[basename] = t_naming_convention.naming_convention
 
                 chan = {'name':t, 'file':self.textures[mesh_name][i]}
 
@@ -290,7 +292,7 @@ class BpyAsset(object):
                     texture_naming_convention[basename]['channels'] = {channel:chan}
 
                 t = t.replace(channel, '')
-                t_length = len(t_naming)
+                # t_length = len(t_naming)
             
             naming_convention[mesh_name] = texture_naming_convention
         
@@ -325,13 +327,11 @@ class BpyAsset(object):
         bpy.ops.object.select_all(action='DESELECT')
         for o in curr_asset_collection.all_objects:
             o.select_set(True)
-
     
     def remove_objects(self):
         self.select_objects()
 
         bpy.ops.object.delete()
-
 
     @check_asset_exist
     def print_asset_objects_name(self):
@@ -347,6 +347,7 @@ class BpyAsset(object):
             names.append(o.name)
         
         return names
+    
     @check_asset_exist
     def rename_objects(self):
         curr_asset_collection = bpy.data.collections[self.asset_name]
@@ -380,12 +381,12 @@ class BpyAsset(object):
     # Properties
     @property
     def texture_channel_names(self):
-        return [
-                P.get_prefs().textureSet_albedo_keyword.lower(),
-                P.get_prefs().textureSet_normal_keyword.lower(),
-                P.get_prefs().textureSet_roughness_keyword.lower(),
-                P.get_prefs().textureSet_metalic_keyword.lower()
-                ]
+        texture_channels = []
+        for c in self.param['lm_texture_channels']:
+            if c.name.lower() not in texture_channels:
+                texture_channels.append(c.name.lower())
+
+        return texture_channels
 
     @property
     def asset_naming_convention(self):
@@ -411,30 +412,24 @@ class BpyAsset(object):
     def get_asset(self):
         if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
             asset = {}
+            texture_set = {}
             for m in self.mesh_naming_convention:
                 mesh = m['file']
 
                 texture_naming_convention = self.get_texture_naming_convention()
-                texture_set = self.create_texture_basename_dict(m['name'])
 
-                for basename,t in texture_naming_convention[m['name']].items():
+                for t in texture_naming_convention[m['fullname']].keys():
+                    if m['fullname'] not in texture_set.keys():
+                        texture_set[t] = {}
+
+                for basename,t in texture_naming_convention[m['fullname']].items():
                     matching_asset = True
-                    if not self.matching_gender(m['gender'], t['gender']):
-                        matching_asset = False
-                    else:
-                        if not self.compare_naming_conventions((m, 'assetname'),(t, 'assetname')):
-                            matching_asset = False
-                            break
-                        
-                    if matching_asset:
-                        if not self.compare_naming_conventions((m, 'plugname'),(t, 'matid')):
-                            continue
 
-                        for channel_name in t['channels'].keys():
-                            if channel_name in self.texture_channel_names:
-                                texture_set[basename][channel_name] = t['channels'][channel_name]['file']
-  
-                asset[m['name']] = (mesh, texture_set)
+                    for channel_name in t['channels'].keys():
+                        if channel_name in self.texture_channel_names:
+                            texture_set[basename][channel_name] = t['channels'][channel_name]['file']
+
+                asset[m['fullname']] = (mesh, texture_set)
             
             return asset
 
