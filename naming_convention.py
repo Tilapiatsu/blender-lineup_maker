@@ -127,7 +127,7 @@ class NamingConvention(object):
 						assigned = True
 					else: # Optionnal
 						# Need to check count of remaining word, and choose the most relevent
-						if count - 1 == len(return_dict['name']):
+						if count - 1 == return_dict['length']:
 							return_dict[word] = value
 							assigned = True
 						
@@ -140,7 +140,11 @@ class NamingConvention(object):
 			naming_convention.update({'file':self.filepath})
 		
 		names = [n.group(1) for n in self.names]
+		optionnal_words = [w.group(3) for w in self.words]
+		undefined_names = [n.group]
 		name_length = len(names)
+		naming_convention['length'] = name_length
+		naming_convention['defined_name_length'] = name_length
 		i = 0
 		for w in self.words:
 			word = w.group(1)
