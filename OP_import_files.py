@@ -48,6 +48,7 @@ class LM_OP_ImportFiles(bpy.types.Operator):
 
                 for mat in context.scene.lm_asset_list[curr_asset.asset_name].material_list:
                     for mesh_name in curr_asset.asset.keys():
+                        # get the proper material name. mat.name is sometime different than texture name
                         curr_asset.feed_material(mat.material, curr_asset.asset[mesh_name][1][mat.name])
 
 
