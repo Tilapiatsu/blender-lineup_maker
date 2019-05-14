@@ -8,14 +8,19 @@ def get_keyword(context):
 
     return idx, keywords, active
 
-def add_keyword(context, naming_convention, keyword, optionnal):
+def add_keyword(context, naming_convention, keyword, optionnal, excluded):
+    suffix = ''
+    if excluded:
+        suffix = '!'
+    elif optionnal:
+        suffix = '?'
     if len(naming_convention):
-        return '{}{}{}{}{}{}'.format(naming_convention, context.scene.lm_separator, '<', keyword,('?' if optionnal else '' ),  '>')
+        return '{}{}{}{}{}{}'.format(naming_convention, context.scene.lm_separator, '<', keyword, suffix,  '>')
     else:
-        return '{}{}{}{}{}'.format(naming_convention, '<', keyword, ('?' if optionnal else '' ),  '>')
+        return '{}{}{}{}{}'.format(naming_convention, '<', keyword, suffix,  '>')
 
 def slice_keyword(context, convention):
-    keyword_pattern = re.compile(r'[{0}]?(<[a-zA-Z0-9^?]+>|[a-zA-Z0-9]+)[{0}]?'.format(context.scene.lm_separator), re.IGNORECASE)
+    keyword_pattern = re.compile(r'[{0}]?(<[a-zA-Z0-9^?^!]+>|[a-zA-Z0-9]+)[{0}]?'.format(context.scene.lm_separator), re.IGNORECASE)
     return keyword_pattern.findall(convention)
 
 def remove_keyword(context, convention):
@@ -40,12 +45,13 @@ class LM_UI_AddAssetKeyword(bpy.types.Operator):
 
     keyword: bpy.props.StringProperty(default='')
     optionnal: bpy.props.BoolProperty(default=False)
+    excluded: bpy.props.BoolProperty(default=False)
 
     def execute(self, context):
         if self.keyword == '':
             _, _, keyword = get_keyword(context)
 
-        context.scene.lm_asset_naming_convention = add_keyword(context, context.scene.lm_asset_naming_convention, keyword.name.upper(), self.optionnal)
+        context.scene.lm_asset_naming_convention = add_keyword(context, context.scene.lm_asset_naming_convention, keyword.name.upper(), self.optionnal, self.excluded)
 
         return {'FINISHED'}
 
@@ -56,12 +62,13 @@ class LM_UI_AddMeshKeyword(bpy.types.Operator):
 
     keyword: bpy.props.StringProperty(default='')
     optionnal: bpy.props.BoolProperty(default=False)
+    excluded: bpy.props.BoolProperty(default=False)
 
     def execute(self, context):
         if self.keyword == '':
             _, _, keyword = get_keyword(context)
 
-        context.scene.lm_mesh_naming_convention = add_keyword(context, context.scene.lm_mesh_naming_convention, keyword.name.upper(), self.optionnal)
+        context.scene.lm_mesh_naming_convention = add_keyword(context, context.scene.lm_mesh_naming_convention, keyword.name.upper(), self.optionnal, self.excluded)
 
         return {'FINISHED'}
 
@@ -72,12 +79,13 @@ class LM_UI_AddTextureKeyword(bpy.types.Operator):
 
     keyword: bpy.props.StringProperty(default='')
     optionnal: bpy.props.BoolProperty(default=False)
+    excluded: bpy.props.BoolProperty(default=False)
 
     def execute(self, context):
         if self.keyword == '':
             _, _, keyword = get_keyword(context)
 
-        context.scene.lm_texture_naming_convention = add_keyword(context, context.scene.lm_texture_naming_convention, keyword.name.upper(), self.optionnal)
+        context.scene.lm_texture_naming_convention = add_keyword(context, context.scene.lm_texture_naming_convention, keyword.name.upper(), self.optionnal, self.excluded)
 
         return {'FINISHED'}
 

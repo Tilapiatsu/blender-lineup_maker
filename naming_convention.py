@@ -27,6 +27,18 @@ class NamingConvention(object):
 		self._keywords = None
 		self._channels = None
 
+	def __eq__(self, other):
+		if isinstance(other, NamingConvention):
+			is_equal = True
+			
+			for i,c in enumerate(self.naming_convention['included']):
+				if c != other.naming_convention['included'][i]:
+					is_equal = False
+					break
+
+			return is_equal
+		return NotImplemented
+	
 	@property
 	def naming_convention(self):
 		if self._naming_convention is None:
@@ -44,7 +56,7 @@ class NamingConvention(object):
 
 	@property
 	def words(self):
-		word_pattern = re.compile(r'[{0}]?(<([a-zA-Z0-9]+)(\?)?>)[{0}]?|[{0}]?([^<][a-zA-Z0-9]+[^>])[{0}]?'.format(self.param['lm_separator']), re.IGNORECASE)
+		word_pattern = re.compile(r'[{0}]?(<([a-zA-Z0-9]+)(\?)?(\!)?>)[{0}]?|[{0}]?([^<][a-zA-Z0-9]+[^>])[{0}]?'.format(self.param['lm_separator']), re.IGNORECASE)
 		self._words = word_pattern.finditer(self.convention)
 		return self._words
 	
@@ -56,6 +68,10 @@ class NamingConvention(object):
 	def optionnal_words(self):
 		return [False if w.group(3) is None else True for w in self.words]
 	
+	@property
+	def included_words(self):
+		return [w.group(2).lower if w.group(4) is None else False for w in self.words]
+
 	@property
 	def names(self):
 		name_pattern = re.compile(r'[{0}]?([a-zA-Z0-9]+)[{0}]?'.format(self.param['lm_separator']), re.IGNORECASE)
@@ -103,13 +119,19 @@ class NamingConvention(object):
 		return self._keywords
 
 	def slice_name(self):
-		def assign_value(ckws, value, return_dict, word, optionnal, count):
+		def assign(return_dict, word, value, excluded):
+			return_dict[word] = value
+			if excluded is None:
+				return_dict['included'].append(value)
+			
+			return True
+
+		def assign_value(ckws, value, return_dict, word, optionnal, excluded, count):
 			assigned = False
 			if word in ckws.keys():
 				if len(ckws[word]):
 					if value in ckws[word]:
-						return_dict[word] = value
-						assigned = True
+						assigned = assign(return_dict, word, value, excluded)
 					elif '#' in ckws[word][0]: # Numeric
 						pattern = re.compile(r'([a-zA-Z]?)([#]+)([a-zA-Z]?)', re.IGNORECASE)
 						matches = pattern.finditer(ckws[word][0])
@@ -128,13 +150,11 @@ class NamingConvention(object):
 
 						for m in matches:
 							if m:
-								return_dict[word] = value
-								assigned = True
+								assigned = assign(return_dict, word, value, excluded)
 								break
 				else:
 					if optionnal is None: # Not Optionnal
-						return_dict[word] = value
-						assigned = True
+						assigned = assign(return_dict, word, value, excluded)
 					else: # Optionnal
 						# Need to check count of remaining word, and choose the most relevent
 						# name_list = self.name_list
@@ -152,13 +172,12 @@ class NamingConvention(object):
 											
 						# 			else: # If the Optionnal keyword is undefined
 						# 				pass
-						return_dict[word] = value
-						assigned = True
+						assigned = assign(return_dict, word, value, excluded)
 						
 			
 			return return_dict, assigned
 			
-		naming_convention = {'name':[], 'fullname': self.fullname, 'hardcoded':[], 'match':True}
+		naming_convention = {'name':[], 'fullname': self.fullname, 'hardcoded':[], 'match':True, 'included':[]}
 
 		if self.filepath:
 			naming_convention.update({'file':self.filepath})
@@ -175,7 +194,9 @@ class NamingConvention(object):
 			word = w.group(1)
 			keyword = w.group(2)
 			optionnal = w.group(3)
-			hardcoded = w.group(4)
+			excluded = w.group(4)
+			hardcoded = w.group(5)
+
 			assigned = True
 			if i < name_length:
 				if hardcoded is not None: # Hardcoded
@@ -188,12 +209,12 @@ class NamingConvention(object):
 						break
 				else:
 					if optionnal is None: # Keyword
-						naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, i)
+						naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
 						remaining = remaining -1
 					else: # Optionnal
 						if len(self.keywords[keyword.lower()]): # If the Optionnal Keyword have a list or keyword values
 							if names[i] in self.keywords[keyword.lower()]: # if the name is in the keyword values
-								naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, i)
+								naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
 								remaining = remaining -1
 							else:
 								assigned = False
@@ -204,7 +225,7 @@ class NamingConvention(object):
 									assigned = False
 								else:
 									if keyword.lower() not in self.get_other_ckws(self.keywords, keyword.lower()):
-										naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, i)
+										naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
 										remaining = remaining -1
 
 				

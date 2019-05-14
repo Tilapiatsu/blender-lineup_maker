@@ -4,6 +4,7 @@ from os import path
 from . import variables as V
 from . import helper as H
 from . import asset_format as A
+from . import naming_convention as N
 
 bl_info = {
     "name": "Lineup Maker : Import Files",
@@ -48,8 +49,17 @@ class LM_OP_ImportFiles(bpy.types.Operator):
 
                 for mat in context.scene.lm_asset_list[curr_asset.asset_name].material_list:
                     for mesh_name in curr_asset.asset.keys():
-                        # get the proper material name. mat.name is sometime different than texture name
-                        curr_asset.feed_material(mat.material, curr_asset.asset[mesh_name][1][mat.name])
+                        for t in curr_asset.asset[mesh_name][1].keys():
+                            tnc = N.NamingConvention(context, t, context.scene.lm_texture_naming_convention)
+                            mnc = N.NamingConvention(context, mat.name, context.scene.lm_texture_naming_convention)
+
+                            if tnc == mnc:
+                                curr_asset.feed_material(mat.material, curr_asset.asset[mesh_name][1][tnc.name])
+                                break
+                        else:
+                           print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
+                        
+                        
 
 
         return {'FINISHED'}

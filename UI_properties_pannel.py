@@ -42,8 +42,15 @@ class LM_PT_NamingConvention(bpy.types.Panel):
         br = b.box()
         bbr = br.split(align=True)
         
-        bbr.operator("scene.lm_add_asset_keyword", text='Add', icon='ADD').optionnal = False
-        bbr.operator("scene.lm_add_asset_keyword", text='Optionnal', icon='ADD').optionnal = True
+        op = bbr.operator("scene.lm_add_asset_keyword", text='Add', icon='ADD')
+        op.optionnal = False
+        op.excluded = False
+        op = bbr.operator("scene.lm_add_asset_keyword", text='Optionnal', icon='ADD')
+        op.optionnal = True
+        op.excluded = False
+        op = bbr.operator("scene.lm_add_asset_keyword", text='Excluded', icon='ADD')
+        op.optionnal = False
+        op.excluded = True
         bbr.operator("scene.lm_remove_asset_keyword", text='Remove', icon='REMOVE')
         
         b.prop(scn, 'lm_asset_naming_convention', text='')
@@ -53,8 +60,15 @@ class LM_PT_NamingConvention(bpy.types.Panel):
         b.label(text='Mesh Naming Convention')
         br = b.box()
         bbr = br.split(align=True)
-        bbr.operator("scene.lm_add_mesh_keyword", text='Add', icon='ADD').optionnal = False
-        bbr.operator("scene.lm_add_mesh_keyword", text='Optionnal', icon='ADD').optionnal = True
+        op = bbr.operator("scene.lm_add_mesh_keyword", text='Add', icon='ADD')
+        op.optionnal = False
+        op.excluded = False
+        op = bbr.operator("scene.lm_add_mesh_keyword", text='Optionnal', icon='ADD')
+        op.optionnal = True
+        op.excluded = False
+        op = bbr.operator("scene.lm_add_mesh_keyword", text='Excluded', icon='ADD')
+        op.optionnal = False
+        op.excluded = True
         bbr.operator("scene.lm_remove_mesh_keyword", text='Remove', icon='REMOVE')
 
         b.prop(scn, 'lm_mesh_naming_convention', text='')
@@ -64,8 +78,15 @@ class LM_PT_NamingConvention(bpy.types.Panel):
         b.label(text='Texture Naming Convention')
         br = b.box()
         bbr = br.split(align=True)
-        bbr.operator("scene.lm_add_texture_keyword", text='Add', icon='ADD').optionnal = False
-        bbr.operator("scene.lm_add_texture_keyword", text='Optionnal', icon='ADD').optionnal = True
+        op = bbr.operator("scene.lm_add_texture_keyword", text='Add', icon='ADD')
+        op.optionnal = False
+        op.excluded = False
+        op = bbr.operator("scene.lm_add_texture_keyword", text='Optionnal', icon='ADD')
+        op.optionnal = True
+        op.excluded = False
+        op = bbr.operator("scene.lm_add_texture_keyword", text='Excluded', icon='ADD')
+        op.optionnal = False
+        op.excluded = True
         bbr.operator("scene.lm_remove_texture_keyword", text='Remove', icon='REMOVE')
 
         b.prop(scn, 'lm_texture_naming_convention', text='')
