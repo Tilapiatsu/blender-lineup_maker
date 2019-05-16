@@ -13,11 +13,11 @@ def get_layer_collection(layer_collection, collection_name):
 def create_asset_collection(context, name):
     collections = bpy.data.collections
     if name in collections:
-        return collections[name]
+        return collections[name], False
     else:
         new_collection = bpy.data.collections.new(name)
         context.collection.children.link(new_collection)
-        return new_collection
+        return new_collection, True
 
 
 def set_active_collection(context, name):

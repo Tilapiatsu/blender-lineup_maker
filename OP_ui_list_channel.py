@@ -3,10 +3,11 @@ import bpy
 def get_channels(context):
     idx = context.scene.lm_channel_idx
     channels = context.scene.lm_channels
+    textures = context.scene.lm_texture_channels
 
     active = channels[idx] if channels else None
 
-    return idx, channels, active
+    return idx, channels, textures, active
 
 class LM_UI_MoveChannel(bpy.types.Operator):
     bl_idname = "scene.lm_move_channel"
@@ -17,7 +18,7 @@ class LM_UI_MoveChannel(bpy.types.Operator):
     direction: bpy.props.EnumProperty(items=[("UP", "Up", ""), ("DOWN", "Down", "")])
 
     def execute(self, context):
-        idx, channel, _ = get_channels(context)
+        idx, channel, _, _ = get_channels(context)
 
         if self.direction == "UP":
             nextidx = max(idx - 1, 0)
@@ -37,7 +38,7 @@ class LM_UI_RenameChannel(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     bl_description = "Rename the selected Texture Channel Name"
 
-    newmatname: bpy.props.StringProperty(name="New Name")
+    new_channel_name: bpy.props.StringProperty(name="New Name")
 
     def check(self, context):
         return True
@@ -51,23 +52,27 @@ class LM_UI_RenameChannel(bpy.types.Operator):
 
         column = layout.column()
 
-        # row = column.split(percentage=0.31)
-        # row.label("Old Name")
-        # row.label(self.active.name)
-
-        column.prop(self, "newmatname")
+        column.prop(self, "new_channel_name")
 
     def invoke(self, context, event):
-        _, _, self.active = get_channels(context)
+        _, _, _, self.active = get_channels(context)
 
-        self.newmatname = self.active.name
+        self.new_channel_name = self.active.name
 
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
 
     def execute(self, context):
-        if self.newmatname:
-            self.active.name = self.newmatname
+        if self.new_channel_name:
+            _, _, textures, _ = get_channels(context)
+
+            for t in textures:
+                if t.channel == self.active.name:
+                    t.channel = self.new_channel_name
+
+            self.active.name = self.new_channel_name
+            
+            
 
         return {'FINISHED'}
 
@@ -99,7 +104,7 @@ class LM_UI_RemoveChannel(bpy.types.Operator):
         return context.scene.lm_channels
 
     def execute(self, context):
-        idx, channel, _ = get_channels(context)
+        idx, channel, _, _ = get_channels(context)
 
         channel.remove(idx)
 

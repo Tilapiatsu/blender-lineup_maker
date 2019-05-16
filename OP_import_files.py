@@ -24,7 +24,7 @@ class LM_OP_ImportFiles(bpy.types.Operator):
         folder_src = bpy.path.abspath(context.scene.lm_asset_path)
 
         H.set_active_collection(context, V.LM_MASTER_COLLECTION)
-        asset_collection = H.create_asset_collection(context, V.LM_ASSET_COLLECTION)
+        asset_collection, _ = H.create_asset_collection(context, V.LM_ASSET_COLLECTION)
         H.set_active_collection(context, asset_collection.name)
         
         object_list = asset_collection.objects
@@ -71,7 +71,7 @@ class LM_OP_ImportFiles(bpy.types.Operator):
 
     def import_asset(self, context, mesh_path, texturepath):
         name,ext = path.splitext(path.basename(mesh_path))
-        curr_asset_collection = H.create_asset_collection(context, name)
+        curr_asset_collection, _ = H.create_asset_collection(context, name)
         H.set_active_collection(context, curr_asset_collection.name)
 
         print('Lineup Maker : Importing asset "{}"'.format(name))

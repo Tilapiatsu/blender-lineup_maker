@@ -58,7 +58,7 @@ class BpyAsset(object):
 	def import_mesh(self, update=False):
 		name,ext = path.splitext(path.basename(self.meshes[0]))
 
-		curr_asset_collection = H.create_asset_collection(self.context, self.asset_name)
+		curr_asset_collection, _ = H.create_asset_collection(self.context, self.asset_name)
 
 		H.set_active_collection(self.context, self.asset_name)
 
@@ -113,10 +113,10 @@ class BpyAsset(object):
 	
 	@check_length
 	def update_mesh(self):
-		H.create_asset_collection(self.context, self.asset_name)
+		_, created = H.create_asset_collection(self.context, self.asset_name)
 		H.set_active_collection(self.context, self.asset_name)
 
-		curr_asset = self.context.scene.lm_asset_list[self.asset_name]
+		curr_asset = self.param['lm_asset_list'][self.asset_name]
 
 		need_update = False
 
@@ -125,11 +125,11 @@ class BpyAsset(object):
 				need_update = True
 				break
 
-		if need_update:
+		if need_update or not created:
 			print('Lineup Maker : Updating asset "{}" : {}'.format(self.asset_name, time.ctime(curr_asset.last_update)))
 
 			self.remove_objects()
-			self.context.scene.update()
+			# self.context.scene.update()
 			self.import_mesh(update=True)
 			# Dirty fix to avoid bad mesh naming when updating asset
 			self.rename_objects()
@@ -148,7 +148,7 @@ class BpyAsset(object):
 		
 
 	def feed_material(self, material, texture_set):
-		M.create_bsdf_material(material, texture_set)
+		M.create_bsdf_material(self.context, material, texture_set)
 
 	def create_exposure_node(world):
 		# create a group
@@ -271,8 +271,12 @@ class BpyAsset(object):
 
 			for i,t in enumerate(texture_names):
 				t_naming_convention = N.NamingConvention(self.context, t, texture_convention)
-				
-				channel = t_naming_convention.naming_convention['channel']
+				try:
+					channel = self.context.scene.lm_texture_channels[t_naming_convention.naming_convention['channel']].channel
+				except KeyError as k:
+					print('The channel name "{}" doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(t_naming_convention.naming_convention['channel'], t))
+					continue
+
 				basename = t_naming_convention.pop_name(t_naming_convention.naming_convention['channel'])['fullname'].lower()
 
 				if basename not in texture_naming_convention.keys():
@@ -380,11 +384,20 @@ class BpyAsset(object):
 	def texture_channel_names(self):
 		texture_channels = []
 		for c in self.param['lm_texture_channels']:
-			if c.name.lower() not in texture_channels:
+			if c.name not in texture_channels:
 				texture_channels.append(c.name.lower())
 
 		return texture_channels
 
+	@property
+	def channels(self):
+		channels = []
+		for c in self.param['lm_channels']:
+			if c.name not in channels:
+				channels.append(c.name)
+
+		return channels
+	
 	@property
 	def asset_naming_convention(self):
 		if self._asset_naming_convention is None:
@@ -423,7 +436,7 @@ class BpyAsset(object):
 					matching_asset = True
 
 					for channel_name in t['channels'].keys():
-						if channel_name in self.texture_channel_names:
+						if channel_name in self.channels:
 							texture_set[basename][channel_name] = t['channels'][channel_name]['file']
 
 				asset[m['fullname']] = (mesh, texture_set)

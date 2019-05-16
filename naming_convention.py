@@ -156,22 +156,6 @@ class NamingConvention(object):
 					if optionnal is None: # Not Optionnal
 						assigned = assign(return_dict, word, value, excluded)
 					else: # Optionnal
-						# Need to check count of remaining word, and choose the most relevent
-						# name_list = self.name_list
-						# word_list = self.word_list
-						# optionnal_words = self.optionnal_words
-						# if len(name_list) < len(optionnal_words): # the name is shorter than the keywords
-						# 	for i,o in enumerate(optionnal_words):
-						# 		if o: # if a keyword is Optionnal
-						# 			if len(self.keywords[word_list[i]]): # If the Optionnal Keyword have a list or keyword values
-						# 				if name_list[i] in self.keywords[word_list[i]]:	# If the name is In the keyword value list
-						# 					return_dict[word] = value
-						# 					assigned = True
-						# 				else:
-						# 					pass
-											
-						# 			else: # If the Optionnal keyword is undefined
-						# 				pass
 						assigned = assign(return_dict, word, value, excluded)
 						
 			
@@ -233,9 +217,7 @@ class NamingConvention(object):
 					i = i - 1
 				else:
 					naming_convention['name'].append(names[i])
-			# else:
-			# 	naming_convention['match'] = False
-			# 	break
+
 			i = i + 1
 
 		return naming_convention
