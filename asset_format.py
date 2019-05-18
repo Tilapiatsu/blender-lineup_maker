@@ -234,9 +234,6 @@ class BpyAsset(object):
 		
 		return exposure_group
 	# Helper
-
-	def store_texture_set():
-		pass
 	
 	def get_asset_naming_convention(self):
 		asset_convention = self.param['lm_asset_naming_convention']
@@ -421,6 +418,7 @@ class BpyAsset(object):
 
 	def get_asset(self):
 		if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
+			# TODO:Asset is not build correctly
 			asset = {}
 			texture_set = {}
 			for m in self.mesh_naming_convention:
