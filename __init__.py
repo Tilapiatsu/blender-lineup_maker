@@ -248,6 +248,9 @@ def register():
     bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
     bpy.types.Scene.lm_shader_name = bpy.props.StringProperty(name="Add Shader", update=update_shader_name)
 
+    bpy.types.Scene.lm_linear_channel = bpy.props.BoolProperty(name="Linear Channel")
+    bpy.types.Scene.lm_normalMap_channel = bpy.props.BoolProperty(name="NormalMap Channel")
+
     for cls in classes:
         bpy.utils.register_class(cls)
     
@@ -286,6 +289,8 @@ def unregister():
     del bpy.types.Scene.lm_shader_idx
     del bpy.types.Scene.lm_channel_name
     del bpy.types.Scene.lm_channel_idx
+    del bpy.types.Scene.lm_normalMap_channel
+    del bpy.types.Scene.lm_linear_channel
     del bpy.types.Scene.lm_texture_channel_name
     del bpy.types.Scene.lm_texture_channel_idx
     del bpy.types.Scene.lm_texture_naming_convention

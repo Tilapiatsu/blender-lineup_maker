@@ -3,10 +3,11 @@ import bpy
 
 
 class LM_Material_List(bpy.types.PropertyGroup):
-    material_name = bpy.props.StringProperty(name="Material Name")
+    name = bpy.props.StringProperty(name="Material Name")
     material = bpy.props.PointerProperty(name='Material', type=bpy.types.Material)
 
 class LM_Mesh_List(bpy.types.PropertyGroup):
+    name : bpy.props.StringProperty(name="Asset Name")
     mesh_name = bpy.props.StringProperty(name="Mesh Name")
     file_path = bpy.props.StringProperty(name="File Path")
     mesh = bpy.props.PointerProperty(name='Mesh', type=bpy.types.Object)
@@ -31,6 +32,8 @@ class LM_Shaders(bpy.types.PropertyGroup):
 class LM_Channels(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
     shader: bpy.props.StringProperty()
+    linear: bpy.props.BoolProperty()
+    normal_map: bpy.props.BoolProperty()
 
 class LM_TextureChannels(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
@@ -58,7 +61,14 @@ class LM_Channel_UIList(bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
-        row.label(text='{} : {}'.format(item.shader, item.name))
+        channel_format = ''
+        if item.normal_map:
+            channel_format = channel_format + ' | NormalMap'
+        elif item.linear:
+            channel_format = channel_format + ' | Linear'
+        else:
+            channel_format = ' | SRGB'
+        row.label(text='{} : {} {}'.format(item.shader, item.name, channel_format))
 
 class LM_TextureSet_UIList(bpy.types.UIList):
     bl_idname = "LM_UL_texturesets"

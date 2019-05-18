@@ -47,9 +47,9 @@ def create_bsdf_material(context, material, texture_set):
 
 	for channel, input_idx in input_indices.items():
 		try:
-			t = texture_set[channel]
+			t = texture_set[channel][0]
 		except KeyError as k:
-			print('No texture found for channel "{}" in the current shader.'.format(channel))
+			print('No texture found for channel "{}" in the material "{}".'.format(channel, material.name))
 			continue
 
 		dir_name = os.path.dirname(t)
@@ -62,10 +62,19 @@ def create_bsdf_material(context, material, texture_set):
 		texture.label = os.path.splitext(file_name)[0]
 
 		texture.location = location
-		location = (location[0], location[1] - incr)
-
 		
-		tree.links.new(texture.outputs[0], shader.inputs[input_idx['index']])
-	
 
+		if texture_set[channel][2]:
+			texture.image.colorspace_settings.name = 'Linear'
+			normal_map = nodes.new('ShaderNodeNormalMap')
+			normal_map.location = (location[0] + incr, location[1])
+			tree.links.new(texture.outputs[0], normal_map.inputs[1])
+			tree.links.new(normal_map.outputs[0], shader.inputs[input_idx['index']])
+		elif texture_set[channel][1]:
+			texture.image.colorspace_settings.name = 'Linear'
+			tree.links.new(texture.outputs[0], shader.inputs[input_idx['index']])
+		else:
+			tree.links.new(texture.outputs[0], shader.inputs[input_idx['index']])
+	
+		location = (location[0], location[1] - incr)
 	return output

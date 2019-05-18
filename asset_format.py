@@ -84,16 +84,17 @@ class BpyAsset(object):
 				continue
 			
 			# register the mesh in scene variable
-			if update:
-				curr_asset = self.context.scene.lm_asset_list[self.asset_name]
+			if update or self.asset_name in self.param['lm_asset_list']:
+				curr_asset = self.param['lm_asset_list'][self.asset_name]
 			else:
-				curr_asset = self.context.scene.lm_asset_list.add()
+				curr_asset = self.param['lm_asset_list'].add()
 				curr_asset.name = self.asset_name
 			
 			curr_asset.last_update = path.getmtime(f)
 
 			curr_mesh_list = curr_asset.mesh_list.add()
 			curr_mesh_list.file_path = f
+			curr_mesh_list.name = name
 
 			for o in curr_asset_collection.objects:
 				curr_mesh_list.mesh_name = o.name.lower()
@@ -388,10 +389,10 @@ class BpyAsset(object):
 
 	@property
 	def channels(self):
-		channels = []
+		channels = {}
 		for c in self.param['lm_channels']:
 			if c.name not in channels:
-				channels.append(c.name)
+				channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map}
 
 		return channels
 	
@@ -418,24 +419,22 @@ class BpyAsset(object):
 
 	def get_asset(self):
 		if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
-			# TODO:Asset is not build correctly
 			asset = {}
-			texture_set = {}
 			for m in self.mesh_naming_convention:
+				texture_set = {}
 				mesh = m['file']
 
-				texture_naming_convention = self.get_texture_naming_convention()
+				texture_naming_convention = self.texture_naming_convention
 
 				for t in texture_naming_convention[m['fullname']].keys():
-					if m['fullname'] not in texture_set.keys():
+					if t not in texture_set.keys():
 						texture_set[t] = {}
 
 				for basename,t in texture_naming_convention[m['fullname']].items():
-					matching_asset = True
 
 					for channel_name in t['channels'].keys():
-						if channel_name in self.channels:
-							texture_set[basename][channel_name] = t['channels'][channel_name]['file']
+						if channel_name in self.channels.keys():
+							texture_set[basename][channel_name] = [t['channels'][channel_name]['file'], self.channels[channel_name]['linear'], self.channels[channel_name]['normal_map']]
 
 				asset[m['fullname']] = (mesh, texture_set)
 			

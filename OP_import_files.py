@@ -46,19 +46,25 @@ class LM_OP_ImportFiles(bpy.types.Operator):
                 else:
                     curr_asset.update_asset()
                     H.set_active_collection(context, asset_collection.name)
-                
-                for mat in context.scene.lm_asset_list[curr_asset.asset_name].material_list:
-                    for mesh_name in curr_asset.asset.keys():
+
+                assigned = False
+                for mesh_name in curr_asset.asset.keys():
+                    for mat in context.scene.lm_asset_list[curr_asset.asset_name].mesh_list[mesh_name].material_list:
                         for t in curr_asset.asset[mesh_name][1].keys():
                             tnc = N.NamingConvention(context, t, context.scene.lm_texture_naming_convention)
-                            mnc = N.NamingConvention(context, mat.name, context.scene.lm_texture_naming_convention)
+                            mnc = N.NamingConvention(context, mat.name.lower(), context.scene.lm_texture_naming_convention)
 
                             if tnc == mnc:
-                                curr_asset.feed_material(mat.material, curr_asset.asset[mesh_name][1][tnc.name])
+                                curr_asset.feed_material(mat.material, curr_asset.asset[mesh_name][1][t])
+                                assigned = True
                                 break
+
                         else:
-                           print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
-                
+                            if not assigned:
+                                print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
+
+                del assigned
+
                 bpy.data.collections[curr_asset.asset_name].hide_viewport = True
                         
                         

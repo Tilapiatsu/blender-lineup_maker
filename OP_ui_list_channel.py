@@ -39,6 +39,8 @@ class LM_UI_RenameChannel(bpy.types.Operator):
     bl_description = "Rename the selected Texture Channel Name"
 
     new_channel_name: bpy.props.StringProperty(name="New Name")
+    new_linear_channel: bpy.props.BoolProperty(name="Linear Channel")
+    new_normal_map_channel: bpy.props.BoolProperty(name="NormalMap Channel")
 
     def check(self, context):
         return True
@@ -53,11 +55,15 @@ class LM_UI_RenameChannel(bpy.types.Operator):
         column = layout.column()
 
         column.prop(self, "new_channel_name")
+        column.prop(self, "new_linear_channel")
+        column.prop(self, "new_normal_map_channel")
 
     def invoke(self, context, event):
         _, _, _, self.active = get_channels(context)
 
         self.new_channel_name = self.active.name
+        self.new_linear_channel = self.active.linear
+        self.new_normal_map_channel = self.active.normal_map
 
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
@@ -71,6 +77,8 @@ class LM_UI_RenameChannel(bpy.types.Operator):
                     t.channel = self.new_channel_name
 
             self.active.name = self.new_channel_name
+            self.active.linear = self.new_linear_channel
+            self.active.normal_map = self.new_normal_map_channel
             
             
 

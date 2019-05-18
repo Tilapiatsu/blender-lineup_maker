@@ -186,7 +186,11 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         c.separator()
         c.operator("scene.lm_rename_channel", text="", icon='OUTLINER_DATA_FONT')
 
-        col.prop(scn, 'lm_channel_name')
+        row = col.row()
+        row.prop(scn, 'lm_channel_name')
+        row.scale_x = 0.4
+        row.prop(scn, 'lm_linear_channel')
+        row.prop(scn, 'lm_normalMap_channel')
 
         c.separator()
         col.label(text='Texture Name')

@@ -30,6 +30,9 @@ class NamingConvention(object):
 	def __eq__(self, other):
 		if isinstance(other, NamingConvention):
 			is_equal = True
+
+			if len(self.naming_convention['included']) != len(other.naming_convention['included']):
+				return False
 			
 			for i,c in enumerate(self.naming_convention['included']):
 				if c != other.naming_convention['included'][i]:
@@ -70,7 +73,7 @@ class NamingConvention(object):
 	
 	@property
 	def included_words(self):
-		return [w.group(2).lower if w.group(4) is None else False for w in self.words]
+		return [w.group(2).lower() if w.group(4) is None else False for w in self.words]
 
 	@property
 	def names(self):
@@ -94,10 +97,11 @@ class NamingConvention(object):
 					if c.channel not in channels[c.shader].keys():
 						channels[c.shader] = {c.channel:[c.name]}
 					else:
-						if c.channel not in channels[c.shader]:
-							channels[c.shader].update({c.channel:[c.name]})
-						else:
+						try:
 							channels[c.shader][c.channel].append(c.name)
+						except KeyError:
+							channels[c.shader].update({c.channel:[c.name]})
+
 			self._channels = channels
 		
 		return self._channels
@@ -123,7 +127,7 @@ class NamingConvention(object):
 			return_dict[word] = value
 			if excluded is None:
 				return_dict['included'].append(value)
-			
+
 			return True
 
 		def assign_value(ckws, value, return_dict, word, optionnal, excluded, count):
@@ -155,6 +159,7 @@ class NamingConvention(object):
 				else:
 					if optionnal is None: # Not Optionnal
 						assigned = assign(return_dict, word, value, excluded)
+						return_dict['included'].append(value)
 					else: # Optionnal
 						assigned = assign(return_dict, word, value, excluded)
 						
