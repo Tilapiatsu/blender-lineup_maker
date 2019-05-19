@@ -29,6 +29,10 @@ class LM_OP_ImportFiles(bpy.types.Operator):
         
         object_list = asset_collection.objects
 
+        # Store the Global View_Layer
+        global_view_layer = context.window.view_layer
+
+        asset_view_layers = {}
         if path.isdir(folder_src):
             subfolders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f))]
             for subfolder in subfolders:
@@ -64,58 +68,23 @@ class LM_OP_ImportFiles(bpy.types.Operator):
                                 print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
 
                 del assigned
-              
-                H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name).hide_viewport = True
-                # bpy.data.collections[curr_asset.asset_name].hide_select = True
-                        
-                        
 
+                curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
+                # Store asset colection view layer
+                asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
+                # Hide asset in Global View Layer
+                curr_asset_view_layer.hide_viewport = True
+            
+            for name in asset_view_layers.keys():
+                bpy.ops.scene.view_layer_add()
+                context.window.view_layer.name = name
+
+                for n, l in asset_view_layers.items():
+                    if name != n:
+                        curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+                        curr_asset_view_layer.hide_viewport = True
+            
+            # Set the global View_layer active
+            context.window.view_layer = global_view_layer
 
         return {'FINISHED'}
-    
-    def import_update_loop(self, context, function, mesh_files, asset_collection):
-        for f in mesh_files:
-            function()
-            H.set_active_collection(context, asset_collection.name)
-
-    def import_asset(self, context, mesh_path, texturepath):
-        name,ext = path.splitext(path.basename(mesh_path))
-        curr_asset_collection, _ = H.create_asset_collection(context, name)
-        H.set_active_collection(context, curr_asset_collection.name)
-
-        print('Lineup Maker : Importing asset "{}"'.format(name))
-        if ext.lower() == '.fbx':
-            bpy.ops.import_scene.fbx(filepath=mesh_path, filter_glob='*.fbx;', axis_forward='-Z', axis_up='Y')
-        
-        # register the current asset in scene variable
-        curr_asset = context.scene.lm_asset_list.add()
-        curr_asset.name = name
-        curr_asset.file_name = name
-        curr_asset.last_update = path.getmtime(mesh_path)
-
-        for o in curr_asset_collection.objects:
-            curr_asset.mesh_name += '{},'.format(o.name)
-            for m in o.material_slots:
-                material_list = curr_asset.material_list.add()
-                material_list.name = m.material.name
-                material_list.material = m.material
-        
-    
-    def update_asset(self, context, mesh_path, texturepath):
-        name,ext = path.splitext(path.basename(mesh_path))
-        curr_asset_collection = bpy.data.collections[name]
-        H.set_active_collection(context, curr_asset_collection.name)
-
-        curr_asset = context.scene.lm_asset_list[name]
-        if curr_asset.last_update < path.getmtime(mesh_path):
-            print('Lineup Maker : Updating asset "{}" : {}'.format(name, time.ctime(curr_asset.last_update)))
-            print('Lineup Maker : Updating file "{}" : {}'.format(name, time.ctime(path.getmtime(mesh_path))))
-
-            bpy.ops.object.select_all(action='DESELECT')
-            for o in curr_asset_collection.objects:
-                o.select_set(True)
-
-            bpy.ops.object.delete()
-            del curr_asset
-
-            self.import_asset(context, mesh_path)
