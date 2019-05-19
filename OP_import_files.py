@@ -64,8 +64,9 @@ class LM_OP_ImportFiles(bpy.types.Operator):
                                 print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
 
                 del assigned
-
-                bpy.data.collections[curr_asset.asset_name].hide_viewport = True
+              
+                H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name).hide_viewport = True
+                # bpy.data.collections[curr_asset.asset_name].hide_select = True
                         
                         
 
