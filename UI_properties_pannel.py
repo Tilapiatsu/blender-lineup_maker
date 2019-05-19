@@ -19,7 +19,15 @@ class LM_PT_main(bpy.types.Panel):
         else:
             icon = "BLANK1"
         row.prop(scn, 'lm_asset_path', text = 'Asset Path', icon=icon)
-        layout.operator("scene.lm_importfiles", icon='IMPORT', text="Import all assets")
+        if len(context.scene.lm_asset_list) == 0:
+            text = 'Import all assets'
+            imported = False
+        else:
+            text = 'Update modified assets'
+            imported = True
+        layout.operator("scene.lm_importassets", icon='IMPORT', text=text)
+        if imported:
+            layout.operator("scene.lm_renderassets", icon='OUTPUT', text='Render all assets')
 
 class LM_PT_NamingConvention(bpy.types.Panel):
     bl_label = "Naming Convention"

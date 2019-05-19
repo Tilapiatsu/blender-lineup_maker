@@ -12,7 +12,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import bpy
-from .OP_import_files import *
+from .OP_main import *
 from .UI_properties_pannel import *
 from .preferences import *
 from .properties import *
@@ -26,7 +26,8 @@ from .OP_ui_naming_convention import *
 bl_info = {
     "name" : "Lineup Maker",
     "author" : "Tilapiatsu",
-    "description" : "",
+    "description" : "This addon will help you to import file from a directory, keep them up to date in your blend scene, and render each asset separatedly",
+    "version": (1, 0, 0, 0),
     "blender" : (2, 80, 0),
     "location" : "",
     "warning" : "",
@@ -35,7 +36,7 @@ bl_info = {
 
 classes = (
     LM_Preferences,
-    LM_OP_ImportFiles,
+    LM_OP_ImportAssets,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,
     LM_PT_main,

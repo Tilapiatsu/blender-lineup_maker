@@ -6,18 +6,9 @@ from . import helper as H
 from . import asset_format as A
 from . import naming_convention as N
 
-bl_info = {
-    "name": "Lineup Maker : Import Files",
-    "author": "Tilapiatsu",
-    "version": (1, 0, 0, 0),
-    "blender": (2, 80, 0),
-    "location": "View3D",
-    "category": "Object",
-}
-
-class LM_OP_ImportFiles(bpy.types.Operator):
-    bl_idname = "scene.lm_importfiles"
-    bl_label = "Lineup Maker: Import all files from source folder"
+class LM_OP_ImportAssets(bpy.types.Operator):
+    bl_idname = "scene.lm_importassets"
+    bl_label = "Lineup Maker: Import all assets from source folder"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -87,4 +78,14 @@ class LM_OP_ImportFiles(bpy.types.Operator):
             # Set the global View_layer active
             context.window.view_layer = global_view_layer
 
+        return {'FINISHED'}
+
+class LM_OP_RenderAssets(bpy.types.Operator):
+    bl_idname = "scene.lm_renderassets"
+    bl_label = "Lineup Maker: Render all assets in the scene"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        
+        
         return {'FINISHED'}
