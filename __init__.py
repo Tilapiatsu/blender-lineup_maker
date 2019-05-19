@@ -37,6 +37,8 @@ bl_info = {
 classes = (
     LM_Preferences,
     LM_OP_ImportAssets,
+    LM_OP_RenderAssets,
+    LM_OP_CompositeRenders,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,
     LM_PT_main,

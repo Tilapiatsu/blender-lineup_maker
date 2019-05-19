@@ -28,6 +28,7 @@ class LM_PT_main(bpy.types.Panel):
         layout.operator("scene.lm_importassets", icon='IMPORT', text=text)
         if imported:
             layout.operator("scene.lm_renderassets", icon='OUTPUT', text='Render all assets')
+            layout.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets')
 
 class LM_PT_NamingConvention(bpy.types.Panel):
     bl_label = "Naming Convention"

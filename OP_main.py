@@ -63,6 +63,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
                 curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
                 # Store asset colection view layer
                 asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
+                context.scene.lm_asset_list[curr_asset_view_layer.name].view_layer = curr_asset_view_layer.name
                 # Hide asset in Global View Layer
                 curr_asset_view_layer.hide_viewport = True
             
@@ -70,7 +71,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
                 bpy.ops.scene.view_layer_add()
                 context.window.view_layer.name = name
 
-                for n, l in asset_view_layers.items():
+                for n, _ in asset_view_layers.items():
                     if name != n:
                         curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
                         curr_asset_view_layer.hide_viewport = True
@@ -83,6 +84,21 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 class LM_OP_RenderAssets(bpy.types.Operator):
     bl_idname = "scene.lm_renderassets"
     bl_label = "Lineup Maker: Render all assets in the scene"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        
+        for asset in context.scene.lm_asset_list:
+            asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, asset.view_layer)
+            # TODO: Set asset.view_layer as active viewlayer 
+            # context.window.view_layer = asset_view_layer
+        
+        return {'FINISHED'}
+
+
+class LM_OP_CompositeRenders(bpy.types.Operator):
+    bl_idname = "scene.lm_compositerenders"
+    bl_label = "Lineup Maker: composite all rendered assets"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):

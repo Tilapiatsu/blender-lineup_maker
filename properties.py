@@ -25,6 +25,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     mesh_list = bpy.props.CollectionProperty(type=LM_Mesh_List)
     material_list = bpy.props.CollectionProperty(type=LM_Material_List)
     texture_list = bpy.props.CollectionProperty(type=LM_Texture_List)
+    view_layer = bpy.props.StringProperty(name="View Layer")
 
 class LM_Shaders(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
