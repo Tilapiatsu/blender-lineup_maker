@@ -220,6 +220,7 @@ def register():
                                     description = 'Path to the folder containing the rendered assets'      
                                     )
     bpy.types.Scene.lm_render_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
+    bpy.types.Scene.lm_force_render = bpy.props.BoolProperty(name='Force Rendering of all assets')
     bpy.types.Scene.lm_asset_naming_convention = bpy.props.StringProperty(
                                     name="Asset Naming Convetion",
                                     subtype='NONE',
@@ -297,6 +298,7 @@ def unregister():
     del bpy.types.Scene.lm_optionnal_mesh_keyword
     del bpy.types.Scene.lm_optionnal_texture_keyword
     del bpy.types.Scene.lm_keyword_name
+    del bpy.types.Scene.lm_force_render
     del bpy.types.Scene.lm_keyword_value
     del bpy.types.Scene.lm_shader_name
     del bpy.types.Scene.lm_shader_idx
@@ -310,7 +312,7 @@ def unregister():
     del bpy.types.Scene.lm_mesh_naming_convention
     del bpy.types.Scene.lm_asset_naming_convention
     del bpy.types.Scene.lm_render_collection
-    del bpy.types.Scene.lm_asset_path 
+    del bpy.types.Scene.lm_asset_path
     del bpy.types.Scene.lm_render_path
       
 

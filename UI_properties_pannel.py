@@ -31,7 +31,8 @@ class LM_PT_main(bpy.types.Panel):
         
         if path.isdir(render_path):
             row.scale_x = 0.3
-            open = row.operator("scene.lm_openfolder", icon='WINDOW', text='Open Folder').folder_path = render_path
+            row.operator("scene.lm_openfolder", icon='WINDOW', text='Open Folder').folder_path = render_path
+            
         
         layout.prop(scn, 'lm_render_collection', text='Render Collection', icon='LIGHT')
 
@@ -44,7 +45,12 @@ class LM_PT_main(bpy.types.Panel):
         layout.operator("scene.lm_importassets", icon='IMPORT', text=text)
 
         if imported:
-            layout.operator("scene.lm_renderassets", icon='OUTPUT', text='Render all assets')
+            row = layout.row()
+            
+            row.prop(scn, 'lm_force_render', text='Force')
+            row.scale_x = 3
+            row.operator("scene.lm_renderassets", icon='OUTPUT', text='Render all assets')
+            
             layout.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets')
 
 class LM_PT_NamingConvention(bpy.types.Panel):
