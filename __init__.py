@@ -13,6 +13,7 @@
 
 import bpy
 from .OP_main import *
+from .OP_files import *
 from .UI_properties_pannel import *
 from .preferences import *
 from .properties import *
@@ -38,6 +39,7 @@ classes = (
     LM_Preferences,
     LM_OP_ImportAssets,
     LM_OP_RenderAssets,
+    LM_OP_OpenFolder,
     LM_OP_CompositeRenders,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,
@@ -209,7 +211,15 @@ def register():
                                     update = None,
                                     description = 'Path to the folder containing the assets'      
                                     )
-
+    
+    bpy.types.Scene.lm_render_path = bpy.props.StringProperty(
+                                    name="Rendered Asset Path",
+                                    subtype='DIR_PATH',
+                                    default="",
+                                    update = None,
+                                    description = 'Path to the folder containing the rendered assets'      
+                                    )
+    bpy.types.Scene.lm_render_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_asset_naming_convention = bpy.props.StringProperty(
                                     name="Asset Naming Convetion",
                                     subtype='NONE',
@@ -299,7 +309,9 @@ def unregister():
     del bpy.types.Scene.lm_texture_naming_convention
     del bpy.types.Scene.lm_mesh_naming_convention
     del bpy.types.Scene.lm_asset_naming_convention
+    del bpy.types.Scene.lm_render_collection
     del bpy.types.Scene.lm_asset_path 
+    del bpy.types.Scene.lm_render_path
       
 
 if __name__ == "__main__":

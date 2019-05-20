@@ -10,22 +10,39 @@ class LM_PT_main(bpy.types.Panel):
     
     def draw(self, context):
         scn = context.scene
-        assetPath = bpy.path.abspath(scn.lm_asset_path)
+        asset_path = bpy.path.abspath(scn.lm_asset_path)
+        render_path = bpy.path.abspath(scn.lm_render_path)
         layout = self.layout
 
-        row = layout.row(align=True)
-        if path.exists(assetPath):
+        
+        if path.isdir(asset_path):
             icon = "DOWNARROW_HLT"
         else:
             icon = "BLANK1"
-        row.prop(scn, 'lm_asset_path', text = 'Asset Path', icon=icon)
-        if len(context.scene.lm_asset_list) == 0:
+        layout.prop(scn, 'lm_asset_path', text='Asset Path', icon=icon)
+        
+        row = layout.row(align=True)
+        if path.isdir(render_path):
+            icon = "DOWNARROW_HLT"
+        else:
+            icon = "BLANK1"
+        
+        row.prop(scn, 'lm_render_path', text='Render Path', icon=icon)
+        
+        if path.isdir(render_path):
+            row.scale_x = 0.3
+            open = row.operator("scene.lm_openfolder", icon='WINDOW', text='Open Folder').folder_path = render_path
+        
+        layout.prop(scn, 'lm_render_collection', text='Render Collection', icon='LIGHT')
+
+        if len(scn.lm_asset_list) == 0:
             text = 'Import all assets'
             imported = False
         else:
             text = 'Update modified assets'
             imported = True
         layout.operator("scene.lm_importassets", icon='IMPORT', text=text)
+
         if imported:
             layout.operator("scene.lm_renderassets", icon='OUTPUT', text='Render all assets')
             layout.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets')
@@ -156,7 +173,6 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
 
     def draw(self, context):
         scn = context.scene
-        assetPath = bpy.path.abspath(scn.lm_asset_path)
         layout = self.layout
 
         col = layout.column(align=True)

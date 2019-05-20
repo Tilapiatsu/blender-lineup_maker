@@ -21,7 +21,8 @@ class LM_Texture_List(bpy.types.PropertyGroup):
     metalic = bpy.props.PointerProperty(name='Metalic', type=bpy.types.Texture)
 
 class LM_Asset_List(bpy.types.PropertyGroup):
-    last_update = bpy.props.FloatProperty(name="Last Update")
+    import_date = bpy.props.FloatProperty(name="Last Import")
+    render_date = bpy.props.FloatProperty(name="Last Render")
     mesh_list = bpy.props.CollectionProperty(type=LM_Mesh_List)
     material_list = bpy.props.CollectionProperty(type=LM_Material_List)
     texture_list = bpy.props.CollectionProperty(type=LM_Texture_List)

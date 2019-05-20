@@ -90,7 +90,7 @@ class BpyAsset(object):
 				curr_asset = self.param['lm_asset_list'].add()
 				curr_asset.name = self.asset_name
 			
-			curr_asset.last_update = path.getmtime(f)
+			curr_asset.import_date = path.getmtime(f)
 
 			curr_mesh_list = curr_asset.mesh_list.add()
 			curr_mesh_list.file_path = f
@@ -122,12 +122,12 @@ class BpyAsset(object):
 		need_update = False
 
 		for f in self.meshes:
-			if curr_asset.last_update < path.getmtime(f):
+			if curr_asset.import_date < path.getmtime(f):
 				need_update = True
 				break
 
 		if need_update or not created:
-			print('Lineup Maker : Updating asset "{}" : {}'.format(self.asset_name, time.ctime(curr_asset.last_update)))
+			print('Lineup Maker : Updating asset "{}" : {}'.format(self.asset_name, time.ctime(curr_asset.import_date)))
 
 			self.remove_objects()
 			# self.context.scene.update()

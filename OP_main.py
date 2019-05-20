@@ -72,9 +72,9 @@ class LM_OP_ImportAssets(bpy.types.Operator):
                 context.window.view_layer.name = name
 
                 for n, _ in asset_view_layers.items():
-                    if name != n:
+                    if name != n and name != context.scene.lm_render_collection.name:
                         curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
-                        curr_asset_view_layer.hide_viewport = True
+                        curr_asset_view_layer.exclude = True
             
             # Set the global View_layer active
             context.window.view_layer = global_view_layer
@@ -87,11 +87,47 @@ class LM_OP_RenderAssets(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        # Store renderpath
+        initial_render_path = bpy.context.scene.render.filepath
+
         
+
         for asset in context.scene.lm_asset_list:
-            asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, asset.view_layer)
-            # TODO: Set asset.view_layer as active viewlayer 
-            # context.window.view_layer = asset_view_layer
+            # # switch view layer to the current asset
+            
+            
+            render_path = os.path.abspath(os.path.join(os.path.abspath(context.scene.lm_render_path), asset.name))
+            render_filename = render_path + '\\{}_'.format(asset.name)
+            if not os.path.exists(render_path):
+                os.makedirs(render_path)
+
+            need_render = True
+            if asset.render_date:
+                need_render = False
+                rendered_files = os.listdir(render_path)
+                if len(rendered_files) < context.scene.frame_end-context.scene.frame_start:
+                    need_render = True
+                else:
+                    for f in os.listdir(render_path):
+                        if asset.render_date < asset.import_date:
+                            need_render = True
+                            break
+                        
+            if need_render:
+                print(asset.view_layer)
+                asset_view_layer = context.scene.view_layers[asset.view_layer]
+                context.window.view_layer = asset_view_layer
+                bpy.context.scene.render.filepath = render_filename
+                bpy.ops.render.render(animation=True, write_still=True, use_viewport=True, layer=asset.view_layer)
+                asset.render_date = time.time()
+            else:
+                print('Lineup Maker : Render of asset "{}" not needed'.format(asset.name) )
+
+
+
+        # Restore renderpath
+        bpy.context.scene.render.filepath = initial_render_path
+
         
         return {'FINISHED'}
 
