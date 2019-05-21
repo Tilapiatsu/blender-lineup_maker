@@ -1,5 +1,5 @@
 import bpy
-import os,time
+import os,time, math
 from os import path
 from . import variables as V
 from . import helper as H
@@ -165,7 +165,10 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 		need_render_asset = [a for a in context.scene.lm_asset_list if a.need_render]
 
+		composite_res = self.get_composite_resolution(context)
+
 		for asset in need_render_asset:
+			composite = bpy.data.images.new(name='{}_composite'.format(asset.name), width=composite_res[0], height=composite_res[1])
 			for f in os.listdir(asset.render_path):
 				image = nodes.new('CompositorNodeImage')
 				bpy.ops.image.open(filepath=os.path.join(asset.render_path, f), directory=asset.render_path, show_multiview=False)
@@ -174,6 +177,17 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 				location = (location[0], location[1] - 300)
 
+	def get_composite_resolution(self, context):
+		fc = context.scene.frame_end-context.scene.frame_start
+		res_x = bpy.context.scene.render.resolution_x
+		res_y = bpy.context.scene.render.resolution_y
+		margin = math.ceil(res_y/3)
+
+		x = math.ceil(fc/2) * res_x
+		y = math.floor(fc/2) * res_y + margin
+
+		return (x, y)
+		
 
 	def get_render_path(self, context, asset_name):
 		render_path = os.path.abspath(os.path.join(os.path.abspath(context.scene.lm_render_path), asset_name))
