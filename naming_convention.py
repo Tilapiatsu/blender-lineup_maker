@@ -1,5 +1,7 @@
 import bpy
 import re
+import json
+import os
 from os import path
 
 from . import variables as V
@@ -26,6 +28,8 @@ class NamingConvention(object):
 
 		self._keywords = None
 		self._channels = None
+
+		self._json = None
 
 	def __eq__(self, other):
 		if isinstance(other, NamingConvention):
@@ -56,6 +60,13 @@ class NamingConvention(object):
 
 		else:
 			print('"{}" need to be a dict'.format(naming_convention))
+
+	@property
+	def json(self):
+		if self._json is None:
+			self._json = self.get_json_data
+		
+		return self._json
 
 	@property
 	def words(self):
@@ -264,3 +275,17 @@ class NamingConvention(object):
 				other_ckws = other_ckws + ckws
 
 		return other_ckws
+
+	def get_json_data(self):
+		files = os.listdir(self.filepath)
+
+		json = [path.join(self.filepath, f) for f in files if path.splitext(f)[1].lower() == '.json' ]
+
+		json_data = {}
+		for j in json:
+			json_name = path.splitext(path.basename(j))[0]
+			with open(j) as json_file:  
+				data = json.load(json_file)
+				json_data[json_name] = data
+
+		return json_data
