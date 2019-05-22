@@ -29,12 +29,13 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			subfolders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f))]
 			for subfolder in subfolders:
 				mesh_files = [path.join(subfolder, f) for f in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys()]
+				json_files = [path.join(subfolder, f) for f in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, f)) and path.splitext(f)[1].lower() == '.json']
 				texture_files = {}
 				mesh_names = [path.basename(path.splitext(t)[0]) for t in mesh_files]
 				for m in mesh_names:
 					texture_files[m] = [path.join(subfolder, m, t) for t in os.listdir(path.join(subfolder, m)) if path.isfile(os.path.join(subfolder, m, t)) and path.splitext(t)[1].lower() in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
 				asset_name = path.basename(subfolder)
-				curr_asset = A.BpyAsset(context, mesh_files, texture_files)
+				curr_asset = A.BpyAsset(context, mesh_files, texture_files, json_files)
 				
 				if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
 					curr_asset.import_asset()

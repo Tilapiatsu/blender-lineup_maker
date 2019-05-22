@@ -8,9 +8,10 @@ from os import path
 import time
 import sys
 import re
+import json, codecs
 
 class BpyAsset(object):
-	def __init__(self, context, meshes, textures):
+	def __init__(self, context, meshes, textures, jsons):
 		self.separator = '_'
 		self.context = context
 		self.scn = context.scene
@@ -20,7 +21,8 @@ class BpyAsset(object):
 		self.meshes = meshes
 		self.textures = textures
 		self.texture_set = {}
-
+		self.jsons = jsons
+		
 		self._asset_naming_convention = None
 		self._mesh_naming_convention = None
 		self._texture_naming_convention = None
@@ -266,33 +268,68 @@ class BpyAsset(object):
 			texture_names = [path.basename(path.splitext(t)[0]) for t in textures]
 
 			texture_naming_convention = {}
+			if len(self.jsons) == 0: # There is no Json file
 
-			for i,t in enumerate(texture_names):
-				t_naming_convention = N.NamingConvention(self.context, t, texture_convention)
-				try:
-					channel = self.context.scene.lm_texture_channels[t_naming_convention.naming_convention['channel']].channel
-				except KeyError as k:
-					print('The channel name "{}" doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(t_naming_convention.naming_convention['channel'], t))
-					continue
+				for i,t in enumerate(texture_names):
+					t_naming_convention = N.NamingConvention(self.context, t, texture_convention)
+					
+					try:
+						channel = self.param['lm_texture_channels'][t_naming_convention.naming_convention['channel']].channel
+					except KeyError as k:
+						print('The channel name "{}" doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(t_naming_convention.naming_convention['channel'], t))
+						continue
 
-				basename = t_naming_convention.pop_name(t_naming_convention.naming_convention['channel'])['fullname'].lower()
+					basename = t_naming_convention.pop_name(t_naming_convention.naming_convention['channel'])['fullname'].lower()
 
-				if basename not in texture_naming_convention.keys():
-					texture_naming_convention[basename] = t_naming_convention.naming_convention
+					if basename not in texture_naming_convention.keys():
+						texture_naming_convention[basename] = t_naming_convention.naming_convention
 
-				chan = {'name':t, 'file':self.textures[mesh_name][i]}
+					chan = {'name':t, 'file':self.textures[mesh_name][i]}
 
-				if 'channels' in texture_naming_convention[basename].keys():
-					if len(texture_naming_convention[basename]['channels'].keys()):
-						texture_naming_convention[basename]['channels'][channel] = chan
+					if 'channels' in texture_naming_convention[basename].keys():
+						if len(texture_naming_convention[basename]['channels'].keys()):
+							texture_naming_convention[basename]['channels'][channel] = chan
+						else:
+							texture_naming_convention[basename]['channels'] = {channel:chan}
 					else:
 						texture_naming_convention[basename]['channels'] = {channel:chan}
-				else:
-					texture_naming_convention[basename]['channels'] = {channel:chan}
 
-				t = t.replace(channel, '')
-				# t_length = len(t_naming)
-			
+					t = t.replace(channel, '')
+					
+			else:
+				json_data = self.get_json_data()
+
+				json = json_data[mesh_name]
+
+				for mat in json['materials']:
+					material_name = mat['material']
+					textures = mat['textures']
+					for texture in textures:
+						texture_name = path.splitext(texture['file'])[0]
+						texture_path = path.join(self.get_asset_texture_folder(mesh_name), texture['file'])
+						t_naming_convention = N.NamingConvention(self.context, texture_name, self.param['lm_texture_naming_convention'])
+
+						try:
+							channel = self.param['lm_texture_channels'][t_naming_convention.naming_convention['channel']].channel
+						except KeyError as k:
+							print('The channel name "{}" doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(t_naming_convention.naming_convention['channel'], t))
+							continue
+						
+						if material_name not in texture_naming_convention.keys():
+							texture_naming_convention[material_name] = t_naming_convention.naming_convention
+
+						chan = {'name':texture_name, 'file':texture_path}
+
+						if 'channels' in texture_naming_convention[material_name].keys():
+							if len(texture_naming_convention[material_name]['channels'].keys()):
+								texture_naming_convention[material_name]['channels'][channel] = chan
+							else:
+								texture_naming_convention[material_name]['channels'] = {channel:chan}
+						else:
+							texture_naming_convention[material_name]['channels'] = {channel:chan}
+						
+						# t = t.replace(channel, '')
+		
 			naming_convention[mesh_name] = texture_naming_convention
 		
 		return naming_convention
@@ -302,6 +339,19 @@ class BpyAsset(object):
 	
 	def get_asset_root(self, meshes):
 		return path.dirname(meshes[0])
+
+	def get_asset_texture_folder(self, mesh_name):
+		return path.join(self.asset_root, mesh_name)
+
+	def get_json_data(self):
+		json_data = {}
+		for j in self.jsons:
+			json_name = path.splitext(path.basename(j))[0]
+			with open(j, 'r', encoding='utf-8-sig') as json_file:  
+				data = json.load(json_file)
+				json_data[json_name] = data
+
+		return json_data
 
 	@check_asset_exist
 	def select_asset(self):

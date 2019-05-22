@@ -1,6 +1,5 @@
 import bpy
 import re
-import json
 import os
 from os import path
 
@@ -275,17 +274,3 @@ class NamingConvention(object):
 				other_ckws = other_ckws + ckws
 
 		return other_ckws
-
-	def get_json_data(self):
-		files = os.listdir(self.filepath)
-
-		json = [path.join(self.filepath, f) for f in files if path.splitext(f)[1].lower() == '.json' ]
-
-		json_data = {}
-		for j in json:
-			json_name = path.splitext(path.basename(j))[0]
-			with open(j) as json_file:  
-				data = json.load(json_file)
-				json_data[json_name] = data
-
-		return json_data
