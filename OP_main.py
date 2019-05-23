@@ -33,7 +33,11 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 				texture_files = {}
 				mesh_names = [path.basename(path.splitext(t)[0]) for t in mesh_files]
 				for m in mesh_names:
-					texture_files[m] = [path.join(subfolder, m, t) for t in os.listdir(path.join(subfolder, m)) if path.isfile(os.path.join(subfolder, m, t)) and path.splitext(t)[1].lower() in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
+					try:
+						texture_files[m] = [path.join(subfolder, m, t) for t in os.listdir(path.join(subfolder, m)) if path.isfile(os.path.join(subfolder, m, t)) and path.splitext(t)[1].lower() in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
+					except FileNotFoundError as e:
+						texture_files[m] = []
+						print('Lineup Maker : folder dosn\'t exist in "{}"'.format(subfolder))
 				asset_name = path.basename(subfolder)
 				curr_asset = A.BpyAsset(context, mesh_files, texture_files, json_files)
 				
@@ -69,18 +73,19 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 				# Hide asset in Global View Layer
 				curr_asset_view_layer.hide_viewport = True
 			
-			for name in asset_view_layers.keys():
-				bpy.ops.scene.view_layer_add()
-				context.window.view_layer.name = name
+			# # create View Layers for each Assets
+			# for name in asset_view_layers.keys():
+			# 	bpy.ops.scene.view_layer_add()
+			# 	context.window.view_layer.name = name
 
-				for n, _ in asset_view_layers.items():
-					if name != n and name != context.scene.lm_render_collection.name:
-						curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
-						curr_asset_view_layer.exclude = True
+			# 	for n, _ in asset_view_layers.items():
+			# 		if name != n and name != context.scene.lm_render_collection.name:
+			# 			curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+			# 			curr_asset_view_layer.exclude = True
 
-						context.window.view_layer = context.scene.view_layers[name]
-						context.view_layer.use_pass_combined = False
-						context.view_layer.use_pass_z = False
+			# 			context.window.view_layer = context.scene.view_layers[name]
+			# 			context.view_layer.use_pass_combined = False
+			# 			context.view_layer.use_pass_z = False
 
 			
 			# Set the global View_layer active
@@ -93,7 +98,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_label = "Lineup Maker: Render all assets in the scene"
 	bl_options = {'REGISTER', 'UNDO'}
 
-	def execute(self, context):
+	def execute_old(self, context):
 		context.scene.render.film_transparent = True
 		
 
@@ -124,7 +129,54 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.revert_need_render(context)
 		return {'FINISHED'}
 
+	def execute(self, context):
+		context.scene.render.film_transparent = True
+		
+		for asset in context.scene.lm_asset_list:
+			render_path, render_filename = self.get_render_path(context, asset.name)
+
+			need_render = True
+			if asset.render_date:
+				need_render = False
+				rendered_files = os.listdir(render_path)
+				if len(rendered_files) < context.scene.frame_end-context.scene.frame_start:
+					need_render = True
+				else:
+					for f in os.listdir(render_path):
+						if asset.render_date < asset.import_date:
+							need_render = True
+							break
+						
+			if need_render or context.scene.lm_force_render:
+				asset.need_render = True
+				asset.render_path = render_path
+
+				for frame in range(context.scene.frame_start, context.scene.frame_end):
+					print('Lineup Maker : Rendering asset "{}" | Frame {}' .format(asset.view_layer, frame))
+					context.scene.frame_set(frame)
+
+					self.isolate_collection_visibility(context, [V.LM_ASSET_COLLECTION, asset.name])
+					bpy.context.scene.render.filepath = render_filename + str(frame).zfill(4)
+					bpy.ops.render.render(write_still=True)
+
+				self.build_composite_nodegraph(context)
+
+		self.revert_need_render(context)
+		return {'FINISHED'}
 	
+	def isolate_collection_visibility(self, context, collections):
+		for asset in context.scene.lm_asset_list:
+			try:
+				bpy.data.collections[asset.view_layer]
+			except KeyError as e:
+				print('Lineup Maker : The collection "{}" doesn\'t exist' .format(asset.view_layer))
+
+				if asset.view_layer in collections:
+					bpy.data.collections[asset.view_layer].exclude = False
+				else:
+					bpy.data.collections[asset.view_layer].exclude = True
+
+
 	def build_output_nodegraph(self, context):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
