@@ -312,7 +312,7 @@ class BpyAsset(object):
 						try:
 							channel = self.param['lm_texture_channels'][t_naming_convention.naming_convention['channel']].channel
 						except KeyError as k:
-							print('The channel name "{}" doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(t_naming_convention.naming_convention['channel'], t))
+							print('The channel name doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(texture_name))
 							continue
 						
 						if material_name not in texture_naming_convention.keys():
