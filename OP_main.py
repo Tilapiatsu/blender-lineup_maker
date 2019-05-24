@@ -98,41 +98,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_label = "Lineup Maker: Render all assets in the scene"
 	bl_options = {'REGISTER', 'UNDO'}
 
-	def execute_old(self, context):
-		context.scene.render.film_transparent = True
-		
-
-		for asset in context.scene.lm_asset_list:
-			render_path, _ = self.get_render_path(context, asset.name)
-
-			need_render = True
-			if asset.render_date:
-				need_render = False
-				rendered_files = os.listdir(render_path)
-				if len(rendered_files) < context.scene.frame_end-context.scene.frame_start:
-					need_render = True
-				else:
-					for f in os.listdir(render_path):
-						if asset.render_date < asset.import_date:
-							need_render = True
-							break
-						
-			if need_render or context.scene.lm_force_render:
-				asset.need_render = True
-				asset.render_path = render_path
-
-		self.build_output_nodegraph(context)
-
-		bpy.ops.render.render(animation=True)
-
-		self.build_composite_nodegraph(context)
-		self.revert_need_render(context)
-		return {'FINISHED'}
-
 	def execute(self, context):
 		context.scene.render.film_transparent = True
-		
-		
+
 		for asset in context.scene.lm_asset_list:
 			render_path, render_filename = self.get_render_path(context, asset.name)
 
@@ -155,14 +123,20 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				asset.need_render = True
 		
 		need_render_asset = [a for a in context.scene.lm_asset_list if a.need_render]
+		
+		self.clear_composite_tree(context)
 
-		self.build_output_nodegraph(context)
-
-		for asset in need_render_asset:
+		for i, asset in enumerate(need_render_asset):
 			render_path, render_filename = self.get_render_path(context, asset.name)
+
 			asset.need_render = True
 			asset.render_path = render_path
+
+			# switch to the proper view_layer
 			context.window.view_layer = context.scene.view_layers[asset.name]
+
+			self.build_output_nodegraph(context)
+
 			for frame in range(context.scene.frame_start, context.scene.frame_end):
 				print('Lineup Maker : Rendering asset "{}" | Frame {}' .format(asset.view_layer, frame))
 				context.scene.frame_set(frame)
@@ -170,8 +144,10 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				bpy.context.scene.render.filepath = render_filename + str(frame).zfill(4)
 				bpy.ops.render.render(write_still=True, layer=asset.view_layer)
 
+				asset.need_render = False
+				asset.rendered = True
 
-		self.build_composite_nodegraph(context)
+			self.build_composite_nodegraph(context, i)
 
 		self.revert_need_render(context)
 		return {'FINISHED'}
@@ -186,13 +162,15 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 					view_layer.exclude = True
 			except KeyError as e:
 				print('Lineup Maker : The collection "{}" doesn\'t exist' .format(asset.view_layer))
-
+	
+	def clear_composite_tree(self, context):
+		tree = context.scene.node_tree
+		nodes = tree.nodes
+		nodes.clear()
 
 	def build_output_nodegraph(self, context):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
-
-		nodes.clear()
 
 		location = (0, 0)
 		incr = 300
@@ -220,26 +198,53 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 		print('Lineup Maker : Output Node graph built')
 
-	def build_composite_nodegraph(self, context):
+	def build_composite_nodegraph(self, context, index):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
 
-		location = (600, 0)
+		location = (600, - 1000 * index)
 		incr = 300
 
-		need_render_asset = [a for a in context.scene.lm_asset_list if a.need_render]
+		rendered_asset = [a for a in context.scene.lm_asset_list if a.rendered]
 
 		composite_res = self.get_composite_resolution(context)
 
-		for asset in need_render_asset:
-			composite = bpy.data.images.new(name='{}_composite'.format(asset.name), width=composite_res[0], height=composite_res[1])
+		for asset in rendered_asset:
+			composite_image = bpy.data.images.new(name='{}_composite'.format(asset.name), width=composite_res[0], height=composite_res[1])
+
+			
+			composite = nodes.new('CompositorNodeImage')
+			composite.location = (location[0], location[1])
+			composite.image = composite_image
+			location = (location[0], location[1] - incr)
+
+			mix = None
+
 			for f in os.listdir(asset.render_path):
 				image = nodes.new('CompositorNodeImage')
 				bpy.ops.image.open(filepath=os.path.join(asset.render_path, f), directory=asset.render_path, show_multiview=False)
 				image.image = bpy.data.images[f]
 				image.location = location
 
-				location = (location[0], location[1] - 300)
+				new_mix = nodes.new('CompositorNodeAlphaOver')
+				new_mix.location = (location[0] + incr, location[1])
+				new_mix.use_premultiply = True
+
+				if mix is not None:
+					tree.links.new(mix.outputs[0], new_mix.inputs[1])
+					tree.links.new(image.outputs[0], new_mix.inputs[2])
+				else:
+					tree.links.new(image.outputs[0], new_mix.inputs[2])
+					tree.links.new(composite.outputs[0], new_mix.inputs[1])
+
+				location = (location[0] + incr, location[1] - incr)
+
+				mix = new_mix
+
+			location = (location[0], location[1] - 100)
+			
+			asset.rendered = False
+
 
 	def get_composite_resolution(self, context):
 		fc = context.scene.frame_end-context.scene.frame_start
@@ -267,6 +272,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		for asset in need_render_asset:
 			asset.need_render = False
 			asset.render_date = time.time()
+			asset.rendered = False
 
 
 class LM_OP_CompositeRenders(bpy.types.Operator):

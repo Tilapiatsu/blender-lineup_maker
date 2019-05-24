@@ -28,6 +28,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     texture_list = bpy.props.CollectionProperty(type=LM_Texture_List)
     view_layer = bpy.props.StringProperty(name="View Layer")
     need_render = bpy.props.BoolProperty()
+    rendered = bpy.props.BoolProperty()
     render_path = bpy.props.StringProperty()
 
 class LM_Shaders(bpy.types.PropertyGroup):
