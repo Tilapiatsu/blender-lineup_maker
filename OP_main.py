@@ -168,7 +168,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				context.scene.frame_set(frame)
 				
 				bpy.context.scene.render.filepath = render_filename + str(frame).zfill(4)
-				bpy.ops.render.render(write_still=True)
+				bpy.ops.render.render(write_still=True, layer=asset.view_layer)
 
 
 		self.build_composite_nodegraph(context)
