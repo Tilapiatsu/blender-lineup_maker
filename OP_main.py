@@ -137,15 +137,21 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 			self.build_output_nodegraph(context)
 
-			for frame in range(context.scene.frame_start, context.scene.frame_end + 1):
-				print('Lineup Maker : Rendering asset "{}" | Frame {}' .format(asset.view_layer, frame))
-				context.scene.frame_set(frame)
+			print('Lineup Maker : Rendering asset "{}"' .format(asset.view_layer))
+			bpy.context.scene.render.filepath = render_filename
+			bpy.ops.render.render(animation=True, write_still=True, layer=asset.view_layer)
+			asset.need_render = False
+			asset.rendered = True
+			
+			# for frame in range(context.scene.frame_start, context.scene.frame_end + 1):
+			# 	print('Lineup Maker : Rendering asset "{}" | Frame {}' .format(asset.view_layer, frame))
+			# 	context.scene.frame_set(frame)
 				
-				bpy.context.scene.render.filepath = render_filename + str(frame).zfill(4)
-				bpy.ops.render.render(write_still=True, layer=asset.view_layer)
+			# 	bpy.context.scene.render.filepath = render_filename + str(frame).zfill(4)
+			# 	bpy.ops.render.render(write_still=True, layer=asset.view_layer)
 
-				asset.need_render = False
-				asset.rendered = True
+			# 	asset.need_render = False
+			# 	asset.rendered = True
 
 			self.build_composite_nodegraph(context, i)
 
@@ -174,6 +180,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	def build_output_nodegraph(self, context):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
+
+		nodes.clear()
 
 		location = (0, 0)
 		incr = 300
