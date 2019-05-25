@@ -126,6 +126,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		
 		self.clear_composite_tree(context)
 
+		composite_nodes = {}
+
 		for i, asset in enumerate(need_render_asset):
 			render_path, render_filename = self.get_render_path(context, asset.name)
 
@@ -135,25 +137,28 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			# switch to the proper view_layer
 			context.window.view_layer = context.scene.view_layers[asset.name]
 
-			self.build_output_nodegraph(context)
-
-			print('Lineup Maker : Rendering asset "{}"' .format(asset.view_layer))
-			bpy.context.scene.render.filepath = render_filename
-			bpy.ops.render.render(animation=True, write_still=True, layer=asset.view_layer)
-			asset.need_render = False
-			asset.rendered = True
+			output_node = self.build_output_nodegraph(context, i, asset)
 			
-			# for frame in range(context.scene.frame_start, context.scene.frame_end + 1):
-			# 	print('Lineup Maker : Rendering asset "{}" | Frame {}' .format(asset.view_layer, frame))
-			# 	context.scene.frame_set(frame)
+			for frame in range(context.scene.frame_start, context.scene.frame_end + 1):
+				print('Lineup Maker : Rendering asset "{}" | Frame {}' .format(asset.view_layer, str(frame).zfill(4)))
+				context.scene.frame_set(frame)
 				
-			# 	bpy.context.scene.render.filepath = render_filename + str(frame).zfill(4)
-			# 	bpy.ops.render.render(write_still=True, layer=asset.view_layer)
+				bpy.context.scene.render.filepath = render_filename + str(frame).zfill(4)
+				bpy.ops.render.render(write_still=False, layer=asset.view_layer)
 
-			# 	asset.need_render = False
-			# 	asset.rendered = True
+				asset.need_render = False
+				asset.rendered = True
+			
+			output_node.mute = True
 
-			self.build_composite_nodegraph(context, i)
+			composite_nodes[asset.name] = self.build_composite_nodegraph(context, i, asset)
+
+		for node in composite_nodes.values():
+			node.mute = False
+		
+		bpy.context.scene.render.filepath = render_filename
+		bpy.ops.render.render(write_still=False)
+
 
 		self.revert_need_render(context)
 
@@ -177,103 +182,99 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		nodes = tree.nodes
 		nodes.clear()
 
-	def build_output_nodegraph(self, context):
+	def build_output_nodegraph(self, context, index, asset):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
 
-		nodes.clear()
-
-		location = (0, 0)
+		location = (0, -1000 * index)
 		incr = 300
 
-		need_render_asset = [a for a in context.scene.lm_asset_list if a.need_render]
 
-		for asset in need_render_asset:
+		rl = nodes.new('CompositorNodeRLayers')
+		rl.location = location
+		rl.layer = asset.view_layer
+		out = nodes.new('CompositorNodeOutputFile')
 
-			rl = nodes.new('CompositorNodeRLayers')
-			rl.location = location
-			rl.layer = asset.view_layer
-			of = nodes.new('CompositorNodeOutputFile')
+		sub_location = (location[0] + incr, location[1])
+		
+		out.location = sub_location
 
-			sub_location = (location[0] + incr, location[1])
+		out.base_path = asset.render_path
+		out.file_slots[0].path = asset.name + '_'
+
+		tree.links.new(rl.outputs[0], out.inputs[0])
+
+		location = (location[0], location[1] - incr)
 			
-			of.location = sub_location
-
-			of.base_path = asset.render_path
-			of.file_slots[0].path = asset.name + '_'
-
-			tree.links.new(rl.outputs[0], of.inputs[0])
-
-			location = (location[0], location[1] - incr)
-			
-
 		print('Lineup Maker : Output Node graph built')
 
-	def build_composite_nodegraph(self, context, index):
+		return out
+
+	def build_composite_nodegraph(self, context, index, asset):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
 
 		location = (600, - 1000 * index)
 		incr = 300
 
-		rendered_asset = [a for a in context.scene.lm_asset_list if a.rendered]
-
 		composite_res = self.get_composite_resolution(context)
 		render_res = (bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y)
 		framecount = self.get_current_frame_range(context)
 
-		for asset in rendered_asset:
-			composite_image = bpy.data.images.new(name='{}_composite'.format(asset.name), width=composite_res[0], height=composite_res[1])
-			composite_image.generated_color = (0.1, 0.1, 0.1, 1)
-			
-			composite = nodes.new('CompositorNodeImage')
-			composite.location = (location[0], location[1])
-			composite.image = composite_image
-			location = (location[0], location[1] - incr)
+		composite_image = bpy.data.images.new(name='{}_composite'.format(asset.name), width=composite_res[0], height=composite_res[1])
+		composite_image.generated_color = (0.1, 0.1, 0.1, 1)
+		
+		composite = nodes.new('CompositorNodeImage')
+		composite.location = (location[0], location[1])
+		composite.image = composite_image
+		location = (location[0], location[1] - incr)
 
-			mix = None
+		mix = None
 
-			files = os.listdir(asset.render_path)
+		files = os.listdir(asset.render_path)
 
-			for i,f in enumerate(files):
-				image = nodes.new('CompositorNodeImage')
-				bpy.ops.image.open(filepath=os.path.join(asset.render_path, f), directory=asset.render_path, show_multiview=False)
-				image.image = bpy.data.images[f]
-				image.location = location
+		for i,f in enumerate(files):
+			image = nodes.new('CompositorNodeImage')
+			bpy.ops.image.open(filepath=os.path.join(asset.render_path, f), directory=asset.render_path, show_multiview=False)
+			image.image = bpy.data.images[f]
+			image.location = location
 
-				location = (location[0] + incr/2, location[1])
-				translate = nodes.new('CompositorNodeTranslate')
-				translate.location = location
-				translate.inputs[1].default_value = -composite_res[0]/2 + render_res[0] / 2 + ((i%(framecount/2)) * render_res[0])
-				translate.inputs[2].default_value = composite_res[1]/2 - render_res[1] / 2 - composite_res[2] - (math.floor(i/framecount*2) * render_res[1])
+			location = (location[0] + incr/2, location[1])
+			translate = nodes.new('CompositorNodeTranslate')
+			translate.location = location
+			translate.inputs[1].default_value = -composite_res[0]/2 + render_res[0] / 2 + ((i%(framecount/2)) * render_res[0])
+			translate.inputs[2].default_value = composite_res[1]/2 - render_res[1] / 2 - composite_res[2] - (math.floor(i/framecount*2) * render_res[1])
 
-				tree.links.new(image.outputs[0], translate.inputs[0])
+			tree.links.new(image.outputs[0], translate.inputs[0])
 
-				new_mix = nodes.new('CompositorNodeAlphaOver')
-				new_mix.location = (location[0] + incr/2, location[1])
-				new_mix.use_premultiply = True
+			new_mix = nodes.new('CompositorNodeAlphaOver')
+			new_mix.location = (location[0] + incr/2, location[1])
+			new_mix.use_premultiply = True
 
-				if mix is not None:
-					tree.links.new(mix.outputs[0], new_mix.inputs[1])
-					tree.links.new(translate.outputs[0], new_mix.inputs[2])
-				else:
-					tree.links.new(translate.outputs[0], new_mix.inputs[2])
-					tree.links.new(composite.outputs[0], new_mix.inputs[1])
+			if mix is not None:
+				tree.links.new(mix.outputs[0], new_mix.inputs[1])
+				tree.links.new(translate.outputs[0], new_mix.inputs[2])
+			else:
+				tree.links.new(translate.outputs[0], new_mix.inputs[2])
+				tree.links.new(composite.outputs[0], new_mix.inputs[1])
 
-				location = (location[0] + incr, location[1] - incr)
+			location = (location[0] + incr, location[1] - incr)
 
-				mix = new_mix
-			
-			of = nodes.new('CompositorNodeOutputFile')
-			of.location = (location[0] + incr, location[1])
-			of.base_path = path.abspath(path.join(asset.render_path, os.pardir))
-			of.file_slots[0].path = asset.name + '_composite_'
+			mix = new_mix
+		
+		out = nodes.new('CompositorNodeOutputFile')
+		out.location = (location[0] + incr, location[1])
+		out.file_slots[0].path = asset.name + '_composite_'
+		out.base_path = path.abspath(path.join(asset.render_path, os.pardir))
+		out.mute = True
 
-			tree.links.new(mix.outputs[0], of.inputs[0])
+		tree.links.new(mix.outputs[0], out.inputs[0])
 
-			location = (location[0], location[1] - 100)
-			
-			asset.rendered = False
+		location = (location[0], location[1] - 100)
+		
+		asset.rendered = False
+		
+		return out
 
 
 	def get_composite_resolution(self, context):
