@@ -128,6 +128,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 		composite_nodes = {}
 
+		context.window_manager.progress_begin(0,len(need_render_asset))
+
 		for i, asset in enumerate(need_render_asset):
 			render_path, render_filename = self.get_render_path(context, asset.name)
 
@@ -141,10 +143,12 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			
 			for frame in range(context.scene.frame_start, context.scene.frame_end + 1):
 				print('Lineup Maker : Rendering asset "{}" | Frame {}' .format(asset.view_layer, str(frame).zfill(4)))
+				self.report({'INFO'}, 'Lineup Maker : Rendering asset "{}" | Frame {}' .format(asset.view_layer, str(frame).zfill(4)))
 				context.scene.frame_set(frame)
 				
 				bpy.context.scene.render.filepath = render_filename + str(frame).zfill(4)
 				bpy.ops.render.render(write_still=False, layer=asset.view_layer)
+				# bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
 				asset.need_render = False
 				asset.rendered = True
@@ -152,6 +156,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			output_node.mute = True
 
 			composite_nodes[asset.name] = self.build_composite_nodegraph(context, i, asset)
+			context.window_manager.progress_update(i)
 
 		for node in composite_nodes.values():
 			node.mute = False
@@ -164,6 +169,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 		# Set the global View_layer active
 		context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
+		context.window_manager.progress_end()
 		return {'FINISHED'}
 
 	def isolate_collection_visibility(self, context, collections):
@@ -268,7 +274,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		out.base_path = path.abspath(path.join(asset.render_path, os.pardir))
 		out.mute = True
 
-		tree.links.new(mix.outputs[0], out.inputs[0])
+		if mix:
+			tree.links.new(mix.outputs[0], out.inputs[0])
 
 		location = (location[0], location[1] - 100)
 		
