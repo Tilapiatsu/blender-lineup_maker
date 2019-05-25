@@ -442,7 +442,7 @@ class BpyAsset(object):
 		channels = {}
 		for c in self.param['lm_channels']:
 			if c.name not in channels:
-				channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map}
+				channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map, 'inverted':c.inverted}
 
 		return channels
 	
@@ -484,7 +484,10 @@ class BpyAsset(object):
 
 					for channel_name in t['channels'].keys():
 						if channel_name in self.channels.keys():
-							texture_set[basename][channel_name] = [t['channels'][channel_name]['file'], self.channels[channel_name]['linear'], self.channels[channel_name]['normal_map']]
+							texture_set[basename][channel_name] = {'file':t['channels'][channel_name]['file'],
+																	'linear':self.channels[channel_name]['linear'],
+																	'normal_map':self.channels[channel_name]['normal_map'],
+																	'inverted':self.channels[channel_name]['inverted']}
 
 				asset[m['fullname']] = (mesh, texture_set)
 			

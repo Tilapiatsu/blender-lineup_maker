@@ -21,8 +21,8 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		object_list = asset_collection.objects
 
 		# Store the Global View_Layer
-		global_view_layer = context.window.view_layer
-		context.scene.view_layers[global_view_layer.name].use = False
+		context.scene.lm_initial_view_layer = context.window.view_layer.name
+		context.scene.view_layers[context.scene.lm_initial_view_layer].use = False
 
 		asset_view_layers = {}
 		if path.isdir(folder_src):
@@ -89,7 +89,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 			
 			# Set the global View_layer active
-			context.window.view_layer = global_view_layer
+			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
 
 		return {'FINISHED'}
 
@@ -110,7 +110,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				if asset.render_date:
 					need_render = False
 					rendered_files = os.listdir(render_path)
-					if len(rendered_files) < context.scene.frame_end-context.scene.frame_start:
+					if len(rendered_files) < self.get_current_frame_range():
 						need_render = True
 					else:
 						for f in os.listdir(render_path):
@@ -137,7 +137,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 			self.build_output_nodegraph(context)
 
-			for frame in range(context.scene.frame_start, context.scene.frame_end):
+			for frame in range(context.scene.frame_start, context.scene.frame_end + 1):
 				print('Lineup Maker : Rendering asset "{}" | Frame {}' .format(asset.view_layer, frame))
 				context.scene.frame_set(frame)
 				
@@ -150,8 +150,11 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			self.build_composite_nodegraph(context, i)
 
 		self.revert_need_render(context)
+
+		# Set the global View_layer active
+		context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
 		return {'FINISHED'}
-	
+
 	def isolate_collection_visibility(self, context, collections):
 		for asset in context.scene.lm_asset_list:
 			try:
@@ -208,10 +211,12 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		rendered_asset = [a for a in context.scene.lm_asset_list if a.rendered]
 
 		composite_res = self.get_composite_resolution(context)
+		render_res = (bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y)
+		framecount = self.get_current_frame_range(context)
 
 		for asset in rendered_asset:
 			composite_image = bpy.data.images.new(name='{}_composite'.format(asset.name), width=composite_res[0], height=composite_res[1])
-
+			composite_image.generated_color = (0.1, 0.1, 0.1, 1)
 			
 			composite = nodes.new('CompositorNodeImage')
 			composite.location = (location[0], location[1])
@@ -220,26 +225,43 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 			mix = None
 
-			for f in os.listdir(asset.render_path):
+			files = os.listdir(asset.render_path)
+
+			for i,f in enumerate(files):
 				image = nodes.new('CompositorNodeImage')
 				bpy.ops.image.open(filepath=os.path.join(asset.render_path, f), directory=asset.render_path, show_multiview=False)
 				image.image = bpy.data.images[f]
 				image.location = location
 
+				location = (location[0] + incr/2, location[1])
+				translate = nodes.new('CompositorNodeTranslate')
+				translate.location = location
+				translate.inputs[1].default_value = -composite_res[0]/2 + render_res[0] / 2 + ((i%(framecount/2)) * render_res[0])
+				translate.inputs[2].default_value = composite_res[1]/2 - render_res[1] / 2 - composite_res[2] - (math.floor(i/framecount*2) * render_res[1])
+
+				tree.links.new(image.outputs[0], translate.inputs[0])
+
 				new_mix = nodes.new('CompositorNodeAlphaOver')
-				new_mix.location = (location[0] + incr, location[1])
+				new_mix.location = (location[0] + incr/2, location[1])
 				new_mix.use_premultiply = True
 
 				if mix is not None:
 					tree.links.new(mix.outputs[0], new_mix.inputs[1])
-					tree.links.new(image.outputs[0], new_mix.inputs[2])
+					tree.links.new(translate.outputs[0], new_mix.inputs[2])
 				else:
-					tree.links.new(image.outputs[0], new_mix.inputs[2])
+					tree.links.new(translate.outputs[0], new_mix.inputs[2])
 					tree.links.new(composite.outputs[0], new_mix.inputs[1])
 
 				location = (location[0] + incr, location[1] - incr)
 
 				mix = new_mix
+			
+			of = nodes.new('CompositorNodeOutputFile')
+			of.location = (location[0] + incr, location[1])
+			of.base_path = path.abspath(path.join(asset.render_path, os.pardir))
+			of.file_slots[0].path = asset.name + '_composite_'
+
+			tree.links.new(mix.outputs[0], of.inputs[0])
 
 			location = (location[0], location[1] - 100)
 			
@@ -255,7 +277,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		x = math.ceil(fc/2) * res_x
 		y = math.floor(fc/2) * res_y + margin
 
-		return (x, y)
+		return (x, y, margin)
 		
 
 	def get_render_path(self, context, asset_name):
@@ -273,7 +295,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			asset.need_render = False
 			asset.render_date = time.time()
 			asset.rendered = False
-
+		
+	def get_current_frame_range(self, context):
+		return context.scene.frame_end + 1 - context.scene.frame_start
 
 class LM_OP_CompositeRenders(bpy.types.Operator):
 	bl_idname = "scene.lm_compositerenders"

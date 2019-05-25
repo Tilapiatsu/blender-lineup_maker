@@ -41,6 +41,7 @@ class LM_UI_RenameChannel(bpy.types.Operator):
     new_channel_name: bpy.props.StringProperty(name="New Name")
     new_linear_channel: bpy.props.BoolProperty(name="Linear Channel")
     new_normal_map_channel: bpy.props.BoolProperty(name="NormalMap Channel")
+    new_inverted_channel: bpy.props.BoolProperty(name="Inverted Channel")
 
     def check(self, context):
         return True
@@ -57,6 +58,7 @@ class LM_UI_RenameChannel(bpy.types.Operator):
         column.prop(self, "new_channel_name")
         column.prop(self, "new_linear_channel")
         column.prop(self, "new_normal_map_channel")
+        column.prop(self, "new_inverted_channel")
 
     def invoke(self, context, event):
         _, _, _, self.active = get_channels(context)
@@ -64,6 +66,7 @@ class LM_UI_RenameChannel(bpy.types.Operator):
         self.new_channel_name = self.active.name
         self.new_linear_channel = self.active.linear
         self.new_normal_map_channel = self.active.normal_map
+        self.new_inverted_channel = self.active.inverted
 
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
@@ -79,9 +82,8 @@ class LM_UI_RenameChannel(bpy.types.Operator):
             self.active.name = self.new_channel_name
             self.active.linear = self.new_linear_channel
             self.active.normal_map = self.new_normal_map_channel
+            self.active.inverted = self.new_inverted_channel
             
-            
-
         return {'FINISHED'}
 
 

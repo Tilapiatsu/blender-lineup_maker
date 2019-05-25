@@ -39,6 +39,7 @@ class LM_Channels(bpy.types.PropertyGroup):
     shader: bpy.props.StringProperty()
     linear: bpy.props.BoolProperty()
     normal_map: bpy.props.BoolProperty()
+    inverted: bpy.props.BoolProperty()
 
 class LM_TextureChannels(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
@@ -73,6 +74,8 @@ class LM_Channel_UIList(bpy.types.UIList):
             channel_format = channel_format + ' | Linear'
         else:
             channel_format = ' | SRGB'
+        if item.inverted:
+            channel_format = channel_format + ' Inverted'
         row.label(text='{} : {} {}'.format(item.shader, item.name, channel_format))
 
 class LM_TextureSet_UIList(bpy.types.UIList):

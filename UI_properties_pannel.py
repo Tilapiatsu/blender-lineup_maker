@@ -222,6 +222,7 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         row.scale_x = 0.4
         row.prop(scn, 'lm_linear_channel')
         row.prop(scn, 'lm_normalMap_channel')
+        row.prop(scn, 'lm_inverted_channel')
 
         c.separator()
         col.label(text='Texture Name')

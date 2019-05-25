@@ -264,11 +264,14 @@ def register():
 
     bpy.types.Scene.lm_linear_channel = bpy.props.BoolProperty(name="Linear Channel")
     bpy.types.Scene.lm_normalMap_channel = bpy.props.BoolProperty(name="NormalMap Channel")
+    bpy.types.Scene.lm_inverted_channel = bpy.props.BoolProperty(name="Inverted Channel")
 
     for cls in classes:
         bpy.utils.register_class(cls)
     
     bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
+
+    bpy.types.Scene.lm_initial_view_layer = bpy.props.StringProperty(name="Initial ViewLayer")
 
     bpy.types.Scene.lm_texture_channels =  bpy.props.CollectionProperty(type=LM_TextureChannels)
     bpy.types.Scene.lm_channels =  bpy.props.CollectionProperty(type=LM_Channels)
@@ -287,6 +290,7 @@ def unregister():
     del bpy.types.Scene.lm_shaders
     del bpy.types.Scene.lm_channels
     del bpy.types.Scene.lm_texture_channels
+    del bpy.types.Scene.lm_initial_view_layer
     del bpy.types.Scene.lm_asset_list
 
     for cls in reversed(classes):
@@ -306,6 +310,7 @@ def unregister():
     del bpy.types.Scene.lm_channel_idx
     del bpy.types.Scene.lm_normalMap_channel
     del bpy.types.Scene.lm_linear_channel
+    del bpy.types.Scene.lm_inverted_channel
     del bpy.types.Scene.lm_texture_channel_name
     del bpy.types.Scene.lm_texture_channel_idx
     del bpy.types.Scene.lm_texture_naming_convention
