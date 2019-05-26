@@ -97,8 +97,136 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_renderassets"
 	bl_label = "Lineup Maker: Render all assets in the scene"
 	bl_options = {'REGISTER', 'UNDO'}
+	
+	_timer = None
+	shots = None
+	stop = None
+	remaining = None
+	rendering = None
+	path = "//"
+	disablerbbutton = False
+	need_render_asset = None
+	asset_number = 0
+
+	def pre(self, dummy):
+		print('PRE')
+		self.rendering = True
+
+	def post(self, dummy):
+		print('POST')
+		self.need_render_asset.pop(0)
+			# self.shots.pop(0) 
+		self.rendering = False
+
+	def cancelled(self, dummy):
+		self.stop = True
 
 	def execute(self, context):
+		self.stop = False
+		self.rendering = False
+		scene = bpy.context.scene
+		wm = bpy.context.window_manager
+
+		self.shots = [ o.name+'' for o in scene.lm_render_collection.all_objects.values() if o.type=='CAMERA' and o.visible_get() == True ]
+
+		if len(self.shots) < 0:
+			self.report({"WARNING"}, 'No cameras defined')
+			return {"FINISHED"}        
+
+		for asset in scene.lm_asset_list:
+			render_path, render_filename = self.get_render_path(context, asset.name)
+
+			# Set  need_render status for each assets
+			need_render = True
+			if not scene.lm_force_render:
+				if asset.render_date:
+					need_render = False
+					rendered_files = os.listdir(render_path)
+					if len(rendered_files) < self.get_current_frame_range():
+						need_render = True
+					else:
+						for f in os.listdir(render_path):
+							if asset.render_date < asset.import_date:
+								need_render = True
+								break
+				else:
+					asset.need_render = True
+			else:
+				asset.need_render = True
+		
+		self.need_render_asset = [a for a in scene.lm_asset_list if a.need_render]
+
+		self.remaining_assets = len(self.need_render_asset)
+
+		self.asset_number = 0
+
+		bpy.app.handlers.render_pre.append(self.pre)
+		bpy.app.handlers.render_post.append(self.post)
+		bpy.app.handlers.render_cancel.append(self.cancelled)
+
+		self._timer = bpy.context.window_manager.event_timer_add(0.5, window=bpy.context.window)
+		bpy.context.window_manager.modal_handler_add(self)
+
+		return {"RUNNING_MODAL"}
+
+	def modal(self, context, event):
+		if event.type == 'TIMER':
+
+			if True in (not self.need_render_asset, self.stop is True): 
+
+				bpy.app.handlers.render_pre.remove(self.pre)
+				bpy.app.handlers.render_post.remove(self.post)
+				bpy.app.handlers.render_cancel.remove(self.cancelled)
+				bpy.context.window_manager.event_timer_remove(self._timer)
+
+				return {"FINISHED"} 
+
+			elif self.rendering is False: 
+				self.render(context)
+
+		return {"PASS_THROUGH"}
+
+	def render(self, context):
+		scn = bpy.context.scene
+		scn.camera = bpy.data.objects[self.shots[0]] 	
+
+		scn.render.film_transparent = True
+
+		
+		self.clear_composite_tree(context)
+
+		composite_nodes = {}
+
+		# context.window_manager.progress_begin(0,len(need_render_asset))
+		# self.remaining_assets = len(self.need_render_asset)
+		asset = self.need_render_asset[0]
+
+		render_path, render_filename = self.get_render_path(context, asset.name)
+
+		asset.need_render = True
+		asset.render_path = render_path
+
+		# switch to the proper view_layer
+		context.window.view_layer = scn.view_layers[asset.name]
+
+		output_node = self.build_output_nodegraph(context, self.asset_number, asset)
+
+		bpy.context.scene.render.filepath = render_filename + self.shots[0] + '_'
+
+		bpy.ops.render.render("INVOKE_DEFAULT", animation=True, write_still=True, layer=asset.view_layer)
+
+		asset.need_render = False
+		asset.rendered = True
+		
+		output_node.mute = True
+
+		composite_nodes[asset.name] = self.build_composite_nodegraph(context, self.asset_number, asset)
+		# context.window_manager.progress_update(i)
+
+		self.remaining_assets -= 1
+		self.asset_number += 1
+
+	def render_bak(self, context):
 		context.scene.render.film_transparent = True
 
 		for asset in context.scene.lm_asset_list:
@@ -131,6 +259,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		context.window_manager.progress_begin(0,len(need_render_asset))
 
 		for i, asset in enumerate(need_render_asset):
+			
 			render_path, render_filename = self.get_render_path(context, asset.name)
 
 			asset.need_render = True
@@ -147,7 +276,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				context.scene.frame_set(frame)
 				
 				bpy.context.scene.render.filepath = render_filename + str(frame).zfill(4)
-				bpy.ops.render.render(write_still=False, layer=asset.view_layer)
+				bpy.ops.render.render("INVOKE_DEFAULT", write_still=False, layer=asset.view_layer)
 				# bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
 				asset.need_render = False
