@@ -101,7 +101,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	_timer = None
 	shots = None
 	stop = None
-	remaining = None
+	frame_range = None
+	remaining_frames = None
+	remaining_assets = None
 	rendering = None
 	path = "//"
 	disablerbbutton = False
@@ -114,8 +116,11 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 	def post(self, dummy):
 		print('POST')
-		self.need_render_asset.pop(0)
-			# self.shots.pop(0) 
+		if self.remaining_frames <= 0:
+			self.need_render_asset.pop(0)
+			self.remaining_frames = self.frame_range
+			# self.shots.pop(0)
+		self.remaining_frames -= 1
 		self.rendering = False
 
 	def cancelled(self, dummy):
@@ -159,6 +164,10 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.remaining_assets = len(self.need_render_asset)
 
 		self.asset_number = 0
+
+		self.frame_range = self.get_current_frame_range(context)
+		self.remaining_frames = self.frame_range
+		
 
 		bpy.app.handlers.render_pre.append(self.pre)
 		bpy.app.handlers.render_post.append(self.post)
