@@ -112,6 +112,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	output_node = None
 	context = None
 	initial_view_layer = None
+	rendered_assets = []
 
 	def pre(self, dummy):
 		self.rendering = True
@@ -164,7 +165,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				if asset.render_date:
 					need_render = False
 					rendered_files = os.listdir(render_path)
-					if len(rendered_files) < self.get_current_frame_range():
+					if len(rendered_files) < self.get_current_frame_range(context):
 						need_render = True
 					else:
 						for f in os.listdir(render_path):
@@ -192,7 +193,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		bpy.context.window_manager.modal_handler_add(self)
 
 		return {"RUNNING_MODAL"}
-
+	
 	def modal(self, context, event):
 		if event.type == 'TIMER':
 
@@ -205,19 +206,28 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 				if self.stop:
 					self.report({'WARNING'}, "Lineup Maker : Render cancelled by user")
+					self.print_render_log()
+					
 				else:
 					self.report({'INFO'}, "Lineup Maker : Render completed")
+					self.print_render_log()
 
+				self.rendered_assets = []
 				return {"FINISHED"} 
 
 			elif self.rendering and self.remaining_assets and self.composite_node is not None:
 				self.unregister_render_handler()
-				print('Lineup Maker : Rendering composited image of "{}"'.format(self.need_render_asset[0].name))
+				asset = self.need_render_asset[0]
+				print('Lineup Maker : Rendering composited image of "{}"'.format(asset.name))
 				
 				bpy.ops.render.render(write_still=False)
 				self.composite_node.mute = True
 				
 				self.composite_node = None
+
+				asset.render_date = time.time()
+				self.rendered_assets.append(asset)
+
 				self.need_render_asset.pop(0)
 				self.remaining_frames = self.frame_range
 
@@ -225,6 +235,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				self.asset_number += 1
 
 				self.rendering = False
+				
 				self.register_render_handler()
 
 			elif self.rendering is False: 
@@ -257,6 +268,11 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.context = context
 
 		bpy.ops.render.render("INVOKE_DEFAULT", animation=True, write_still=False, layer=asset.view_layer)
+
+	def print_render_log(self):
+		self.report({'INFO'}, "Lineup Maker : {} assets rendered".format(len(self.rendered_assets)))
+		for a in self.rendered_assets:
+			self.report({'INFO'}, "Lineup Maker : {} rendered".format(a.name))
 
 	def isolate_collection_visibility(self, context, collections):
 		for asset in context.scene.lm_asset_list:
