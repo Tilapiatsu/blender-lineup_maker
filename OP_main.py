@@ -75,8 +75,9 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			
 			# create View Layers for each Assets
 			for name in asset_view_layers.keys():
-				bpy.ops.scene.view_layer_add()
-				context.window.view_layer.name = name
+				if name not in context.scene.view_layers:
+					bpy.ops.scene.view_layer_add()
+					context.window.view_layer.name = name
 
 				for n, _ in asset_view_layers.items():
 					if name != n and name != context.scene.lm_render_collection.name:

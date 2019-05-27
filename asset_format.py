@@ -97,7 +97,8 @@ class BpyAsset(object):
 			curr_mesh_list = curr_asset.mesh_list.add()
 			curr_mesh_list.file_path = f
 			curr_mesh_list.name = name
-
+			
+			# Updating Materials
 			for o in curr_asset_collection.objects:
 				curr_mesh_list.mesh_name = o.name.lower()
 				curr_mesh_list.mesh = o
@@ -122,7 +123,7 @@ class BpyAsset(object):
 		curr_asset = self.param['lm_asset_list'][self.asset_name]
 
 		need_update = False
-
+		
 		for f in self.meshes:
 			if curr_asset.import_date < path.getmtime(f):
 				need_update = True
@@ -409,7 +410,7 @@ class BpyAsset(object):
 				if i < len(splited_name) - 1:
 					name = name + separator
 			o.name = name
-	
+
 	def compare_naming_conventions(self, n1, n2):
 		if n1[1] in n1[0].keys() and n2[1] in n2[0].keys():
 			return n1[0][n1[1]] == n2[0][n2[1]]
