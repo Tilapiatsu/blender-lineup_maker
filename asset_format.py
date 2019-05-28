@@ -154,7 +154,7 @@ class BpyAsset(object):
 		pass
 		
 
-	def feed_material(self, material, texture_set):
+	def feed_material(self, material, texture_set=None):
 		M.create_bsdf_material(self.context, material, texture_set)
 
 	def create_exposure_node(world):

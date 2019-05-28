@@ -53,6 +53,27 @@ class LM_PT_main(bpy.types.Panel):
             
             layout.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets')
 
+
+class LM_PT_CompositLayout(bpy.types.Panel):          
+    bl_label = "Composite Layout"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = 'Lineup Maker'
+    bl_options = {"DEFAULT_CLOSED"}
+
+    
+    def draw(self, context):
+        scn = context.scene
+        asset_path = bpy.path.abspath(scn.lm_asset_path)
+        render_path = bpy.path.abspath(scn.lm_render_path)
+        layout = self.layout
+
+        col = layout.column(align=True)
+
+        col.prop(scn, 'lm_background_color', text='Backgroud Color')
+        col.prop(scn, 'lm_font_color', text='Font Color')
+
+
 class LM_PT_NamingConvention(bpy.types.Panel):
     bl_label = "Naming Convention"
     bl_space_type = "VIEW_3D"
@@ -169,7 +190,6 @@ class LM_PT_NamingConvention(bpy.types.Panel):
 
         c.separator()
         
-
 class LM_PT_TextureSetSettings(bpy.types.Panel):
     bl_label = "TextureSet Settings"
     bl_space_type = "VIEW_3D"

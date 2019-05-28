@@ -43,6 +43,7 @@ classes = (
     LM_OP_CompositeRenders,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,
+    LM_PT_CompositLayout,
     LM_PT_main,
     LM_Material_List,
     LM_Mesh_List,
@@ -222,9 +223,10 @@ def register():
     bpy.types.Scene.lm_render_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_asset_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_force_render = bpy.props.BoolProperty(name='Force Rendering of all assets')
-    bpy.types.Scene.lm_default_material_color = bpy.props.IntVectorProperty(name='Default Material Color', subtype='COLOR', default=(0.5,0.5,0.5))
-    bpy.types.Scene.lm_default_material_roughness = bpy.props.FloatProperty(name='Default Material Roughness', default=0.6)
-    bpy.types.Scene.lm_background_color = bpy.props.IntVectorProperty(name='background Color', subtype='COLOR', default=(0.5,0.5,0.5))
+    bpy.types.Scene.lm_default_material_color = bpy.props.FloatVectorProperty(name='Default Material Color', subtype='COLOR', default=(0.5,0.5,0.5), min=0, max=1)
+    bpy.types.Scene.lm_default_material_roughness = bpy.props.FloatProperty(name='Default Material Roughness', default=0.6, min=0, max=1)
+    bpy.types.Scene.lm_background_color = bpy.props.FloatVectorProperty(name='Background Color', subtype='COLOR', default=(0.05,0.05,0.05), min=0, max=1)
+    bpy.types.Scene.lm_font_color = bpy.props.FloatVectorProperty(name='Font Color', subtype='COLOR', default=(0.85,0.85,0.85), min=0, max=1)
     bpy.types.Scene.lm_asset_naming_convention = bpy.props.StringProperty(
                                     name="Asset Naming Convetion",
                                     subtype='NONE',
@@ -306,6 +308,7 @@ def unregister():
     del bpy.types.Scene.lm_optionnal_mesh_keyword
     del bpy.types.Scene.lm_optionnal_texture_keyword
     del bpy.types.Scene.lm_keyword_name
+    del bpy.types.Scene.lm_font_color
     del bpy.types.Scene.lm_background_color
     del bpy.types.Scene.lm_default_material_roughness
     del bpy.types.Scene.lm_default_material_color
