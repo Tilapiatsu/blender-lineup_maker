@@ -88,9 +88,12 @@ class BpyAsset(object):
 			# register the mesh in scene variable
 			if update or self.asset_name in self.param['lm_asset_list']:
 				curr_asset = self.param['lm_asset_list'][self.asset_name]
+				curr_asset.collection = curr_asset_collection
+				print(curr_asset)
 			else:
 				curr_asset = self.param['lm_asset_list'].add()
 				curr_asset.name = self.asset_name
+				curr_asset.collection = curr_asset_collection
 			
 			curr_asset.import_date = path.getmtime(f)
 
@@ -132,7 +135,7 @@ class BpyAsset(object):
 		if need_update or not created:
 			print('Lineup Maker : Updating asset "{}" : {}'.format(self.asset_name, time.ctime(curr_asset.import_date)))
 
-			self.remove_objects()
+			self.remove_asset()
 			# self.context.scene.update()
 			self.import_mesh(update=True)
 			# Dirty fix to avoid bad mesh naming when updating asset
@@ -427,6 +430,14 @@ class BpyAsset(object):
 					return True
 		else:
 			return False
+
+	def remove_asset(self):
+		if self.asset_name in bpy.data.collections:
+			bpy.data.collections.remove(bpy.data.collections[self.asset_name])
+			H.set_active_collection(self.context, V.LM_ASSET_COLLECTION)
+		# if self.asset_name in self.param['lm_asset_list']:
+		# 	print(dir(self.param['lm_asset_list'][self.asset_name]))
+		# 	self.param['lm_asset_list'].remove(self.param['lm_asset_list'].index(self.asset_name))
 
 	# Properties
 	@property

@@ -27,6 +27,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     material_list = bpy.props.CollectionProperty(type=LM_Material_List)
     texture_list = bpy.props.CollectionProperty(type=LM_Texture_List)
     view_layer = bpy.props.StringProperty(name="View Layer")
+    collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     need_render = bpy.props.BoolProperty()
     rendered = bpy.props.BoolProperty()
     render_path = bpy.props.StringProperty()

@@ -15,19 +15,28 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		folder_src = bpy.path.abspath(context.scene.lm_asset_path)
 
 		H.set_active_collection(context, V.LM_MASTER_COLLECTION)
-		asset_collection, _ = H.create_asset_collection(context, V.LM_ASSET_COLLECTION)
+		if context.scene.lm_asset_collection is None:
+			asset_collection, _ = H.create_asset_collection(context, V.LM_ASSET_COLLECTION)
+		else:
+			asset_collection = context.scene.lm_asset_collection
 		H.set_active_collection(context, asset_collection.name)
 		
 		object_list = asset_collection.objects
 
 		# Store the Global View_Layer
-		context.scene.lm_initial_view_layer = context.window.view_layer.name
+		if context.scene.lm_initial_view_layer  == '':
+			context.scene.lm_initial_view_layer = context.window.view_layer.name
+		else:
+			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
+
 		context.scene.view_layers[context.scene.lm_initial_view_layer].use = False
 
 		asset_view_layers = {}
 		if path.isdir(folder_src):
 			subfolders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f))]
+			
 			for subfolder in subfolders:
+				bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 				mesh_files = [path.join(subfolder, f) for f in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys()]
 				json_files = [path.join(subfolder, f) for f in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, f)) and path.splitext(f)[1].lower() == '.json']
 				texture_files = {}
@@ -35,6 +44,10 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 				for m in mesh_names:
 					try:
 						texture_files[m] = [path.join(subfolder, m, t) for t in os.listdir(path.join(subfolder, m)) if path.isfile(os.path.join(subfolder, m, t)) and path.splitext(t)[1].lower() in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
+						for mesh, textures in texture_files.items():
+							print('Lineup Maker : {} texture files found for mesh {}'.format(len(textures), mesh))
+							for t in textures:
+								print('Lineup Maker : 		{} '.format(t))
 					except FileNotFoundError as e:
 						texture_files[m] = []
 						print('Lineup Maker : folder dosn\'t exist in "{}"'.format(subfolder))
@@ -78,6 +91,8 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 				if name not in context.scene.view_layers:
 					bpy.ops.scene.view_layer_add()
 					context.window.view_layer.name = name
+				else:
+					context.window.view_layer = context.scene.view_layers[name]
 
 				for n, _ in asset_view_layers.items():
 					if name != n and name != context.scene.lm_render_collection.name:
@@ -122,9 +137,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	def post(self, dummy):
 		if self.remaining_frames <= 1:
 			asset = self.need_render_asset[0]
-
-			self.composite_node = self.build_composite_nodegraph(self.context, self.asset_number, asset)
-
 			asset.need_render = False
 			asset.rendered = True
 		else:
@@ -137,7 +149,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		bpy.app.handlers.render_pre.append(self.pre)
 		bpy.app.handlers.render_post.append(self.post)
 		bpy.app.handlers.render_cancel.append(self.cancelled)
-		self._timer = bpy.context.window_manager.event_timer_add(0.5, window=bpy.context.window)
+		self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
 
 	def unregister_render_handler(self):
 		bpy.app.handlers.render_pre.remove(self.pre)
@@ -187,6 +199,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.remaining_frames = self.frame_range
 		
 		self.clear_composite_tree(context)
+		self.context = context
 
 		self.register_render_handler()
 
@@ -215,6 +228,10 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 				self.rendered_assets = []
 				return {"FINISHED"} 
+
+			elif self.rendering  and self.composite_node is None and self.need_render_asset[0].need_render is False and self.need_render_asset[0].rendered is True:
+				asset = self.need_render_asset[0]
+				self.composite_node = self.build_composite_nodegraph(context, self.asset_number, asset)
 
 			elif self.rendering and self.remaining_assets and self.composite_node is not None:
 				self.unregister_render_handler()
@@ -266,7 +283,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		bpy.context.scene.render.filepath = render_filename + self.shots[0] + '_'
 		self.output_node.mute = True
 
-		self.context = context
+		# self.context = context
 
 		bpy.ops.render.render("INVOKE_DEFAULT", animation=True, write_still=False, layer=asset.view_layer)
 
@@ -375,7 +392,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		out.location = (location[0] + incr, location[1])
 		out.file_slots[0].path = asset.name + '_composite_'
 		out.base_path = path.abspath(path.join(asset.render_path, os.pardir))
-		# out.mute = True
 
 		if mix:
 			tree.links.new(mix.outputs[0], out.inputs[0])
