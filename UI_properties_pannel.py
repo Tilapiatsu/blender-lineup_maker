@@ -241,3 +241,6 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         c.operator("scene.lm_rename_texture_channel", text="", icon='OUTLINER_DATA_FONT')
 
         col.prop(scn, 'lm_texture_channel_name')
+
+        col.prop(scn, 'lm_default_material_color')
+        col.prop(scn, 'lm_default_material_roughness')
