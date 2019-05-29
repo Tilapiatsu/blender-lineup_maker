@@ -32,6 +32,20 @@ LM_NAMING_CONVENTION_KEYWORDS.update(LM_NAMING_CONVENTION_KEYWORDS_TEXTURE)
 LM_NAMING_CONVENTION_KEYWORDS.update({'assetname':[]})
 
 
+LM_OUTPUT_EXTENSION = {'BMP':'.bmp',
+						'IRIS':'.iris',
+						'PNG':'.png',
+						'JPEG':'.jpg',
+						'JPEG2000':'.jpg',
+						'TARGA':'.tga',
+						'TARGA_RAW':'.tga',
+						'CINEON':'.cin',
+						'DPX':'.dpx',
+						'OPEN_EXR_MULTILAYER':'.exr',
+						'OPEN_EXR':'.exr',
+						'HDR':'.exr',
+						'TIFF':'.tif'}
+
 class GetParam(object):
 	def  __init__(self, scn):
 		param = {}

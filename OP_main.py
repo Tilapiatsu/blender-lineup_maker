@@ -132,6 +132,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	initial_view_layer = None
 	rendered_assets = []
 	render_filename = ''
+	render_path = ''
+
+	composite_filepath = ''
 
 	def pre(self, dummy):
 		self.rendering = True
@@ -142,9 +145,13 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			asset = self.need_render_asset[0]
 			asset.need_render = False
 			asset.rendered = True
+			
+			asset.render_list.clear()
+			for file in os.listdir(self.render_path):
+				render = asset.render_list.add()
+				render.render_filepath = os.path.join(self.render_path, file)
+
 		else:
-			render = asset.render_list.add()
-			render.render_filepath = self.render_filename
 			self.remaining_frames -= 1
 
 	def cancelled(self, dummy):
@@ -261,7 +268,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				
 				self.register_render_handler()
 
-			elif self.rendering is False: 
+			elif self.rendering is False and self.composite_node is None: 
 				self.render(context)
 
 		return {"PASS_THROUGH"}
@@ -276,16 +283,16 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		# self.remaining_assets = len(self.need_render_asset)
 		asset = self.need_render_asset[0]
 
-		render_path, self.render_filename = self.get_render_path(context, asset.name)
+		self.render_path, self.render_filename = self.get_render_path(context, asset.name)
 
 		asset.need_render = True
-		asset.render_path = render_path
+		asset.render_path = self.render_path
 
 		# switch to the proper view_layer
 		context.window.view_layer = scn.view_layers[asset.name]
 
 		self.output_node = self.build_output_nodegraph(context, self.asset_number, asset)
-		bpy.context.scene.render.filepath = render_filename + self.shots[0] + '_'
+		bpy.context.scene.render.filepath = self.render_filename + self.shots[0] + '_'
 		self.output_node.mute = True
 
 		# self.context = context
@@ -395,8 +402,14 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		
 		out = nodes.new('CompositorNodeOutputFile')
 		out.location = (location[0] + incr, location[1])
-		out.file_slots[0].path = asset.name + '_composite_'
-		out.base_path = path.abspath(path.join(asset.render_path, os.pardir))
+
+		composite_name = asset.name + '_composite_'
+		composite_path = path.abspath(path.join(asset.render_path, os.pardir))
+
+		out.file_slots[0].path = composite_name
+		out.base_path = composite_path
+
+		asset.composite_filepath = os.path.join(composite_path, composite_name + str(context.scene.frame_current).zfill(4) + self.get_output_node_extention(context, out))
 
 		if mix:
 			tree.links.new(mix.outputs[0], out.inputs[0])
@@ -426,6 +439,12 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		
 		return render_path, render_filename
 	
+	def get_output_node_extention(self, context, output_node):
+		return V.LM_OUTPUT_EXTENSION[output_node.format.file_format]
+
+	def get_curr_render_extension(self, context):
+		return V.LM_OUTPUT_EXTENSION[bpy.context.scene.render.image_settings.file_format]
+
 	def revert_need_render(self, context):
 		need_render_asset = [a for a in context.scene.lm_asset_list if a.need_render]
 

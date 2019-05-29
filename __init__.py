@@ -49,6 +49,7 @@ classes = (
     LM_PT_TextureSetSettings,
     LM_PT_CompositLayout,
     LM_PT_main,
+    LM_Render_List,
     LM_Material_List,
     LM_Mesh_List,
     LM_Texture_List,
