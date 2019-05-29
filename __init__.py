@@ -11,10 +11,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+# TODO: 
+#   - Check that the need_render is setup correctly to avoid unecessary rerendering 
+#   - Separate render and composite operator
+#   - Create PDF at the end of the compositing process
+#   - composite text on top of the image at the end of compositing process
+#   - Create an operator to update/import render and compoosite in a row
+#   - Create a render selected asset operator
 
 #  DEPENDENCIES :
 #      PyPDF: pip install PyPDF2
 #      https://github.com/mstamy2/PyPDF2
+
+
 import bpy
 from .OP_main import *
 from .OP_files import *
