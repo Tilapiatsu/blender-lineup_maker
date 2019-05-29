@@ -223,10 +223,6 @@ def register():
     bpy.types.Scene.lm_render_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_asset_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_force_render = bpy.props.BoolProperty(name='Force Rendering of all assets')
-    bpy.types.Scene.lm_default_material_color = bpy.props.FloatVectorProperty(name='Default Material Color', subtype='COLOR', default=(0.5,0.5,0.5), min=0, max=1)
-    bpy.types.Scene.lm_default_material_roughness = bpy.props.FloatProperty(name='Default Material Roughness', default=0.6, min=0, max=1)
-    bpy.types.Scene.lm_background_color = bpy.props.FloatVectorProperty(name='Background Color', subtype='COLOR', default=(0.05,0.05,0.05), min=0, max=1)
-    bpy.types.Scene.lm_font_color = bpy.props.FloatVectorProperty(name='Font Color', subtype='COLOR', default=(0.85,0.85,0.85), min=0, max=1)
     bpy.types.Scene.lm_asset_naming_convention = bpy.props.StringProperty(
                                     name="Asset Naming Convetion",
                                     subtype='NONE',
@@ -272,6 +268,14 @@ def register():
     bpy.types.Scene.lm_normalMap_channel = bpy.props.BoolProperty(name="NormalMap Channel")
     bpy.types.Scene.lm_inverted_channel = bpy.props.BoolProperty(name="Inverted Channel")
 
+    bpy.types.Scene.lm_override_material_color = bpy.props.BoolProperty(name="Override Material Color", default=True)
+    bpy.types.Scene.lm_default_material_color = bpy.props.FloatVectorProperty(name='Default Material Color', subtype='COLOR', default=(0.5,0.5,0.5), min=0, max=1)
+    bpy.types.Scene.lm_override_material_roughness = bpy.props.BoolProperty(name="Override Material Roughness", default=True)
+    bpy.types.Scene.lm_default_material_roughness = bpy.props.FloatProperty(name='Default Material Roughness', default=0.6, min=0, max=1)
+
+    bpy.types.Scene.lm_background_color = bpy.props.FloatVectorProperty(name='Background Color', subtype='COLOR', default=(0.05,0.05,0.05), min=0, max=1)
+    bpy.types.Scene.lm_font_color = bpy.props.FloatVectorProperty(name='Font Color', subtype='COLOR', default=(0.85,0.85,0.85), min=0, max=1)
+
     for cls in classes:
         bpy.utils.register_class(cls)
     
@@ -301,7 +305,9 @@ def unregister():
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-    
+
+    del bpy.types.Scene.lm_override_material_roughness
+    del bpy.types.Scene.lm_override_material_color
     del bpy.types.Scene.lm_avoid_update
     del bpy.types.Scene.lm_separator
     del bpy.types.Scene.lm_optionnal_asset_keyword

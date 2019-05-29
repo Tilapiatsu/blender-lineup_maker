@@ -219,9 +219,9 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
 
         col.prop(scn, 'lm_shader_name')
 
-        c.separator()
-
         col = layout.column(align=True)
+        col.separator()
+        col.separator()
         col.label(text='Channel Name')
         row = col.row()
         
@@ -244,7 +244,8 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         row.prop(scn, 'lm_normalMap_channel')
         row.prop(scn, 'lm_inverted_channel')
 
-        c.separator()
+        col.separator()
+        col.separator()
         col.label(text='Texture Name')
         row = col.row()
         
@@ -262,5 +263,17 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
 
         col.prop(scn, 'lm_texture_channel_name')
 
-        col.prop(scn, 'lm_default_material_color')
-        col.prop(scn, 'lm_default_material_roughness')
+        col.separator()
+        col.separator()
+        b = col.box()
+        b.label(text='Material Override')
+
+        r = b.row(align=True)
+        r.prop(scn, 'lm_override_material_color', text='Override Material Color')
+        r.scale_x = 3
+        r.prop(scn, 'lm_default_material_color', text='')
+
+        r = b.row(align=True)
+        r.prop(scn, 'lm_override_material_roughness', text='Override Material Roughness')
+        r.scale_x = 3
+        r.prop(scn, 'lm_default_material_roughness',text='')
