@@ -131,6 +131,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	context = None
 	initial_view_layer = None
 	rendered_assets = []
+	render_filename = ''
 
 	def pre(self, dummy):
 		self.rendering = True
@@ -142,6 +143,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			asset.need_render = False
 			asset.rendered = True
 		else:
+			render = asset.render_list.add()
+			render.render_filepath = self.render_filename
 			self.remaining_frames -= 1
 
 	def cancelled(self, dummy):
@@ -273,7 +276,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		# self.remaining_assets = len(self.need_render_asset)
 		asset = self.need_render_asset[0]
 
-		render_path, render_filename = self.get_render_path(context, asset.name)
+		render_path, self.render_filename = self.get_render_path(context, asset.name)
 
 		asset.need_render = True
 		asset.render_path = render_path

@@ -1,6 +1,7 @@
 import bpy
 
-
+class LM_Render_List(bpy.types.PropertyGroup):
+    render_filepath = bpy.props.StringProperty(name="Render path", subtype='FILE_PATH')
 
 class LM_Material_List(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(name="Material Name")
@@ -30,7 +31,10 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     need_render = bpy.props.BoolProperty()
     rendered = bpy.props.BoolProperty()
-    render_path = bpy.props.StringProperty()
+    render_path = bpy.props.StringProperty(subtype='DIR_PATH')
+    
+    composited_filepath = bpy.props.StringProperty(subtype='FILE_PATH')
+    render_list = bpy.props.CollectionProperty(type=LM_Render_List)
 
 class LM_Shaders(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()

@@ -11,6 +11,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+
+#  DEPENDENCIES :
+#      PyPDF: pip install PyPDF2
+#      https://github.com/mstamy2/PyPDF2
 import bpy
 from .OP_main import *
 from .OP_files import *
