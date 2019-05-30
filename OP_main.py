@@ -214,7 +214,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.context = context
 
 		self.register_render_handler()
-
 		
 		bpy.context.window_manager.modal_handler_add(self)
 
@@ -461,7 +460,186 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 	bl_label = "Lineup Maker: composite all rendered assets"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	_timer = None
+	stop = None
+	rendering = None
+	context = None
+	composite_node = None
+	need_compositing_asset = []
+	composited_asset = []
+	asset_number = 0
+
+	def pre(self, dummy):
+		self.rendering = True
+		self.report({'INFO'}, "Lineup Maker : Rendering '{}'".format(os.path.join(self.need_render_asset[0].render_path, self.need_render_asset[0].name)))
+		
+	def post(self, dummy):
+		if len(self.need_compositing_asset) > 0:
+			self.need_compositing_asset.pop(0)
+		
+		self.composite_node = None
+		self.rendering = False
+		self.asset_number += 1
+
+	def cancelled(self, dummy):
+		self.stop = True
+
 	def execute(self, context):
+		self.stop = False
+		self.rendering = False
+		self.clear_composite_tree(context)
+		self.context = context
+		self.composited_asset = []
+		self.need_compositing_asset = []
+
+		for asset in context.scene.lm_asset_list:
+			render_exist = True
+			for render in asset.render_list:
+				if not os.path.exists(render.render_filepath):
+					render_exist = False
+					break
+
+			if render_exist:
+				self.need_compositing_asset.append(asset)
+
+		self.register_render_handler()
 		
+		bpy.context.window_manager.modal_handler_add(self)
+
+		return {"RUNNING_MODAL"}
+		for asset in context.scene.lm_asset_list:
+			self.build_composite_nodegraph()
+
+	def register_render_handler(self):
+		bpy.app.handlers.render_pre.append(self.pre)
+		bpy.app.handlers.render_post.append(self.post)
+		bpy.app.handlers.render_cancel.append(self.cancelled)
+		self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
+
+	def unregister_render_handler(self):
+		bpy.app.handlers.render_pre.remove(self.pre)
+		bpy.app.handlers.render_post.remove(self.post)
+		bpy.app.handlers.render_cancel.remove(self.cancelled)
+		bpy.context.window_manager.event_timer_remove(self._timer)
+
+	def modal(self, context, event):
+		if event.type == 'TIMER':
+
+			if True in (not self.need_compositing_asset, self.stop is True): 
+				self.unregister_render_handler()
+				bpy.context.window_manager.event_timer_remove(self._timer)
+
+				if self.stop:
+					self.report({'WARNING'}, "Lineup Maker : Compositing cancelled by user")
+					self.print_render_log()
+					
+				else:
+					self.report({'INFO'}, "Lineup Maker : Compositing completed")
+					self.print_render_log()
+
+				return {"FINISHED"} 
+
+			elif self.rendering and self.composite_node is None:
+				asset = self.need_compositing_asset[0]
+				self.composite_node = self.build_composite_nodegraph(context, self.asset_number, asset)
+
+				bpy.ops.render.render(write_still=False)
+
+		return {"PASS_THROUGH"}
+
+	def print_render_log(self):
+		self.report({'INFO'}, "Lineup Maker : {} assets rendered".format(len(self.composited_asset)))
+		for a in self.composited_asset:
+			self.report({'INFO'}, "Lineup Maker : {} rendered".format(a.name))
+
+	def build_composite_nodegraph(self, context, index, asset):
+		print('Lineup Maker : Generating composite nodegraph')
+		tree = context.scene.node_tree
+		nodes = tree.nodes
+
+		location = (600, - 1000 * index)
+		incr = 300
+
+		composite_res = self.get_composite_resolution(context)
+		render_res = (bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y)
+		framecount = self.get_current_frame_range(context)
+
+		composite_image = bpy.data.images.new(name='{}_composite'.format(asset.name), width=composite_res[0], height=composite_res[1])
+		composite_image.generated_color = (0.1, 0.1, 0.1, 1)
 		
-		return {'FINISHED'}
+		composite = nodes.new('CompositorNodeImage')
+		composite.location = (location[0], location[1])
+		composite.image = composite_image
+		location = (location[0], location[1] - incr)
+
+		mix = None
+
+		files = os.listdir(asset.render_path)
+
+		for i,f in enumerate(files):
+			image = nodes.new('CompositorNodeImage')
+			bpy.ops.image.open(filepath=os.path.join(asset.render_path, f), directory=asset.render_path, show_multiview=False)
+			image.image = bpy.data.images[f]
+			image.location = location
+
+			location = (location[0] + incr/2, location[1])
+			translate = nodes.new('CompositorNodeTranslate')
+			translate.location = location
+			translate.inputs[1].default_value = -composite_res[0]/2 + render_res[0] / 2 + ((i%(framecount/2)) * render_res[0])
+			translate.inputs[2].default_value = composite_res[1]/2 - render_res[1] / 2 - composite_res[2] - (math.floor(i/framecount*2) * render_res[1])
+
+			tree.links.new(image.outputs[0], translate.inputs[0])
+
+			new_mix = nodes.new('CompositorNodeAlphaOver')
+			new_mix.location = (location[0] + incr/2, location[1])
+			new_mix.use_premultiply = True
+
+			if mix is not None:
+				tree.links.new(mix.outputs[0], new_mix.inputs[1])
+				tree.links.new(translate.outputs[0], new_mix.inputs[2])
+			else:
+				tree.links.new(translate.outputs[0], new_mix.inputs[2])
+				tree.links.new(composite.outputs[0], new_mix.inputs[1])
+
+			location = (location[0] + incr, location[1] - incr)
+
+			mix = new_mix
+		
+		out = nodes.new('CompositorNodeOutputFile')
+		out.location = (location[0] + incr, location[1])
+
+		composite_name = asset.name + '_composite_'
+		composite_path = path.abspath(path.join(asset.render_path, os.pardir))
+
+		out.file_slots[0].path = composite_name
+		out.base_path = composite_path
+
+		asset.composite_filepath = os.path.join(composite_path, composite_name + str(context.scene.frame_current).zfill(4) + self.get_output_node_extention(context, out))
+
+		if mix:
+			tree.links.new(mix.outputs[0], out.inputs[0])
+
+		location = (location[0], location[1] - 100)
+		
+		asset.rendered = False
+		
+		return out
+
+	def get_composite_resolution(self, context):
+		fc = context.scene.frame_end-context.scene.frame_start
+		res_x = bpy.context.scene.render.resolution_x
+		res_y = bpy.context.scene.render.resolution_y
+		margin = math.ceil(res_y/3)
+
+		x = math.ceil(fc/2) * res_x
+		y = math.floor(fc/2) * res_y + margin
+
+		return (x, y, margin)
+
+	def get_current_frame_range(self, context):
+		return context.scene.frame_end + 1 - context.scene.frame_start
+
+	def clear_composite_tree(self, context):
+		tree = context.scene.node_tree
+		nodes = tree.nodes
+		nodes.clear()

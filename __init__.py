@@ -14,7 +14,7 @@
 # TODO: 
 #   - Separate render and composite operator
 #   - Create PDF at the end of the compositing process
-#   - composite text on top of the image at the end of compositing process
+#   - Composite text on top of the image at the end of compositing process
 #   - Create UI to Assign a camera by Category
 #   - Create an operator to update/import render and compoosite in a row
 #   - Create a render selected asset operator
