@@ -36,6 +36,9 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     composite_filepath = bpy.props.StringProperty(subtype='FILE_PATH')
     render_list = bpy.props.CollectionProperty(type=LM_Render_List)
 
+    need_write_info = bpy.props.BoolProperty(default=False)
+    info_written = bpy.props.BoolProperty(default=False)
+
 class LM_Shaders(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
 
