@@ -38,6 +38,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
 
     need_write_info = bpy.props.BoolProperty(default=False)
     info_written = bpy.props.BoolProperty(default=False)
+    wip = bpy.props.BoolProperty(default=False)
 
 class LM_Shaders(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()

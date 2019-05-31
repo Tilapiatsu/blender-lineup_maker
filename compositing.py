@@ -98,12 +98,13 @@ class LM_Composite_Image(object):
 			text_color = self.context.scene.lm_font_color
 			image = Image.open(self.asset.composite_filepath)
 			font_size = int(math.floor(res[0]*50/res[1]))
+			character_size = (math.ceil(font_size/2), font_size)
 			font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Fonts')
-			font_file = os.path.join(font_path, 'ArchivoBlack-Regular.ttf')
-			font_title = ImageFont.truetype(font_file, size = font_size)
+			font_file = os.path.join(font_path, 'UbuntuMono-Bold.ttf')
+			font_title = ImageFont.truetype(font_file, size=font_size)
 
 			draw = ImageDraw.Draw(image)
-			position = (int(math.ceil(res[0]/3)), int(math.ceil(res[2]/2 - font_size/2)))
+			position = (int(math.ceil(res[0]/2)) - character_size[0] * math.ceil(len(self.asset.name)/2), int(math.ceil(res[2]/3 - character_size[1]/2)))
 			draw.text(xy=position, text=self.asset.name, fill=(int(text_color[0] * 255), int(text_color[1] * 255), int(text_color[2] * 255)), font=font_title, align='center')
 
 			image.save(self.asset.composite_filepath, "PNG")
