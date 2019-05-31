@@ -13,7 +13,6 @@
 
 # TODO: 
 #   - Create PDF at the end of the compositing process
-#   - Composite text on top of the image at the end of compositing process
 #   - Create UI to Assign a camera by Category
 #   - Create an operator to update/import render and compoosite in a row
 #   - Create a render selected asset operator
@@ -21,15 +20,6 @@
 #  DEPENDENCIES :
 #      PyPDF: pip install PyPDF2
 #      https://github.com/mstamy2/PyPDF2
-# 
-#   PIL Installation :
-#   1. remove the modules/PIL folder, you don’t need it anymore
-#   2. open ‘cmd’ as an admin and navigate to the blender installation folder (c:\program files\Blender Foundation…)
-#   3. find the 2.78\python\bin folder, you are looking for a file called ‘python.exe’
-#   4. download https://bootstrap.pypa.io/get-pip.py 13 and put it into the bin folder
-#   5. in cmd, from the bin folder, type ‘python.exe get-pip.py’
-#   6. when done, go one folder up(from bin) and go into the (new) Scripts folder. You are looking for a file called ‘pip.exe’
-#   7. when you’ve found it, run ‘pip.exe install pillow’
 
 import bpy
 

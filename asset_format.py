@@ -26,8 +26,10 @@ class BpyAsset(object):
 		self._asset_naming_convention = None
 		self._mesh_naming_convention = None
 		self._texture_naming_convention = None
+		self._json_data = None
 
 		self.asset = None
+		self.scn_asset = None
 		
 	# Decorators
 	def check_asset_exist(func):
@@ -47,6 +49,7 @@ class BpyAsset(object):
 			else:
 				return func(self, *args, **kwargs)
 		return func_wrapper
+
 	# Methods
 	def import_asset(self):
 		self.import_mesh()
@@ -87,19 +90,29 @@ class BpyAsset(object):
 			
 			# register the mesh in scene variable
 			if update or self.asset_name in self.param['lm_asset_list']:
-				curr_asset = self.param['lm_asset_list'][self.asset_name]
-				curr_asset.collection = curr_asset_collection
-				print(curr_asset)
+				self.scn_asset = self.param['lm_asset_list'][self.asset_name]
+				self.scn_asset.collection = curr_asset_collection
 			else:
-				curr_asset = self.param['lm_asset_list'].add()
-				curr_asset.name = self.asset_name
-				curr_asset.collection = curr_asset_collection
+				self.scn_asset = self.param['lm_asset_list'].add()
+				self.scn_asset.name = self.asset_name
+				self.scn_asset.collection = curr_asset_collection
 			
-			curr_asset.import_date = path.getmtime(f)
+			self.scn_asset.import_date = path.getmtime(f)
 
-			curr_mesh_list = curr_asset.mesh_list.add()
+			if name in self.json_data.keys():
+				if 'isWip' in self.json_data[name].keys():
+					self.scn_asset.wip = self.json_data[name]['isWip']
+				if 'triangles' in self.json_data[name].keys():
+					self.scn_asset.triangles = self.json_data[name]['triangles']
+				if 'vertices' in self.json_data[name].keys():
+					self.scn_asset.vertices = self.json_data[name]['vertices']
+				if 'hasUV2' in self.json_data[name].keys():
+					self.scn_asset.has_uv2 = self.json_data[name]['hasUV2']
+
+			curr_mesh_list = self.scn_asset.mesh_list.add()
 			curr_mesh_list.file_path = f
 			curr_mesh_list.name = name
+
 			
 			# Updating Materials
 			for o in curr_asset_collection.objects:
@@ -107,8 +120,8 @@ class BpyAsset(object):
 				curr_mesh_list.mesh = o
 
 				for m in o.material_slots:
-					if m.name not in curr_asset.material_list:
-						material_list = curr_asset.material_list.add()
+					if m.name not in self.scn_asset.material_list:
+						material_list = self.scn_asset.material_list.add()
 						material_list.name = m.material.name.lower()
 						material_list.material = m.material
 
@@ -117,6 +130,7 @@ class BpyAsset(object):
 					curr_mesh_material_list.material = m.material
 			
 		self.asset = self.get_asset()
+		# self.param['lm_asset_list'][self.asset_name] = self.scn_asset
 	
 	@check_length
 	def update_mesh(self):
@@ -290,6 +304,11 @@ class BpyAsset(object):
 
 					chan = {'name':t, 'file':self.textures[mesh_name][i]}
 
+					# Feed scn_asset
+					texture = self.scn_asset.texture_list.add()
+					texture.channel = channel
+					texture.file_path = t
+
 					if 'channels' in texture_naming_convention[basename].keys():
 						if len(texture_naming_convention[basename]['channels'].keys()):
 							texture_naming_convention[basename]['channels'][channel] = chan
@@ -301,8 +320,7 @@ class BpyAsset(object):
 					t = t.replace(channel, '')
 					
 			else:
-				json_data = self.get_json_data()
-
+				json_data = self.json_data
 				json = json_data[mesh_name]
 
 				for mat in json['materials']:
@@ -318,7 +336,11 @@ class BpyAsset(object):
 						except KeyError as k:
 							print('The channel name doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(texture_name))
 							continue
-						
+						# Feed scn_asset
+						scn_texture = self.scn_asset.texture_list.add()
+						scn_texture.channel = channel
+						scn_texture.file_path = texture['file']
+
 						if material_name not in texture_naming_convention.keys():
 							texture_naming_convention[material_name] = t_naming_convention.naming_convention
 
@@ -478,6 +500,13 @@ class BpyAsset(object):
 			self._texture_naming_convention = self.get_texture_naming_convention()
 		
 		return self._texture_naming_convention
+
+	@property
+	def json_data(self):
+		if self._json_data is None:
+			self._json_data = self.get_json_data()
+		
+		return self._json_data
 
 	def get_asset(self):
 		if len(self.asset_naming_convention) and len(self.mesh_naming_convention):

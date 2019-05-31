@@ -1,5 +1,5 @@
 import bpy
-import os, math
+import os, math, time
 from os import path
 from . import variables as V
 from PIL import Image, ImageDraw, ImageFont
@@ -10,6 +10,20 @@ class LM_Composite_Image(object):
 		self.asset = asset
 		self.index = index
 		self._output = None
+
+		self.res = self.get_composite_resolution()
+
+		self.text_color = (int(self.context.scene.lm_font_color[0] * 255), int(self.context.scene.lm_font_color[1] * 255), int(self.context.scene.lm_font_color[2] * 255))
+
+		self.font_size_title = int(math.floor(self.res[0]*50/self.res[1]))
+		self.character_size_title = (math.ceil(self.font_size_title/2), self.font_size_title)
+		self.font_size_chapter = int(math.floor(self.res[0]*25/self.res[1]))
+		self.character_size_chapter = (math.ceil(self.font_size_chapter/2), self.font_size_chapter)
+
+		self.font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Fonts')
+		self.font_file = os.path.join(self.font_path, 'UbuntuMono-Bold.ttf')
+		self.font_title = ImageFont.truetype(self.font_file, size=self.font_size_title)
+		self.font_chapter = ImageFont.truetype(self.font_file, size=self.font_size_chapter)
 
 	@property
 	def output(self):
@@ -26,11 +40,10 @@ class LM_Composite_Image(object):
 		location = (600, - 1000 * self.index)
 		incr = 300
 
-		composite_res = self.get_composite_resolution()
 		render_res = (bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y)
 		framecount = self.get_current_frame_range()
 
-		composite_image = bpy.data.images.new(name='{}_composite'.format(self.asset.name), width=composite_res[0], height=composite_res[1])
+		composite_image = bpy.data.images.new(name='{}_composite'.format(self.asset.name), width=self.res[0], height=self.res[1])
 		composite_image.generated_color = (0.1, 0.1, 0.1, 1)
 		
 		composite = nodes.new('CompositorNodeImage')
@@ -51,8 +64,8 @@ class LM_Composite_Image(object):
 			location = (location[0] + incr/2, location[1])
 			translate = nodes.new('CompositorNodeTranslate')
 			translate.location = location
-			translate.inputs[1].default_value = -composite_res[0]/2 + render_res[0] / 2 + ((i%(framecount/2)) * render_res[0])
-			translate.inputs[2].default_value = composite_res[1]/2 - render_res[1] / 2 - composite_res[2] - (math.floor(i/framecount*2) * render_res[1])
+			translate.inputs[1].default_value = -self.res[0]/2 + render_res[0] / 2 + ((i%(framecount/2)) * render_res[0])
+			translate.inputs[2].default_value = self.res[1]/2 - render_res[1] / 2 - self.res[2] + self.character_size_chapter[1] - (math.floor(i/framecount*2) * render_res[1])
 
 			tree.links.new(image.outputs[0], translate.inputs[0])
 
@@ -94,18 +107,60 @@ class LM_Composite_Image(object):
 	def composite_asset_info(self):
 		if self.asset.composite_filepath != '':
 			print('Lineup Maker : Compositing asset info for "{}"'.format(self.asset.name))
-			res = self.get_composite_resolution()
-			text_color = self.context.scene.lm_font_color
 			image = Image.open(self.asset.composite_filepath)
-			font_size = int(math.floor(res[0]*50/res[1]))
-			character_size = (math.ceil(font_size/2), font_size)
-			font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Fonts')
-			font_file = os.path.join(font_path, 'UbuntuMono-Bold.ttf')
-			font_title = ImageFont.truetype(font_file, size=font_size)
 
 			draw = ImageDraw.Draw(image)
-			position = (int(math.ceil(res[0]/2)) - character_size[0] * math.ceil(len(self.asset.name)/2), int(math.ceil(res[2]/3 - character_size[1]/2)))
-			draw.text(xy=position, text=self.asset.name, fill=(int(text_color[0] * 255), int(text_color[1] * 255), int(text_color[2] * 255)), font=font_title, align='center')
+			draw.rectangle(xy=[0, 0, self.res[0], self.res[2] - self.character_size_chapter[1]], fill='black')
+
+			draw.rectangle(xy=[0, self.res[1], self.res[0], self.res[1] - self.character_size_chapter[1]], fill='black')
+
+			# Asset Name
+			text = self.asset.name
+			position = (int(math.ceil(self.res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), 0)
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_title, align='center')
+
+			# WIP
+			text = 'WIP'
+			if self.asset.wip:
+				position = (int(math.ceil(self.res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1])
+				draw.text(xy=position, text=text, fill=self.text_color, font=self.font_title, align='center')
+			
+			# Geometry_Info : Triangles
+			text = 'Triangle Count : {}'.format(self.asset.triangles)
+			position = (self.character_size_chapter[0], self.character_size_chapter[1])
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_chapter, align='center')
+
+			# Geometry_Info : Vertices
+			text = 'Vertices Count : {}'.format(self.asset.vertices)
+			position = self.add_position(position, (0, self.character_size_chapter[1]))
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_chapter, align='center')
+
+			# Geometry_Info : Has UV2
+			text = 'UV2 : {}'.format(self.asset.has_uv2)
+			position = self.add_position(position, (0, self.character_size_chapter[1]))
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_chapter, align='center')
+
+			initial_pos = (self.res[0], self.character_size_chapter[1])
+			# texture_Info : Normal map
+			for i, texture in enumerate(self.asset.texture_list):
+				text = '{} : {}'.format(texture.channel, texture.file_path)
+				position = self.add_position(initial_pos, (-len(text) * self.character_size_chapter[0], self.character_size_chapter[1] * i))
+				draw.text(xy=position, text=text, fill=self.text_color, font=self.font_chapter, align='right')
+
+			# Updated date
+			text = 'Updated : {}'.format(time.ctime(self.asset.import_date))
+			position = (0, self.res[1] - self.character_size_chapter[1])
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_chapter, align='left')
+
+			# Render date
+			text = 'Rendered : {}'.format(time.ctime(self.asset.render_date))
+			position = (self.res[0]/2 - len(text) * self.character_size_chapter[0] / 2, self.res[1] - self.character_size_chapter[1])
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_chapter, align='left')
+
+			# Page
+			text = '{}'.format(self.asset.asset_number)
+			position = (self.res[0] - self.character_size_chapter[0] * len(text) - self.character_size_chapter[0], self.res[1] - self.character_size_chapter[1])
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_chapter, align='right')
 
 			image.save(self.asset.composite_filepath, "PNG")
 
@@ -125,3 +180,6 @@ class LM_Composite_Image(object):
 
 	def get_current_frame_range(self):
 		return self.context.scene.frame_end + 1 - self.context.scene.frame_start
+
+	def add_position(self, p1, p2):
+		return (p1[0] + p2[0], p1[1] + p2[1])

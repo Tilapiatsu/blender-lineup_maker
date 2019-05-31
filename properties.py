@@ -15,11 +15,8 @@ class LM_Mesh_List(bpy.types.PropertyGroup):
     material_list = bpy.props.CollectionProperty(type=LM_Material_List)
 
 class LM_Texture_List(bpy.types.PropertyGroup):
-    textureset_name = bpy.props.StringProperty(name="TextureSet Name")
-    albedo = bpy.props.PointerProperty(name='Albedo', type=bpy.types.Texture)
-    normal = bpy.props.PointerProperty(name='Normal', type=bpy.types.Texture)
-    roughness = bpy.props.PointerProperty(name='Roughness', type=bpy.types.Texture)
-    metalic = bpy.props.PointerProperty(name='Metalic', type=bpy.types.Texture)
+    file_path = bpy.props.StringProperty(name='Texture File')
+    channel = bpy.props.StringProperty(name='channel')
 
 class LM_Asset_List(bpy.types.PropertyGroup):
     import_date = bpy.props.FloatProperty(name="Last Import")
@@ -38,7 +35,12 @@ class LM_Asset_List(bpy.types.PropertyGroup):
 
     need_write_info = bpy.props.BoolProperty(default=False)
     info_written = bpy.props.BoolProperty(default=False)
+
+    asset_number = bpy.props.IntProperty()
     wip = bpy.props.BoolProperty(default=False)
+    triangles = bpy.props.IntProperty()
+    vertices = bpy.props.IntProperty()
+    has_uv2 = bpy.props.BoolProperty(default=False)
 
 class LM_Shaders(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()

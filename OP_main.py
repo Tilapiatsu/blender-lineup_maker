@@ -108,11 +108,18 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 						context.view_layer.use_pass_z = False
 
 			
-			# Set the global View_layer active
-			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
+		# Set the global View_layer active
+		context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
+
+		self.renumber_assets(context)
 
 		return {'FINISHED'}
 
+	def renumber_assets(self, context):
+		asset_name_list = [a.name for a in context.scene.lm_asset_list]
+
+		for number,name in enumerate(asset_name_list):
+			context.scene.lm_asset_list[name].asset_number = number + 1
 class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_renderassets"
 	bl_label = "Lineup Maker: Render all assets in the scene"
@@ -390,6 +397,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 	composited_asset = []
 	asset_number = 0
 	info_written_asset = []
+	done = False
 
 	def pre(self, dummy):
 		self.compositing = True
@@ -426,29 +434,37 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 
 		for asset in context.scene.lm_asset_list:
 			render_exist = True
-			for render in asset.render_list:
-				if not os.path.exists(render.render_filepath):
-					render_exist = False
-					break
+			if len(asset.render_list):
+				for render in asset.render_list:
+					if not os.path.exists(render.render_filepath):
+						render_exist = False
+						break
+			else:
+				self.report({'WARNING'}, 'Lineup Maker : No render found for asset "{}"'.format(asset.name))
+				render_exist = False
 
 			if render_exist:
 				self.need_compositing_asset.append(asset)
 
-		for i,asset in enumerate(self.need_compositing_asset):
-			C.LM_Composite_Image(context, asset, self.asset_number).output
-			asset.need_write_info = False
-			asset.info_written = False
+		if len(self.need_compositing_asset):
+			for i,asset in enumerate(self.need_compositing_asset):
+				C.LM_Composite_Image(context, asset, self.asset_number).output
+				asset.need_write_info = False
+				asset.info_written = False
 
-		self.register_render_handler()
-		
-		bpy.context.window_manager.modal_handler_add(self)
+			self.register_render_handler()
+			
+			bpy.context.window_manager.modal_handler_add(self)
 
-		return {"RUNNING_MODAL"}
+			return {"RUNNING_MODAL"}
+		else:
+			self.report({'WARNING'}, 'Lineup Maker : No render found for any assets')
+			return {"FINISHED"}
 
 	def modal(self, context, event):
 		if event.type == 'TIMER':
 
-			if True in (not self.need_compositing_asset and not self.composited_asset, self.stop is True): 
+			if True in (not self.need_compositing_asset and self.done, self.stop is True): 
 
 				self.unregister_render_handler()
 				bpy.context.window_manager.event_timer_remove(self._timer)
@@ -472,7 +488,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 					asset.info_written = True
 					self.info_written_asset.append(asset)
 				
-				self.composited_asset = []
+				self.done = True
 
 
 			elif self.compositing is False and not len(self.composited_asset): 
@@ -482,9 +498,9 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 
 
 	def print_render_log(self):
-		self.report({'INFO'}, "Lineup Maker : {} assets rendered".format(len(self.composited_asset)))
+		self.report({'INFO'}, "Lineup Maker : {} assets composited".format(len(self.composited_asset)))
 		for a in self.composited_asset:
-			self.report({'INFO'}, "Lineup Maker : {} rendered".format(a.name))
+			self.report({'INFO'}, "Lineup Maker : {} composited".format(a.name))
 
 	def get_current_frame_range(self, context):
 		return context.scene.frame_end + 1 - context.scene.frame_start
