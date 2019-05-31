@@ -32,7 +32,15 @@
 #   7. when you’ve found it, run ‘pip.exe install pillow’
 
 import bpy
-from .OP_main import *
+
+try:
+    from .OP_main import *
+except ModuleNotFoundError as e:
+    print(e)
+    from . import setup
+    setup.install_dependencies()
+    from .OP_main import *
+
 from .OP_files import *
 from .UI_properties_pannel import *
 from .preferences import *
