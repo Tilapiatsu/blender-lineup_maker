@@ -1,5 +1,6 @@
 import bpy
 import os, time, math
+from fpdf import FPDF
 from os import path
 from . import variables as V
 from . import helper as H
@@ -7,6 +8,61 @@ from . import asset_format as A
 from . import naming_convention as N
 from . import compositing as C
 
+
+class LM_OP_UpdateLineup(bpy.types.Operator):
+	bl_idname = "scene.lm_update_lineup"
+	bl_label = "Lineup Maker: Import/Update asset, then render, then composite, then export PDF"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	imported = False
+	rendered = False
+	composited = False
+	exported = False
+	done = False
+
+	def register_render_handler(self):
+		self._timer = bpy.context.window_manager.event_timer_add(0.5, window=bpy.context.window)
+
+	def unregister_render_handler(self):
+		bpy.context.window_manager.event_timer_remove(self._timer)
+	
+
+	def execute(self, context):
+		self.imported = False
+		self.rendered = False
+		self.composited = False
+		self.exported = False
+		self.done = False
+
+		self.register_render_handler()
+		bpy.context.window_manager.modal_handler_add(self)
+		
+		return {"RUNNING_MODAL"}
+	
+	def modal(self, context, event):
+		if event.type == 'TIMER':
+			if not self.imported:
+				bpy.ops.scene.lm_importassets()
+				self.imported = True
+			
+			elif not self.rendered:
+				bpy.ops.scene.lm_renderassets()
+				self.rendered = True
+			
+			elif not self.composited:
+				bpy.ops.scene.lm_compositerenders()
+				self.composited = True
+
+			elif not self.exported:
+				bpy.ops.scene.lm_export_pdf()
+				self.exported = True
+			
+			else:
+				self.report({'INFO'}, 'Lineup Maker : Lineup Updated correctly ')
+				return {"FINISHED"}
+
+		return {"PASS_THROUGH"}
+		
 
 class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_importassets"
@@ -117,9 +173,11 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 	def renumber_assets(self, context):
 		asset_name_list = [a.name for a in context.scene.lm_asset_list]
+		asset_name_list.sort()
 
 		for number,name in enumerate(asset_name_list):
 			context.scene.lm_asset_list[name].asset_number = number + 1
+
 class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_renderassets"
 	bl_label = "Lineup Maker: Render all assets in the scene"
@@ -353,6 +411,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 		out.base_path = asset.render_path
 		out.file_slots[0].path = asset.name + '_'
+		# out.format.compression = 0
 
 		tree.links.new(rl.outputs[0], out.inputs[0])
 
@@ -383,6 +442,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		
 	def get_current_frame_range(self, context):
 		return context.scene.frame_end + 1 - context.scene.frame_start
+
 
 class LM_OP_CompositeRenders(bpy.types.Operator):
 	bl_idname = "scene.lm_compositerenders"
@@ -496,7 +556,6 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 
 		return {"PASS_THROUGH"}
 
-
 	def print_render_log(self):
 		self.report({'INFO'}, "Lineup Maker : {} assets composited".format(len(self.composited_asset)))
 		for a in self.composited_asset:
@@ -509,3 +568,25 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
 		nodes.clear()
+
+class LM_OP_ExportPDF(bpy.types.Operator):
+	bl_idname = "scene.lm_export_pdf"
+	bl_label = "Lineup Maker: Export PDF in the Render Path"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	def execute(self, context):
+		pdf = FPDF(format=[])
+		asset_name_list = [a.name for a in context.scene.lm_asset_list]
+		asset_name_list.sort()
+		for name in asset_name_list:
+			asset = context.scene.lm_asset_list[name]
+			if asset.composite_filepath != '':
+				pdf.add_page()
+				composite = C.LM_Composite_Image(context, asset)
+				res = composite.res
+
+				pdf.image(name=asset.composite_filepath, x=0, y=0, w=res[0], h=res[1])
+		
+		pdf.output(path.join(context.scene.lm_render_path, 'lineup.pdf'))
+
+		return {'FINISHED'}

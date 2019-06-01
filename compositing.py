@@ -92,6 +92,7 @@ class LM_Composite_Image(object):
 
 		out.file_slots[0].path = composite_name
 		out.base_path = composite_path
+		# out.format.compression = 0
 
 		self.asset.composite_filepath = os.path.join(composite_path, composite_name + str(self.context.scene.frame_current).zfill(4) + self.get_output_node_extention(out))
 

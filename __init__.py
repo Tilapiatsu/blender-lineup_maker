@@ -18,15 +18,14 @@
 #   - Create a render selected asset operator
 
 #  DEPENDENCIES :
-#      PyPDF: pip install PyPDF2
-#      https://github.com/mstamy2/PyPDF2
+#      pyfpdf : pip install fpdf
+#      https://www.blog.pythonlibrary.org/2018/06/05/creating-pdfs-with-pyfpdf-and-python/
 
 import bpy
 
 try:
     from .OP_main import *
 except ModuleNotFoundError as e:
-    print(e)
     from . import setup
     setup.install_dependencies()
     from .OP_main import *
@@ -55,10 +54,12 @@ bl_info = {
 
 classes = (
     LM_Preferences,
+    LM_OP_UpdateLineup,
     LM_OP_ImportAssets,
     LM_OP_RenderAssets,
     LM_OP_OpenFolder,
     LM_OP_CompositeRenders,
+    LM_OP_ExportPDF,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,
     LM_PT_CompositLayout,
