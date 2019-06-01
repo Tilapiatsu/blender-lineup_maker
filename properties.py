@@ -64,6 +64,11 @@ class LM_KeywordValues(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
     keyword: bpy.props.StringProperty()
 
+class LM_Cameras(bpy.types.PropertyGroup):
+    camera: bpy.props.PointerProperty(type=bpy.types.Object)
+    keyword: bpy.props.StringProperty()
+    keyword_value: bpy.props.StringProperty()
+
 # UI List
 
 class LM_Shader_UIList(bpy.types.UIList):
@@ -109,3 +114,10 @@ class LM_KeywordValues_UIList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
         row.label(text='{} : {}'.format(item.keyword, item.name))
+
+class LM_Cameras_UIList(bpy.types.UIList):
+    bl_idname = "LM_UL_cameras"
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        row = layout.split(factor=0.7)
+        row.label(text='"{}" will render asset which "{}" = "{}"'.format(item.camera.name, item.keyword, item.keyword_value))

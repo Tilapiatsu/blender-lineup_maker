@@ -62,7 +62,6 @@ class LM_OP_UpdateLineup(bpy.types.Operator):
 				return {"FINISHED"}
 
 		return {"PASS_THROUGH"}
-		
 
 class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_importassets"
@@ -242,10 +241,10 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		scene = bpy.context.scene
 		wm = bpy.context.window_manager
 
-		self.shots = [ o.name+'' for o in scene.lm_render_collection.all_objects.values() if o.type=='CAMERA' and o.visible_get() == True ]
+		# self.shots = [ o.name+'' for o in scene.lm_render_collection.all_objects.values() if o.type=='CAMERA' and o.visible_get() == True ]
 
-		if len(self.shots) < 0:
-			self.report({"WARNING"}, 'No cameras defined')
+		if not context.scene.lm_default_camera:
+			self.report({"WARNING"}, 'No Default cameras defined')
 			return {"FINISHED"}        
 
 		for asset in scene.lm_asset_list:
@@ -347,13 +346,10 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		return {"PASS_THROUGH"}
 
 	def render(self, context):
-		scn = bpy.context.scene
-		scn.camera = bpy.data.objects[self.shots[0]] 	
+		scn = bpy.context.scene 	
 
 		scn.render.film_transparent = True
 
-		# context.window_manager.progress_begin(0,len(need_render_asset))
-		# self.remaining_assets = len(self.need_render_asset)
 		asset = self.need_render_asset[0]
 
 		self.render_path, self.render_filename = self.get_render_path(context, asset.name)
@@ -363,9 +359,11 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 		# switch to the proper view_layer
 		context.window.view_layer = scn.view_layers[asset.name]
+		
+		self.set_rendering_camera(context, asset)
 
 		self.output_node = self.build_output_nodegraph(context, self.asset_number, asset)
-		bpy.context.scene.render.filepath = self.render_filename + self.shots[0] + '_'
+		bpy.context.scene.render.filepath = self.render_filename + context.scene.camera.name + '_'
 		self.output_node.mute = True
 
 		# self.context = context
@@ -443,6 +441,17 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	def get_current_frame_range(self, context):
 		return context.scene.frame_end + 1 - context.scene.frame_start
 
+	def set_rendering_camera(self, context, asset):
+		cam = context.scene.lm_default_camera
+		naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
+
+		for camera_keyword in context.scene.lm_cameras:
+			
+			if naming_convention.naming_convention[camera_keyword.keyword] == camera_keyword.keyword_value.lower():
+				cam = camera_keyword.camera
+				break
+
+		context.scene.camera = bpy.data.objects[cam.name]
 
 class LM_OP_CompositeRenders(bpy.types.Operator):
 	bl_idname = "scene.lm_compositerenders"
@@ -575,7 +584,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 
 	def execute(self, context):
-		pdf = FPDF(format=[])
+		pdf = FPDF()
 		asset_name_list = [a.name for a in context.scene.lm_asset_list]
 		asset_name_list.sort()
 		for name in asset_name_list:

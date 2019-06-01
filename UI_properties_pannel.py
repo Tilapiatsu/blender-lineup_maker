@@ -192,7 +192,8 @@ class LM_PT_NamingConvention(bpy.types.Panel):
         b.prop(scn, 'lm_keyword_value')
 
         c.separator()
-        
+
+
 class LM_PT_TextureSetSettings(bpy.types.Panel):
     bl_label = "TextureSet Settings"
     bl_space_type = "VIEW_3D"
@@ -280,3 +281,42 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         r.prop(scn, 'lm_override_material_roughness', text='Override Material Roughness')
         r.scale_x = 3
         r.prop(scn, 'lm_default_material_roughness',text='')
+
+
+class LM_PT_Cameras(bpy.types.Panel):          
+    bl_label = "Camera Assignment"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = 'Lineup Maker'
+
+    
+    def draw(self, context):
+        scn = context.scene
+        layout = self.layout
+
+        col = layout.column(align=True)
+        b = col.box()
+        b.label(text='Keywords')
+        
+        row = b.row()
+        
+        rows = len(scn.lm_keywords) if len(scn.lm_keywords) > 2 else 2
+        row.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
+
+        b = col.box()
+        b.prop(scn, 'lm_default_camera', text='Default Camera')
+        b.label(text='Cameras')
+        row = b.row()
+        rows = len(scn.lm_cameras) if len(scn.lm_cameras) > 2 else 2
+        
+        row.template_list('LM_UL_cameras', '', scn, 'lm_cameras', scn, 'lm_camera_idx', rows=rows)
+        c = row.column(align=True)
+        c.operator("scene.lm_move_camera_keyword", text="", icon='TRIA_UP').direction = "UP"
+        c.operator("scene.lm_move_camera_keyword", text="", icon='TRIA_DOWN').direction = "DOWN"
+
+        c.separator()
+        c.operator("scene.lm_clear_camera_keywords", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_remove_camera_keyword", text="", icon='X')
+        c.separator()
+        c.operator("scene.lm_rename_camera_keyword", text="", icon='OUTLINER_DATA_FONT')
+        b.prop(scn, 'lm_camera_keyword_name', text='Camera Keyword')

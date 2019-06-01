@@ -38,6 +38,7 @@ from .OP_ui_list_texture import *
 from .OP_ui_list_channel import *
 from .OP_ui_list_shader import *
 from .OP_ui_list_keyword import *
+from .OP_ui_list_camera_keyword import *
 from .OP_ui_list_keyword_value import *
 from .OP_ui_naming_convention import *
 
@@ -62,6 +63,7 @@ classes = (
     LM_OP_ExportPDF,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,
+    LM_PT_Cameras,
     LM_PT_CompositLayout,
     LM_PT_main,
     LM_Render_List,
@@ -74,11 +76,17 @@ classes = (
     LM_Shaders,
     LM_Keywords,
     LM_KeywordValues,
+    LM_Cameras,
     LM_TextureSet_UIList,
     LM_Channel_UIList,
     LM_Shader_UIList,
     LM_Keywords_UIList,
     LM_KeywordValues_UIList,
+    LM_Cameras_UIList,
+    LM_UI_MoveCameraKeyword,
+    LM_UI_RenameCameraKeyword,
+    LM_UI_ClearCameraKeyword,
+    LM_UI_RemoveCameraKeyword,
     LM_UI_MoveKeyword,
     LM_UI_RenameKeyword,
     LM_UI_ClearKeyword,
@@ -224,6 +232,29 @@ def update_keyword_name(self, context):
         scn.lm_avoid_update = True
         scn.lm_keyword_name = ""
 
+def update_camera_keyword_name(self, context):
+    scn = context.scene
+    if scn.lm_avoid_update:
+        scn.lm_avoid_update = False
+        return
+
+    else:
+        if bpy.context.active_object.type != 'CAMERA':
+            print('Lineup Maker : You need to select a Camera First')
+            scn.lm_avoid_update = True
+            scn.lm_camera_keyword_name = 'You need to select a Camera First'
+            return
+        elif scn.lm_camera_keyword_name and scn.lm_camera_keyword_name not in scn.lm_cameras:
+            c = scn.lm_cameras.add()
+            c.keyword_value = scn.lm_camera_keyword_name
+            c.camera = bpy.context.active_object
+            c.keyword = scn.lm_keywords[scn.lm_keyword_idx].name
+
+            scn.lm_camera_idx = len(scn.lm_cameras) - 1
+
+        scn.lm_avoid_update = True
+        scn.lm_camera_keyword_name = ""
+
 def register():
     bpy.types.Scene.lm_asset_path = bpy.props.StringProperty(
                                     name="Assets Path",
@@ -242,6 +273,7 @@ def register():
                                     )
     bpy.types.Scene.lm_render_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_asset_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
+    bpy.types.Scene.lm_default_camera = bpy.props.PointerProperty(type=bpy.types.Camera)
     bpy.types.Scene.lm_force_render = bpy.props.BoolProperty(name='Force Rendering of all assets')
     bpy.types.Scene.lm_asset_naming_convention = bpy.props.StringProperty(
                                     name="Asset Naming Convetion",
@@ -279,10 +311,12 @@ def register():
     bpy.types.Scene.lm_texture_channel_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_channel_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_shader_idx = bpy.props.IntProperty()
+    bpy.types.Scene.lm_camera_idx = bpy.props.IntProperty()
     
     bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_texture_channel_name)
     bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
     bpy.types.Scene.lm_shader_name = bpy.props.StringProperty(name="Add Shader", update=update_shader_name)
+    bpy.types.Scene.lm_camera_keyword_name = bpy.props.StringProperty(name="Add Keyword for selected Chamera", update=update_camera_keyword_name)
 
     bpy.types.Scene.lm_linear_channel = bpy.props.BoolProperty(name="Linear Channel")
     bpy.types.Scene.lm_normalMap_channel = bpy.props.BoolProperty(name="NormalMap Channel")
@@ -309,12 +343,15 @@ def register():
 
     bpy.types.Scene.lm_keywords =  bpy.props.CollectionProperty(type=LM_Keywords)
     bpy.types.Scene.lm_keyword_values =  bpy.props.CollectionProperty(type=LM_KeywordValues)
+
+    bpy.types.Scene.lm_cameras = bpy.props.CollectionProperty(type=LM_Cameras)
     
     
     
 
 
 def unregister():
+    del bpy.types.Scene.lm_cameras
     del bpy.types.Scene.lm_keyword_values
     del bpy.types.Scene.lm_keywords
     del bpy.types.Scene.lm_shaders
@@ -342,6 +379,7 @@ def unregister():
     del bpy.types.Scene.lm_keyword_value
     del bpy.types.Scene.lm_shader_name
     del bpy.types.Scene.lm_shader_idx
+    del bpy.types.Scene.lm_camera_idx
     del bpy.types.Scene.lm_channel_name
     del bpy.types.Scene.lm_channel_idx
     del bpy.types.Scene.lm_normalMap_channel
@@ -352,6 +390,7 @@ def unregister():
     del bpy.types.Scene.lm_texture_naming_convention
     del bpy.types.Scene.lm_mesh_naming_convention
     del bpy.types.Scene.lm_asset_naming_convention
+    del bpy.types.Scene.lm_default_camera
     del bpy.types.Scene.lm_asset_collection
     del bpy.types.Scene.lm_render_collection
     del bpy.types.Scene.lm_asset_path

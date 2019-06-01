@@ -7,7 +7,7 @@ from . import variables as V
 from . import preferences as P
 
 class NamingConvention(object):
-	def __init__(self, context, name,  convention, filepath=None):
+	def __init__(self, context, name, convention, filepath=None):
 		self.context = context
 		self.scn = context.scene
 		self.param = V.GetParam(self.scn).param
