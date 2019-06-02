@@ -320,3 +320,33 @@ class LM_PT_Cameras(bpy.types.Panel):
         c.separator()
         c.operator("scene.lm_rename_camera_keyword", text="", icon='OUTLINER_DATA_FONT')
         b.prop(scn, 'lm_camera_keyword_name', text='Camera Keyword')
+
+
+class LM_PT_Chapter(bpy.types.Panel):          
+    bl_label = "Chapters Definition"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = 'Lineup Maker'
+
+    
+    def draw(self, context):
+        scn = context.scene
+        layout = self.layout
+
+        col = layout.column(align=True)
+        b = col.box()
+        b.label(text='Keywords')
+        
+        row = b.row()
+        
+        rows = len(scn.lm_keywords) if len(scn.lm_keywords) > 2 else 2
+        row.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
+        
+        chapter = 'chapter will be created based on : '
+        if scn.lm_chapter_name is not None:
+            chapter = scn.lm_chapter_name
+
+        b.operator('scene.lm_use_keyword_as_chapter', text='Use selected keyword as chapter')
+        row = b.row()
+        row.label(text=chapter)
+        row.operator('scene.lm_clear_chapter_keyword', icon='X', text="")
