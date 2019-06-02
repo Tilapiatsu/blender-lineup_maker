@@ -163,7 +163,8 @@ class LM_Composite_Image(object):
 			position = (self.res[0] - self.character_size_chapter[0] * len(text) - self.character_size_chapter[0], self.res[1] - self.character_size_chapter[1])
 			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_chapter, align='right')
 
-			image.save(self.asset.composite_filepath, "PNG")
+			# image.convert('RGB')
+			image.save(self.asset.composite_filepath, "PNG", bits=8)
 
 	def get_output_node_extention(self, output_node):
 		return V.LM_OUTPUT_EXTENSION[output_node.format.file_format]
