@@ -608,7 +608,8 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	def execute(self, context):
 		composite = C.LM_Composite_Image(context, context.scene.lm_asset_list[0].name)
 		res = composite.res
-		pdf = FPDF('P', 'mm', (res[0], res[1]))
+		orientation = 'P' if res[1] < res[0] else 'L'
+		pdf = FPDF(orientation, 'mm', (res[0], res[1]))
 		
 		asset_name_list = [a.name for a in context.scene.lm_asset_list]
 		asset_name_list.sort()
