@@ -5,6 +5,7 @@ from . import variables as V
 from . import naming_convention as N
 from . import helper as H
 from PIL import Image, ImageDraw, ImageFont
+from fpdf import FPDF
 
 class LM_Composite_Image(object):
 	def __init__(self, context, asset, index=0):
@@ -29,6 +30,8 @@ class LM_Composite_Image(object):
 		self.font_chapter = ImageFont.truetype(self.font_file, size=self.font_size_chapter)
 		self.font_title = ImageFont.truetype(self.font_file, size=self.font_size_title)
 		self.font_paragraph = ImageFont.truetype(self.font_file, size=self.font_size_paragraph)
+
+		self.pdf = fpdf()
 
 	@property
 	def output(self):
@@ -116,6 +119,72 @@ class LM_Composite_Image(object):
 		if self.asset.raw_composite_filepath != '':
 			print('Lineup Maker : Compositing asset info for "{}"'.format(self.asset.name))
 			image = Image.open(self.asset.raw_composite_filepath)
+
+			draw = ImageDraw.Draw(image)
+			draw.rectangle(xy=[0, 0, self.res[0], self.res[2] - self.character_size_paragraph[1]], fill='black')
+
+			draw.rectangle(xy=[0, self.res[1], self.res[0], self.res[1] - self.character_size_paragraph[1]], fill='black')
+
+			# Asset Name
+			text = self.asset.name
+			position = (int(math.ceil(self.res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), 0)
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_title, align='center')
+
+			# WIP
+			text = 'WIP'
+			if self.asset.wip:
+				position = (int(math.ceil(self.res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1])
+				draw.text(xy=position, text=text, fill=self.text_color, font=self.font_title, align='center')
+			
+			# Geometry_Info : Triangles
+			text = 'Triangle Count : {}'.format(self.asset.triangles)
+			position = (self.character_size_paragraph[0], self.character_size_paragraph[1])
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='center')
+
+			# Geometry_Info : Vertices
+			text = 'Vertices Count : {}'.format(self.asset.vertices)
+			position = self.add_position(position, (0, self.character_size_paragraph[1]))
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='center')
+
+			# Geometry_Info : Has UV2
+			text = 'UV2 : {}'.format(self.asset.has_uv2)
+			position = self.add_position(position, (0, self.character_size_paragraph[1]))
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='center')
+
+			initial_pos = (self.res[0], self.character_size_paragraph[1])
+			# texture_Info : Normal map
+			for i, texture in enumerate(self.asset.texture_list):
+				text = '{} : {}'.format(texture.channel, texture.file_path)
+				position = self.add_position(initial_pos, (-len(text) * self.character_size_paragraph[0], self.character_size_paragraph[1] * i))
+				draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='right')
+
+			# Updated date
+			text = 'Updated : {}'.format(time.ctime(self.asset.import_date))
+			position = (0, self.res[1] - self.character_size_paragraph[1])
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='left')
+
+			# Render date
+			text = 'Rendered : {}'.format(time.ctime(self.asset.render_date))
+			position = (self.res[0]/2 - len(text) * self.character_size_paragraph[0] / 2, self.res[1] - self.character_size_paragraph[1])
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='left')
+
+			# Page
+			text = '{}'.format(self.asset.asset_number)
+			position = (self.res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.res[1] - self.character_size_paragraph[1])
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='right')
+
+			self.asset.final_composite_filepath = path.join(self.context.scene.lm_render_path, '01_Final_Composite')
+			H.create_folder_if_neeed(self.asset.final_composite_filepath)
+			self.asset.final_composite_filepath = path.join(self.asset.final_composite_filepath, self.asset.name + '_final_composite.jpg')
+
+			converted = Image.new("RGB", image.size, (255, 255, 255))
+			converted.paste(image, mask=image.split()[3])
+			converted.save(self.asset.final_composite_filepath, "JPEG", quality=80)
+
+	def composite_pdf_asset_info(self, pdf):
+		if self.asset.raw_composite_filepath != '':
+			print('Lineup Maker : Compositing pdf asset info for "{}"'.format(self.asset.name))
+			pdf.set_font(self.font_file, size=self.font_size_title)
 
 			draw = ImageDraw.Draw(image)
 			draw.rectangle(xy=[0, 0, self.res[0], self.res[2] - self.character_size_paragraph[1]], fill='black')
