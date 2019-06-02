@@ -606,15 +606,16 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 
 	def execute(self, context):
-		pdf = FPDF()
+		composite = C.LM_Composite_Image(context, context.scene.lm_asset_list[0].name)
+		res = composite.res
+		pdf = FPDF('P', 'mm', (res[0], res[1]))
+		
 		asset_name_list = [a.name for a in context.scene.lm_asset_list]
 		asset_name_list.sort()
 		for name in asset_name_list:
 			asset = context.scene.lm_asset_list[name]
 			if asset.final_composite_filepath != '':
 				pdf.add_page()
-				composite = C.LM_Composite_Image(context, asset)
-				res = composite.res
 
 				pdf.image(name=asset.final_composite_filepath, x=0, y=0, w=res[0], h=res[1])
 		
