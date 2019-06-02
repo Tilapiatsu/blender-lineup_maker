@@ -323,7 +323,7 @@ class LM_PT_Cameras(bpy.types.Panel):
 
 
 class LM_PT_Chapter(bpy.types.Panel):          
-    bl_label = "Chapters Definition"
+    bl_label = "Chapter Definition"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = 'Lineup Maker'

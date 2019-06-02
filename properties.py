@@ -30,7 +30,8 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     rendered = bpy.props.BoolProperty()
     render_path = bpy.props.StringProperty(subtype='DIR_PATH')
     
-    composite_filepath = bpy.props.StringProperty(subtype='FILE_PATH')
+    raw_composite_filepath = bpy.props.StringProperty(subtype='FILE_PATH')
+    final_composite_filepath = bpy.props.StringProperty(subtype='FILE_PATH')
     render_list = bpy.props.CollectionProperty(type=LM_Render_List)
 
     need_write_info = bpy.props.BoolProperty(default=False)

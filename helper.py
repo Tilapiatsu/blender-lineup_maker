@@ -1,43 +1,46 @@
-import bpy
+import bpy, os
 
+def create_folder_if_neeed(path):
+	if not os.path.exists(path):
+			os.makedirs(path)
 
 def get_layer_collection(layer_collection, collection_name):
-    found = None
-    if (layer_collection.name == collection_name):
-        return layer_collection
-    for layer in layer_collection.children:
-        found = get_layer_collection(layer, collection_name)
-        if found:
-            return found
+	found = None
+	if (layer_collection.name == collection_name):
+		return layer_collection
+	for layer in layer_collection.children:
+		found = get_layer_collection(layer, collection_name)
+		if found:
+			return found
 
 def create_asset_collection(context, name):
-    collections = bpy.data.collections
-    if name in collections:
-        return collections[name], False
-    else:
-        new_collection = bpy.data.collections.new(name)
-        context.collection.children.link(new_collection)
-        return new_collection, True
+	collections = bpy.data.collections
+	if name in collections:
+		return collections[name], False
+	else:
+		new_collection = bpy.data.collections.new(name)
+		context.collection.children.link(new_collection)
+		return new_collection, True
 
 
 def set_active_collection(context, name):
-    context.view_layer.active_layer_collection = get_layer_collection(context.view_layer.layer_collection, name)
+	context.view_layer.active_layer_collection = get_layer_collection(context.view_layer.layer_collection, name)
 
 def slice(pattern, sep='_'):
-    sep_in = '<'
-    sep_out = '>'
-    
-    sliced = pattern.split(sep)
+	sep_in = '<'
+	sep_out = '>'
+	
+	sliced = pattern.split(sep)
 
-    sliced_result = []
+	sliced_result = []
 
-    for s in sliced:
-        if sep_in in s:
-            sliced_in = s.split(sep_in)
-            for ss in sliced_in:
-                if ss is not '':
-                    sliced_result.append(ss.lower()[:-1])
-        else:
-            sliced_result.append(s.lower())
+	for s in sliced:
+		if sep_in in s:
+			sliced_in = s.split(sep_in)
+			for ss in sliced_in:
+				if ss is not '':
+					sliced_result.append(ss.lower()[:-1])
+		else:
+			sliced_result.append(s.lower())
 
-    return sliced_result
+	return sliced_result

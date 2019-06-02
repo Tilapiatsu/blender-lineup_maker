@@ -201,6 +201,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	render_path = ''
 
 	composite_filepath = ''
+	chapter = ''
+	chapters = []
 
 	def pre(self, dummy):
 		self.rendering = True
@@ -289,6 +291,10 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		if event.type == 'TIMER':
 
 			if True in (not self.need_render_asset, self.stop is True): 
+				
+				for asset in self.chapters:
+					composite = C.LM_Composite_Image(context, asset)
+					composite.composite_chapter()
 
 				self.unregister_render_handler()
 				bpy.context.window_manager.event_timer_remove(self._timer)
@@ -310,7 +316,13 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 			elif self.rendering  and self.composite_node is None and self.need_render_asset[0].need_render is False and self.need_render_asset[0].rendered is True:
 				asset = self.need_render_asset[0]
-				self.composite_node = C.LM_Composite_Image(context, asset, self.asset_number).output
+				naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention).naming_convention
+				curr_chapter = naming_convention[context.scene.lm_chapter_name]
+				composite = C.LM_Composite_Image(context, asset, self.asset_number)
+				self.composite_node = composite.output
+				if curr_chapter != self.chapter:
+					self.chapters.append(asset)
+					self.chapter = curr_chapter
 
 			elif self.rendering and self.remaining_assets and self.composite_node is not None:
 				self.unregister_render_handler()
@@ -422,8 +434,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	def get_render_path(self, context, asset_name):
 		render_path = os.path.abspath(os.path.join(os.path.abspath(context.scene.lm_render_path), asset_name))
 		render_filename = render_path + '\\{}_'.format(asset_name)
-		if not os.path.exists(render_path):
-			os.makedirs(render_path)
+		H.create_folder_if_neeed(render_path)
 		
 		return render_path, render_filename
 
@@ -466,6 +477,8 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 	composited_asset = []
 	asset_number = 0
 	info_written_asset = []
+	chapter = ''
+	chapters = []
 	done = False
 
 	def pre(self, dummy):
@@ -538,6 +551,9 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 				self.unregister_render_handler()
 				bpy.context.window_manager.event_timer_remove(self._timer)
 
+				for asset in self.chapters:
+					composite = C.LM_Composite_Image(context, asset, self.asset_number)
+					composite.composite_chapter()
 
 				if self.stop:
 					self.report({'WARNING'}, "Lineup Maker : Compositing cancelled by user")
@@ -552,8 +568,14 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 			
 
 			elif self.compositing is False and len(self.composited_asset):
-				for asset in self.composited_asset:
-					C.LM_Composite_Image(context, asset, self.asset_number).composite_asset_info()
+				for asset in context.scene.lm_asset_list:
+					naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention).naming_convention
+					curr_chapter = naming_convention[context.scene.lm_chapter_name]
+					composite = C.LM_Composite_Image(context, asset, self.asset_number)
+					composite.composite_asset_info()
+					if curr_chapter != self.chapter:
+						self.chapters.append(asset)
+						self.chapter = curr_chapter
 					asset.info_written = True
 					self.info_written_asset.append(asset)
 				
@@ -589,12 +611,12 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		asset_name_list.sort()
 		for name in asset_name_list:
 			asset = context.scene.lm_asset_list[name]
-			if asset.composite_filepath != '':
+			if asset.final_composite_filepath != '':
 				pdf.add_page()
 				composite = C.LM_Composite_Image(context, asset)
 				res = composite.res
 
-				pdf.image(name=asset.composite_filepath, x=0, y=0, w=res[0], h=res[1])
+				pdf.image(name=asset.final_composite_filepath, x=0, y=0, w=res[0], h=res[1])
 		
 		pdf.output(path.join(context.scene.lm_render_path, 'lineup.pdf'))
 

@@ -2,6 +2,8 @@ import bpy
 import os, math, time
 from os import path
 from . import variables as V
+from . import naming_convention as N
+from . import helper as H
 from PIL import Image, ImageDraw, ImageFont
 
 class LM_Composite_Image(object):
@@ -87,14 +89,16 @@ class LM_Composite_Image(object):
 		out = nodes.new('CompositorNodeOutputFile')
 		out.location = (location[0] + incr, location[1])
 
-		composite_name = self.asset.name + '_composite_'
-		composite_path = path.abspath(path.join(self.asset.render_path, os.pardir))
+		composite_name = self.asset.name + '_raw_composite_'
+		composite_path = path.join(self.context.scene.lm_render_path, '00_Raw_Composite')
+		
+		H.create_folder_if_neeed(composite_path)
 
 		out.file_slots[0].path = composite_name
 		out.base_path = composite_path
 		# out.format.compression = 0
 
-		self.asset.composite_filepath = os.path.join(composite_path, composite_name + str(self.context.scene.frame_current).zfill(4) + self.get_output_node_extention(out))
+		self.asset.raw_composite_filepath = os.path.join(composite_path, composite_name + str(self.context.scene.frame_current).zfill(4) + self.get_output_node_extention(out))
 
 		if mix:
 			tree.links.new(mix.outputs[0], out.inputs[0])
@@ -106,9 +110,9 @@ class LM_Composite_Image(object):
 		return out
 
 	def composite_asset_info(self):
-		if self.asset.composite_filepath != '':
+		if self.asset.raw_composite_filepath != '':
 			print('Lineup Maker : Compositing asset info for "{}"'.format(self.asset.name))
-			image = Image.open(self.asset.composite_filepath)
+			image = Image.open(self.asset.raw_composite_filepath)
 
 			draw = ImageDraw.Draw(image)
 			draw.rectangle(xy=[0, 0, self.res[0], self.res[2] - self.character_size_chapter[1]], fill='black')
@@ -163,8 +167,37 @@ class LM_Composite_Image(object):
 			position = (self.res[0] - self.character_size_chapter[0] * len(text) - self.character_size_chapter[0], self.res[1] - self.character_size_chapter[1])
 			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_chapter, align='right')
 
+			self.asset.final_composite_filepath = path.join(self.context.scene.lm_render_path, '01_Final_Composite')
+			H.create_folder_if_neeed(self.asset.final_composite_filepath)
+			self.asset.final_composite_filepath = path.join(self.asset.final_composite_filepath, self.asset.name + '_final_composite.png')
+
 			# image.convert('RGB')
-			image.save(self.asset.composite_filepath, "PNG", bits=8)
+			image.save(self.asset.final_composite_filepath, "PNG", bits=8)
+
+	def composite_chapter(self):
+		if self.asset.final_composite_filepath != '':
+			naming_convention = N.NamingConvention(self.context, self.asset.name, self.context.scene.lm_asset_naming_convention).naming_convention
+			chapter_name = naming_convention[self.context.scene.lm_chapter_name]
+
+			print('Lineup Maker : Compositing chapter "{}"'.format(chapter_name))
+			image = Image.new('RGB', (self.res[0], self.res[1]))
+
+			draw = ImageDraw.Draw(image)
+			draw.rectangle(xy=[0, 0, self.res[0], self.res[2] * 2], fill='black')
+			draw.rectangle(xy=[0, self.res[1] - self.res[2] * 2, self.res[0], self.res[1]], fill='black')
+
+
+			# Chapter Name
+			text = chapter_name.upper()
+			position = (int(math.ceil(self.res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), int(math.ceil(self.res[1]/2)) - math.ceil(self.character_size_title[1]/2))
+			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_title, align='center')
+
+			filename = 'MAD_CHR_' + chapter_name + '_Chapter.png'
+			filepath = path.join(path.dirname(self.asset.final_composite_filepath), filename)
+			H.create_folder_if_neeed(path.dirname(self.asset.final_composite_filepath))
+
+			image.save(filepath, "PNG", bits=8)
+
 
 	def get_output_node_extention(self, output_node):
 		return V.LM_OUTPUT_EXTENSION[output_node.format.file_format]
