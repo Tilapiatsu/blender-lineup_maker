@@ -12,8 +12,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
+#   - Create a summary and a chapter creator
 #   - Create PDF at the end of the compositing process
-#   - Create UI to Assign a camera by Category
 #   - Create an operator to update/import render and compoosite in a row
 #   - Create a render selected asset operator
 
