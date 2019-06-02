@@ -609,17 +609,24 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		composite = C.LM_Composite_Image(context, context.scene.lm_asset_list[0].name)
 		res = composite.res
 		orientation = 'P' if res[1] < res[0] else 'L'
-		pdf = FPDF(orientation, 'mm', (res[0], res[1]))
+		pdf = FPDF(orientation, 'pt', (res[0], res[1]))
 		
 		asset_name_list = [a.name for a in context.scene.lm_asset_list]
 		asset_name_list.sort()
 		for name in asset_name_list:
 			asset = context.scene.lm_asset_list[name]
-			if asset.final_composite_filepath != '':
+			if asset.raw_composite_filepath != '':
 				pdf.add_page()
 
+				composite = C.LM_Composite_Image(context, asset)
+				composite.convert_to_jpeg(asset.raw_composite_filepath, asset.final_composite_filepath, 80)
+
 				pdf.image(name=asset.final_composite_filepath, x=0, y=0, w=res[0], h=res[1])
+				composite.composite_pdf_asset_info(pdf)
 		
-		pdf.output(path.join(context.scene.lm_render_path, 'lineup.pdf'))
+		pdf_file = path.join(context.scene.lm_render_path, 'lineup.pdf')
+		pdf.output(pdf_file)
+
+		self.report({'INFO'}, 'Lineup Maker : PDF File exported correctly : "{}"'.format(pdf_file))
 
 		return {'FINISHED'}

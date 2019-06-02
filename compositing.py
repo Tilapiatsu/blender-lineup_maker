@@ -5,7 +5,6 @@ from . import variables as V
 from . import naming_convention as N
 from . import helper as H
 from PIL import Image, ImageDraw, ImageFont
-from fpdf import FPDF
 
 class LM_Composite_Image(object):
 	def __init__(self, context, asset, index=0):
@@ -30,8 +29,6 @@ class LM_Composite_Image(object):
 		self.font_chapter = ImageFont.truetype(self.font_file, size=self.font_size_chapter)
 		self.font_title = ImageFont.truetype(self.font_file, size=self.font_size_title)
 		self.font_paragraph = ImageFont.truetype(self.font_file, size=self.font_size_paragraph)
-
-		self.pdf = fpdf()
 
 	@property
 	def output(self):
@@ -182,70 +179,67 @@ class LM_Composite_Image(object):
 			converted.save(self.asset.final_composite_filepath, "JPEG", quality=80)
 
 	def composite_pdf_asset_info(self, pdf):
-		if self.asset.raw_composite_filepath != '':
-			print('Lineup Maker : Compositing pdf asset info for "{}"'.format(self.asset.name))
-			pdf.set_font(self.font_file, size=self.font_size_title)
+		print('Lineup Maker : Compositing pdf asset info for "{}"'.format(self.asset.name))
+		pdf.add_font(family='UbuntuMono-Bold', style='', fname=self.font_file, uni=True)
+		pdf.set_font('UbuntuMono-Bold', size=self.font_size_title)
+		pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
+		pdf.set_fill_color(r=0)
 
-			draw = ImageDraw.Draw(image)
-			draw.rectangle(xy=[0, 0, self.res[0], self.res[2] - self.character_size_paragraph[1]], fill='black')
+		pdf.rect(x=0, y=0, w=self.res[0], h=self.res[2] - self.character_size_paragraph[1], style='F')
+		pdf.rect(x=0, y=self.res[1] - self.character_size_paragraph[1]*1.5, w=self.res[0], h=self.res[1], style='F')
 
-			draw.rectangle(xy=[0, self.res[1], self.res[0], self.res[1] - self.character_size_paragraph[1]], fill='black')
+		# Asset Name
+		text = self.asset.name
+		position = (int(math.ceil(self.res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1])
+		pdf.text(x=position[0], y=position[1], txt=text)
 
-			# Asset Name
-			text = self.asset.name
-			position = (int(math.ceil(self.res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), 0)
-			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_title, align='center')
+		# WIP
+		text = 'WIP'
+		if self.asset.wip:
+			pdf.set_text_color(r=200, g=50, b=0)
+			position = (int(math.ceil(self.res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1] * 2)
+			pdf.text(x=position[0], y=position[1], txt=text)
+			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
 
-			# WIP
-			text = 'WIP'
-			if self.asset.wip:
-				position = (int(math.ceil(self.res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1])
-				draw.text(xy=position, text=text, fill=self.text_color, font=self.font_title, align='center')
-			
-			# Geometry_Info : Triangles
-			text = 'Triangle Count : {}'.format(self.asset.triangles)
-			position = (self.character_size_paragraph[0], self.character_size_paragraph[1])
-			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='center')
+		pdf.set_font_size(self.font_size_paragraph)
 
-			# Geometry_Info : Vertices
-			text = 'Vertices Count : {}'.format(self.asset.vertices)
-			position = self.add_position(position, (0, self.character_size_paragraph[1]))
-			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='center')
+		# Geometry_Info : Triangles
+		text = 'Triangle Count : {}'.format(self.asset.triangles)
+		position = (self.character_size_paragraph[0], self.character_size_paragraph[1])
+		pdf.text(x=position[0], y=position[1], txt=text)
 
-			# Geometry_Info : Has UV2
-			text = 'UV2 : {}'.format(self.asset.has_uv2)
-			position = self.add_position(position, (0, self.character_size_paragraph[1]))
-			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='center')
+		# Geometry_Info : Vertices
+		text = 'Vertices Count : {}'.format(self.asset.vertices)
+		position = self.add_position(position, (0, self.character_size_paragraph[1]))
+		pdf.text(x=position[0], y=position[1], txt=text)
 
-			initial_pos = (self.res[0], self.character_size_paragraph[1])
-			# texture_Info : Normal map
-			for i, texture in enumerate(self.asset.texture_list):
-				text = '{} : {}'.format(texture.channel, texture.file_path)
-				position = self.add_position(initial_pos, (-len(text) * self.character_size_paragraph[0], self.character_size_paragraph[1] * i))
-				draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='right')
+		# Geometry_Info : Has UV2
+		text = 'UV2 : {}'.format(self.asset.has_uv2)
+		position = self.add_position(position, (0, self.character_size_paragraph[1]))
+		pdf.text(x=position[0], y=position[1], txt=text)
 
-			# Updated date
-			text = 'Updated : {}'.format(time.ctime(self.asset.import_date))
-			position = (0, self.res[1] - self.character_size_paragraph[1])
-			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='left')
+		initial_pos = (self.res[0] - self.character_size_paragraph[0], self.character_size_paragraph[1])
+		# texture_Info : Normal map
+		for i, texture in enumerate(self.asset.texture_list):
+			text = '{} : {}'.format(texture.channel, texture.file_path)
+			position = self.add_position(initial_pos, (-len(text) * self.character_size_paragraph[0], self.character_size_paragraph[1] * i))
+			pdf.text(x=position[0], y=position[1], txt=text)
 
-			# Render date
-			text = 'Rendered : {}'.format(time.ctime(self.asset.render_date))
-			position = (self.res[0]/2 - len(text) * self.character_size_paragraph[0] / 2, self.res[1] - self.character_size_paragraph[1])
-			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='left')
+		# Updated date
+		text = 'Updated : {}'.format(time.ctime(self.asset.import_date))
+		position = (0, self.res[1] - self.character_size_paragraph[1]/2)
+		pdf.text(x=position[0], y=position[1], txt=text)
 
-			# Page
-			text = '{}'.format(self.asset.asset_number)
-			position = (self.res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.res[1] - self.character_size_paragraph[1])
-			draw.text(xy=position, text=text, fill=self.text_color, font=self.font_paragraph, align='right')
+		# Render date
+		text = 'Rendered : {}'.format(time.ctime(self.asset.render_date))
+		position = (self.res[0]/2 - len(text) * self.character_size_paragraph[0] / 2, self.res[1] - self.character_size_paragraph[1]/2)
+		pdf.text(x=position[0], y=position[1], txt=text)
 
-			self.asset.final_composite_filepath = path.join(self.context.scene.lm_render_path, '01_Final_Composite')
-			H.create_folder_if_neeed(self.asset.final_composite_filepath)
-			self.asset.final_composite_filepath = path.join(self.asset.final_composite_filepath, self.asset.name + '_final_composite.jpg')
+		# Page
+		text = '{}'.format(self.asset.asset_number)
+		position = (self.res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.res[1] - self.character_size_paragraph[1]/2)
+		pdf.text(x=position[0], y=position[1], txt=text)
 
-			converted = Image.new("RGB", image.size, (255, 255, 255))
-			converted.paste(image, mask=image.split()[3])
-			converted.save(self.asset.final_composite_filepath, "JPEG", quality=80)
 
 	def composite_chapter(self):
 		if self.asset.final_composite_filepath != '':
@@ -273,6 +267,12 @@ class LM_Composite_Image(object):
 			converted.paste(image)
 			converted.save(filepath, "JPEG", quality=80)
 
+	def convert_to_jpeg(self, file, output, quality):
+		image = Image.open(file)
+
+		converted = Image.new("RGB", image.size, (255, 255, 255))
+		converted.paste(image, mask=image.split()[3])
+		converted.save(output, "JPEG", quality=quality)
 
 	def get_output_node_extention(self, output_node):
 		return V.LM_OUTPUT_EXTENSION[output_node.format.file_format]
