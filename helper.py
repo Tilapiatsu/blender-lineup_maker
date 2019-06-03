@@ -44,3 +44,27 @@ def slice(pattern, sep='_'):
 			sliced_result.append(s.lower())
 
 	return sliced_result
+
+
+def set_chapter(self, chapter_nc, asset_nc):
+	match = True
+	if len(chapter_nc.naming_convention['name']):
+		for word in chapter_nc.naming_convention['name']:
+			if word not in asset_nc.naming_convention['name']:
+				match = False
+				break
+	else:
+		match = False
+	
+	if not match:
+		self.chapter = ''
+		for i,word in enumerate(chapter_nc.word_list):
+			if word in asset_nc.naming_convention.keys():
+				if i < len(chapter_nc.word_list) - 1:
+					self.chapter += asset_nc.naming_convention[word].upper() + '_'
+				else:
+					self.chapter += asset_nc.naming_convention[word].upper()
+		
+		return True
+	else:
+		return False

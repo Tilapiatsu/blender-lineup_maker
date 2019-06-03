@@ -14,9 +14,9 @@ class LM_Composite(object):
 
 		self.res = self.get_composite_resolution()
 
-		self.text_color = (int(self.context.scene.lm_font_color[0] * 255), int(self.context.scene.lm_font_color[1] * 255), int(self.context.scene.lm_font_color[2] * 255))
-		self.text_background_color = self.context.scene.lm_text_background_color
-		self.content_background_color = self.context.scene.lm_content_background_color
+		self.text_color = (int(self.context.scene.lm_font_color[0] * 255), int(self.context.scene.lm_font_color[1] * 255), int(self.context.scene.lm_font_color[2] * 255), 255)
+		self.text_background_color = (int(self.context.scene.lm_text_background_color[0]*255), int(self.context.scene.lm_text_background_color[1]*255), int(self.context.scene.lm_text_background_color[2]*255), 255)
+		self.content_background_color = (int(self.context.scene.lm_content_background_color[0]*255), int(self.context.scene.lm_content_background_color[1]*255), int(self.context.scene.lm_content_background_color[2]*255), 255)
 
 		self.font_size_chapter = int(math.floor(self.res[0]*100/self.res[1]))
 		self.character_size_chapter = (math.ceil(self.font_size_chapter/2), self.font_size_chapter)
@@ -36,28 +36,6 @@ class LM_Composite(object):
 		self.curr_page = 0
 		self.pages = {}
 		
-	
-	def set_chapter(self, chapter_nc, asset_nc):
-		match = True
-		if len(chapter_nc.naming_convention['name']):
-			for word in chapter_nc.naming_convention['name']:
-				if word not in asset_nc.naming_convention['name']:
-					match = False
-					break
-		else:
-			match = False
-		
-		if not match:
-			self.chapter = ''
-			for i,word in enumerate(chapter_nc.word_list):
-				if i < len(chapter_nc.word_list) - 1:
-					self.chapter += asset_nc.naming_convention[word].upper() + '_'
-				else:
-					self.chapter += asset_nc.naming_convention[word].upper()
-			
-			return True
-		else:
-			return False
 	
 	def composite_pdf_summary(self, pdf):
 		# pdf.add_page()
@@ -79,25 +57,27 @@ class LM_Composite(object):
 
 		initial_pos = (self.character_size_title[0], self.character_size_title[1])
 
-		asset_name_list = [a.name for a in context.scene.lm_asset_list]
+		asset_name_list = [a.name for a in self.context.scene.lm_asset_list]
 		asset_name_list.sort()
-
+		
 		for i,asset in enumerate(asset_name_list):
-			chapter_naming_convention = N.NamingConvention(context, self.chapter, context.scene.lm_chapter_naming_convention)
-			asset_naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
+			chapter_naming_convention = N.NamingConvention(self.context, self.chapter, self.context.scene.lm_chapter_naming_convention)
+			asset_naming_convention = N.NamingConvention(self.context, asset, self.context.scene.lm_asset_naming_convention)
 
-			new_chapter = self.set_chapter(chapter_naming_convention, asset_naming_convention)
+			new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
 
-			if new_chapter:
-				text = self.chapter
-			else:
-				text = asset
 
 			column = (self.character_size_title[1] * i) % self.res[1]
 			if new_chapter:
-				position = self.add_position(initial_pos, (100 if (self.character_size_title[1] * i) < self.res[1] else 100 + int(self.res[0]/2), column))
-			else:
+				text = self.chapter
 				position = self.add_position(initial_pos, (0 if (self.character_size_title[1] * i) < self.res[1] else int(self.res[0]/2), column))
+				pdf.text(x=position[0], y=position[1], txt=text)
+				pdf.link(x=position[0], y=position[1] - self.character_size_title[1], w=len(text)*self.character_size_title[0], h=self.character_size_title[1], link=self.pages[self.chapter][0])
+				old_initial_position = initial_pos
+				initial_pos = position
+
+			text = asset
+			position = self.add_position(initial_pos, (100 if (self.character_size_title[1] * i) < self.res[1] else 100 + int(self.res[0]/2), column))
 			pdf.text(x=position[0], y=position[1], txt=text)
 			pdf.link(x=position[0], y=position[1] - self.character_size_title[1], w=len(text)*self.character_size_title[0], h=self.character_size_title[1], link=self.pages[asset][0])
 	
@@ -198,7 +178,7 @@ class LM_Composite_Image(LM_Composite):
 		framecount = self.get_current_frame_range()
 
 		composite_image = bpy.data.images.new(name='{}_composite'.format(name), width=self.res[0], height=self.res[1])
-		composite_image.generated_color = (self.content_background_color[0], self.content_background_color[1], self.content_background_color[2], 1)
+		composite_image.generated_color = (self.content_background_color[0]/255, self.content_background_color[1]/255, self.content_background_color[2]/255, 1)
 		
 		composite = nodes.new('CompositorNodeImage')
 		composite.location = (location[0], location[1])

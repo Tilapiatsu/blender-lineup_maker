@@ -135,7 +135,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 								break
 						else:
 							if not assigned:
-								curr_asset.feed_material(mat.material)
+								# curr_asset.feed_material(mat.material)
 								print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
 
 				del assigned
@@ -606,7 +606,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 			chapter_naming_convention = N.NamingConvention(context, self.chapter, context.scene.lm_chapter_naming_convention)
 			asset_naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
 
-			new_chapter = self.set_chapter(chapter_naming_convention, asset_naming_convention)
+			new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
 
 			if new_chapter:
 				pdf.add_page()
@@ -633,25 +633,3 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		self.report({'INFO'}, 'Lineup Maker : PDF File exported correctly : "{}"'.format(pdf_file))
 
 		return {'FINISHED'}
-	
-	def set_chapter(self, chapter_nc, asset_nc):
-		match = True
-		if len(chapter_nc.naming_convention['name']):
-			for word in chapter_nc.naming_convention['name']:
-				if word not in asset_nc.naming_convention['name']:
-					match = False
-					break
-		else:
-			match = False
-		
-		if not match:
-			self.chapter = ''
-			for i,word in enumerate(chapter_nc.word_list):
-				if i < len(chapter_nc.word_list) - 1:
-					self.chapter += asset_nc.naming_convention[word].upper() + '_'
-				else:
-					self.chapter += asset_nc.naming_convention[word].upper()
-			
-			return True
-		else:
-			return False

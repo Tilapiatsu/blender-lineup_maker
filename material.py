@@ -59,6 +59,9 @@ def create_bsdf_material(context, material, texture_set=None):
 			except KeyError as k:
 				print('No texture found for channel "{}" in the material "{}".'.format(channel, material.name))
 				continue
+			
+			if t is None:
+				continue
 
 			dir_name = os.path.dirname(t)
 			file_name = os.path.basename(t)
@@ -66,6 +69,7 @@ def create_bsdf_material(context, material, texture_set=None):
 			texture = nodes.new('ShaderNodeTexImage')
 
 			bpy.ops.image.open(filepath=t, directory=dir_name, show_multiview=False)
+				
 			texture.image = bpy.data.images[file_name]
 			texture.label = os.path.splitext(file_name)[0]
 

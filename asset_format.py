@@ -328,20 +328,24 @@ class BpyAsset(object):
 					textures = mat['textures']
 					for texture in textures:
 						if texture['file'] == 'null':
-							continue
-							
-						texture_name = path.splitext(texture['file'])[0]
-						texture_path = path.join(self.get_asset_texture_folder(mesh_name), texture['file'])
-						t_naming_convention = N.NamingConvention(self.context, texture_name, self.param['lm_texture_naming_convention'])
+							texture['file'] = None
+							texture_name = None
+							texture_path = None
+							t_naming_convention = N.NamingConvention(self.context, '', self.param['lm_texture_naming_convention'])
+						else:
+							texture_name = path.splitext(texture['file'])[0]
+							texture_path = path.join(self.get_asset_texture_folder(mesh_name), texture['file'])
 
-						channel = texture['channel']
+							t_naming_convention = N.NamingConvention(self.context, texture_name, self.param['lm_texture_naming_convention'])
+							channel = texture['channel']
+							# Feed scn_asset
+							scn_texture = self.scn_asset.texture_list.add()
+							scn_texture.channel = channel
+							scn_texture.file_path = texture['file']
+
+							
 
 						t_naming_convention.naming_convention['channel'] = channel
-						
-						# Feed scn_asset
-						scn_texture = self.scn_asset.texture_list.add()
-						scn_texture.channel = channel
-						scn_texture.file_path = texture['file']
 
 						if material_name not in texture_naming_convention.keys():
 							texture_naming_convention[material_name] = t_naming_convention.naming_convention
@@ -459,9 +463,12 @@ class BpyAsset(object):
 		if self.asset_name in bpy.data.collections:
 			bpy.data.collections.remove(bpy.data.collections[self.asset_name])
 			H.set_active_collection(self.context, V.LM_ASSET_COLLECTION)
-		# if self.asset_name in self.param['lm_asset_list']:
-		# 	print(dir(self.param['lm_asset_list'][self.asset_name]))
-		# 	self.param['lm_asset_list'].remove(self.param['lm_asset_list'].index(self.asset_name))
+		if self.asset_name in self.param['lm_asset_list']:
+			for mat in self.param['lm_asset_list'][self.asset_name].material_list:
+				print(mat)
+				print(dir(mat))
+				print('toto')
+			
 
 	# Properties
 	@property
