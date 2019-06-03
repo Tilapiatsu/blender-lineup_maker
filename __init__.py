@@ -332,7 +332,8 @@ def register():
     bpy.types.Scene.lm_override_material_roughness = bpy.props.BoolProperty(name="Override Material Roughness", default=True)
     bpy.types.Scene.lm_default_material_roughness = bpy.props.FloatProperty(name='Default Material Roughness', default=0.6, min=0, max=1)
 
-    bpy.types.Scene.lm_background_color = bpy.props.FloatVectorProperty(name='Background Color', subtype='COLOR', default=(0.05,0.05,0.05), min=0, max=1)
+    bpy.types.Scene.lm_content_background_color = bpy.props.FloatVectorProperty(name='Content Background Color', subtype='COLOR', default=(0.05,0.05,0.05), min=0, max=1)
+    bpy.types.Scene.lm_text_background_color = bpy.props.FloatVectorProperty(name='Text Background Color', subtype='COLOR', default=(0, 0, 0), min=0, max=1)
     bpy.types.Scene.lm_font_color = bpy.props.FloatVectorProperty(name='Font Color', subtype='COLOR', default=(0.85,0.85,0.85), min=0, max=1)
 
     for cls in classes:
@@ -377,7 +378,8 @@ def unregister():
     del bpy.types.Scene.lm_optionnal_texture_keyword
     del bpy.types.Scene.lm_keyword_name
     del bpy.types.Scene.lm_font_color
-    del bpy.types.Scene.lm_background_color
+    del bpy.types.Scene.lm_text_background_color
+    del bpy.types.Scene.lm_content_background_color
     del bpy.types.Scene.lm_default_material_roughness
     del bpy.types.Scene.lm_default_material_color
     del bpy.types.Scene.lm_force_render

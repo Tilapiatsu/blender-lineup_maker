@@ -125,6 +125,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 							curr_asset.feed_material(mat.material)
 							continue
 						for t in curr_asset.asset[mesh_name][1].keys():
+							# TODO : Check if this is compatible with Json
 							tnc = N.NamingConvention(context, t, context.scene.lm_texture_naming_convention)
 							mnc = N.NamingConvention(context, mat.name.lower(), context.scene.lm_texture_naming_convention)
 
@@ -134,6 +135,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 								break
 						else:
 							if not assigned:
+								curr_asset.feed_material(mat.material)
 								print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
 
 				del assigned

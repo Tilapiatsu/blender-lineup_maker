@@ -73,7 +73,8 @@ class LM_PT_CompositLayout(bpy.types.Panel):
 
         col = layout.column(align=True)
 
-        col.prop(scn, 'lm_background_color', text='Backgroud Color')
+        col.prop(scn, 'lm_content_background_color', text='Content Backgroud Color')
+        col.prop(scn, 'lm_text_background_color', text='Text Backgroud Color')
         col.prop(scn, 'lm_font_color', text='Font Color')
 
 

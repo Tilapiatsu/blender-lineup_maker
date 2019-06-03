@@ -15,6 +15,8 @@ class LM_Composite(object):
 		self.res = self.get_composite_resolution()
 
 		self.text_color = (int(self.context.scene.lm_font_color[0] * 255), int(self.context.scene.lm_font_color[1] * 255), int(self.context.scene.lm_font_color[2] * 255))
+		self.text_background_color = self.context.scene.lm_text_background_color
+		self.content_background_color = self.context.scene.lm_content_background_color
 
 		self.font_size_chapter = int(math.floor(self.res[0]*100/self.res[1]))
 		self.character_size_chapter = (math.ceil(self.font_size_chapter/2), self.font_size_chapter)
@@ -29,8 +31,33 @@ class LM_Composite(object):
 		self.font_title = ImageFont.truetype(self.font_file, size=self.font_size_title)
 		self.font_paragraph = ImageFont.truetype(self.font_file, size=self.font_size_paragraph)
 
+		self.chapter = ''
+
 		self.curr_page = 0
 		self.pages = {}
+		
+	
+	def set_chapter(self, chapter_nc, asset_nc):
+		match = True
+		if len(chapter_nc.naming_convention['name']):
+			for word in chapter_nc.naming_convention['name']:
+				if word not in asset_nc.naming_convention['name']:
+					match = False
+					break
+		else:
+			match = False
+		
+		if not match:
+			self.chapter = ''
+			for i,word in enumerate(chapter_nc.word_list):
+				if i < len(chapter_nc.word_list) - 1:
+					self.chapter += asset_nc.naming_convention[word].upper() + '_'
+				else:
+					self.chapter += asset_nc.naming_convention[word].upper()
+			
+			return True
+		else:
+			return False
 	
 	def composite_pdf_summary(self, pdf):
 		# pdf.add_page()
@@ -38,7 +65,7 @@ class LM_Composite(object):
 		pdf.add_font(family='UbuntuMono-Bold', style='', fname=self.font_file, uni=True)
 		pdf.set_font('UbuntuMono-Bold', size=self.font_size_title)
 		pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
-		pdf.set_fill_color(r=0)
+		pdf.set_fill_color(r=self.text_background_color[0], g=self.text_background_color[1], b=self.text_background_color[2])
 
 		pdf.rect(x=0, y=0, w=self.res[0], h=self.res[1], style='F')
 
@@ -52,20 +79,34 @@ class LM_Composite(object):
 
 		initial_pos = (self.character_size_title[0], self.character_size_title[1])
 
-		for i,asset in enumerate(self.context.scene.lm_asset_list):
-			# Asset Name
-			text = asset.name
+		asset_name_list = [a.name for a in context.scene.lm_asset_list]
+		asset_name_list.sort()
+
+		for i,asset in enumerate(asset_name_list):
+			chapter_naming_convention = N.NamingConvention(context, self.chapter, context.scene.lm_chapter_naming_convention)
+			asset_naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
+
+			new_chapter = self.set_chapter(chapter_naming_convention, asset_naming_convention)
+
+			if new_chapter:
+				text = self.chapter
+			else:
+				text = asset
+
 			column = (self.character_size_title[1] * i) % self.res[1]
-			position = self.add_position(initial_pos, (0 if (self.character_size_title[1] * i) < self.res[1] else int(self.res[0]/2), column))
+			if new_chapter:
+				position = self.add_position(initial_pos, (100 if (self.character_size_title[1] * i) < self.res[1] else 100 + int(self.res[0]/2), column))
+			else:
+				position = self.add_position(initial_pos, (0 if (self.character_size_title[1] * i) < self.res[1] else int(self.res[0]/2), column))
 			pdf.text(x=position[0], y=position[1], txt=text)
-			pdf.link(x=position[0], y=position[1] - self.character_size_title[1], w=len(text)*self.character_size_title[0], h=self.character_size_title[1], link=self.pages[asset.name][0])
+			pdf.link(x=position[0], y=position[1] - self.character_size_title[1], w=len(text)*self.character_size_title[0], h=self.character_size_title[1], link=self.pages[asset][0])
 	
 	def composite_pdf_chapter(self, pdf, chapter_name):
 		print('Lineup Maker : Compositing pdf chapter "{}"'.format(chapter_name))
 		pdf.add_font(family='UbuntuMono-Bold', style='', fname=self.font_file, uni=True)
 		pdf.set_font('UbuntuMono-Bold', size=self.font_size_chapter)
 		pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
-		pdf.set_fill_color(r=0)
+		pdf.set_fill_color(r=self.text_background_color[0], g=self.text_background_color[1], b=self.text_background_color[2])
 
 		pdf.rect(x=0, y=0, w=self.res[0], h=self.res[1], style='F')
 
@@ -93,8 +134,8 @@ class LM_Composite(object):
 			image = Image.new('RGB', (self.res[0], self.res[1]))
 
 			draw = ImageDraw.Draw(image)
-			draw.rectangle(xy=[0, 0, self.res[0], self.res[2] * 2], fill='black')
-			draw.rectangle(xy=[0, self.res[1] - self.res[2] * 2, self.res[0], self.res[1]], fill='black')
+			draw.rectangle(xy=[0, 0, self.res[0], self.res[2] * 2], fill=self.text_background_color)
+			draw.rectangle(xy=[0, self.res[1] - self.res[2] * 2, self.res[0], self.res[1]], fill=self.text_background_color)
 
 
 			# Chapter Name
@@ -157,7 +198,7 @@ class LM_Composite_Image(LM_Composite):
 		framecount = self.get_current_frame_range()
 
 		composite_image = bpy.data.images.new(name='{}_composite'.format(name), width=self.res[0], height=self.res[1])
-		composite_image.generated_color = (0.1, 0.1, 0.1, 1)
+		composite_image.generated_color = (self.content_background_color[0], self.content_background_color[1], self.content_background_color[2], 1)
 		
 		composite = nodes.new('CompositorNodeImage')
 		composite.location = (location[0], location[1])
@@ -228,9 +269,9 @@ class LM_Composite_Image(LM_Composite):
 			image = Image.open(self.context.scene.lm_asset_list[name].raw_composite_filepath)
 
 			draw = ImageDraw.Draw(image)
-			draw.rectangle(xy=[0, 0, self.res[0], self.res[2] - self.character_size_paragraph[1]], fill='black')
+			draw.rectangle(xy=[0, 0, self.res[0], self.res[2] - self.character_size_paragraph[1]], fill=self.text_background_color)
 
-			draw.rectangle(xy=[0, self.res[1], self.res[0], self.res[1] - self.character_size_paragraph[1]], fill='black')
+			draw.rectangle(xy=[0, self.res[1], self.res[0], self.res[1] - self.character_size_paragraph[1]], fill=self.text_background_color)
 
 			# Asset Name
 			text = name
@@ -293,7 +334,7 @@ class LM_Composite_Image(LM_Composite):
 		pdf.add_font(family='UbuntuMono-Bold', style='', fname=self.font_file, uni=True)
 		pdf.set_font('UbuntuMono-Bold', size=self.font_size_title)
 		pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
-		pdf.set_fill_color(r=0)
+		pdf.set_fill_color(r=self.text_background_color[0], g=self.text_background_color[1], b=self.text_background_color[2])
 
 		pdf.rect(x=0, y=0, w=self.res[0], h=self.res[2] - self.character_size_paragraph[1], style='F')
 		pdf.rect(x=0, y=self.res[1] - self.character_size_paragraph[1]*1.5, w=self.res[0], h=self.res[1], style='F')

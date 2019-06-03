@@ -327,15 +327,17 @@ class BpyAsset(object):
 					material_name = mat['material']
 					textures = mat['textures']
 					for texture in textures:
+						if texture['file'] == 'null':
+							continue
+							
 						texture_name = path.splitext(texture['file'])[0]
 						texture_path = path.join(self.get_asset_texture_folder(mesh_name), texture['file'])
 						t_naming_convention = N.NamingConvention(self.context, texture_name, self.param['lm_texture_naming_convention'])
 
-						try:
-							channel = self.param['lm_texture_channels'][t_naming_convention.naming_convention['channel']].channel
-						except KeyError as k:
-							print('The channel name doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(texture_name))
-							continue
+						channel = texture['channel']
+
+						t_naming_convention.naming_convention['channel'] = channel
+						
 						# Feed scn_asset
 						scn_texture = self.scn_asset.texture_list.add()
 						scn_texture.channel = channel
