@@ -1,5 +1,5 @@
 import bpy
-import os, time, math
+import os, time, math, subprocess
 from fpdf import FPDF
 from os import path
 from . import variables as V
@@ -631,5 +631,8 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		pdf.output(pdf_file)
 
 		self.report({'INFO'}, 'Lineup Maker : PDF File exported correctly : "{}"'.format(pdf_file))
+
+		if context.scene.lm_open_pdf_when_exported:
+			subprocess.call(pdf_file)
 
 		return {'FINISHED'}

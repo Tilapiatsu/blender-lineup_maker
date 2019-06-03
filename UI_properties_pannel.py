@@ -53,8 +53,10 @@ class LM_PT_main(bpy.types.Panel):
             row.scale_x = 3
             row.operator("scene.lm_renderassets", icon='OUTPUT', text='Render all assets')
             
-            b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets')
-            b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
+            # b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets')
+            row = b.row()
+            row.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
+            row.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
 
 
 class LM_PT_CompositLayout(bpy.types.Panel):          

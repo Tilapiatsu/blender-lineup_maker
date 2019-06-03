@@ -336,6 +336,8 @@ def register():
     bpy.types.Scene.lm_text_background_color = bpy.props.FloatVectorProperty(name='Text Background Color', subtype='COLOR', default=(0, 0, 0), min=0, max=1)
     bpy.types.Scene.lm_font_color = bpy.props.FloatVectorProperty(name='Font Color', subtype='COLOR', default=(0.85,0.85,0.85), min=0, max=1)
 
+    bpy.types.Scene.lm_open_pdf_when_exported = bpy.props.BoolProperty(name="Open PDF File When Exported", default=True)
+
     for cls in classes:
         bpy.utils.register_class(cls)
     
@@ -369,6 +371,7 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
+    del bpy.types.Scene.lm_open_pdf_when_exported
     del bpy.types.Scene.lm_override_material_roughness
     del bpy.types.Scene.lm_override_material_color
     del bpy.types.Scene.lm_avoid_update
