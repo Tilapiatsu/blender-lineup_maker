@@ -341,12 +341,8 @@ class LM_PT_Chapter(bpy.types.Panel):
         
         rows = len(scn.lm_keywords) if len(scn.lm_keywords) > 2 else 2
         row.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
-        
-        chapter = 'chapter will be created based on : '
-        if scn.lm_chapter_name is not None:
-            chapter = scn.lm_chapter_name
 
-        b.operator('scene.lm_use_keyword_as_chapter', text='Use selected keyword as chapter')
+        b.operator('scene.lm_add_chapter_keyword', text='Add selected keyword in chapter')
         row = b.row()
-        row.label(text=chapter)
-        row.operator('scene.lm_clear_chapter_keyword', icon='X', text="")
+        row.prop(scn, 'lm_chapter_naming_convention', text='Chapter Keywords')
+        row.operator('scene.lm_remove_chapter_keyword', icon='X', text="")

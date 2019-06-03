@@ -201,8 +201,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	render_path = ''
 
 	composite_filepath = ''
-	chapter = ''
-	chapters = []
 
 	def pre(self, dummy):
 		self.rendering = True
@@ -291,10 +289,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		if event.type == 'TIMER':
 
 			if True in (not self.need_render_asset, self.stop is True): 
-				
-				for asset in self.chapters:
-					composite = C.LM_Composite_Image(context, asset)
-					composite.composite_chapter()
 
 				self.unregister_render_handler()
 				bpy.context.window_manager.event_timer_remove(self._timer)
@@ -316,13 +310,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 			elif self.rendering  and self.composite_node is None and self.need_render_asset[0].need_render is False and self.need_render_asset[0].rendered is True:
 				asset = self.need_render_asset[0]
-				naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention).naming_convention
-				curr_chapter = naming_convention[context.scene.lm_chapter_name]
-				composite = C.LM_Composite_Image(context, asset, self.asset_number)
+				composite = C.LM_Composite_Image(context, self.asset_number)
+				composite.build_composite_nodegraph(asset.name)
 				self.composite_node = composite.output
-				if curr_chapter != self.chapter:
-					self.chapters.append(asset)
-					self.chapter = curr_chapter
 
 			elif self.rendering and self.remaining_assets and self.composite_node is not None:
 				self.unregister_render_handler()
@@ -338,7 +328,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				asset.render_date = time.time()
 				asset.need_write_info = True
 
-				C.LM_Composite_Image(context, asset, self.asset_number).composite_asset_info()
+				C.LM_Composite_Image(context, self.asset_number).composite_asset_info(asset.name)
 
 				self.rendered_assets.append(asset)
 
@@ -477,8 +467,6 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 	composited_asset = []
 	asset_number = 0
 	info_written_asset = []
-	chapter = ''
-	chapters = []
 	done = False
 
 	def pre(self, dummy):
@@ -530,7 +518,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 
 		if len(self.need_compositing_asset):
 			for i,asset in enumerate(self.need_compositing_asset):
-				C.LM_Composite_Image(context, asset, self.asset_number).output
+				C.LM_Composite_Image(context, asset, self.asset_number).output(asset.name)
 				asset.need_write_info = False
 				asset.info_written = False
 
@@ -551,10 +539,6 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 				self.unregister_render_handler()
 				bpy.context.window_manager.event_timer_remove(self._timer)
 
-				for asset in self.chapters:
-					composite = C.LM_Composite_Image(context, asset, self.asset_number)
-					composite.composite_chapter()
-
 				if self.stop:
 					self.report({'WARNING'}, "Lineup Maker : Compositing cancelled by user")
 					self.print_render_log()
@@ -569,13 +553,8 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 
 			elif self.compositing is False and len(self.composited_asset):
 				for asset in context.scene.lm_asset_list:
-					naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention).naming_convention
-					curr_chapter = naming_convention[context.scene.lm_chapter_name]
-					composite = C.LM_Composite_Image(context, asset, self.asset_number)
-					composite.composite_asset_info()
-					if curr_chapter != self.chapter:
-						self.chapters.append(asset)
-						self.chapter = curr_chapter
+					composite = C.LM_Composite_Image(context, self.asset_number)
+					composite.composite_asset_info(asset.name)
 					asset.info_written = True
 					self.info_written_asset.append(asset)
 				
@@ -605,24 +584,46 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_label = "Lineup Maker: Export PDF in the Render Path"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	chapter = ''
+
 	def execute(self, context):
-		composite = C.LM_Composite_Image(context, context.scene.lm_asset_list[0].name)
+		composite = C.LM_Composite_Image(context)
 		res = composite.res
 		orientation = 'P' if res[1] < res[0] else 'L'
 		pdf = FPDF(orientation, 'pt', (res[0], res[1]))
 		
 		asset_name_list = [a.name for a in context.scene.lm_asset_list]
 		asset_name_list.sort()
+
+		# create TOC
+		pdf.add_page()
+		composite.curr_page += 1
+
 		for name in asset_name_list:
 			asset = context.scene.lm_asset_list[name]
+			chapter_naming_convention = N.NamingConvention(context, self.chapter, context.scene.lm_chapter_naming_convention)
+			asset_naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
+
+			new_chapter = self.set_chapter(chapter_naming_convention, asset_naming_convention)
+
+			if new_chapter:
+				pdf.add_page()
+				composite.curr_page += 1
+				composite.composite_pdf_chapter(pdf, self.chapter)
+
 			if asset.raw_composite_filepath != '':
 				pdf.add_page()
+				composite.curr_page += 1
 
-				composite = C.LM_Composite_Image(context, asset)
 				composite.convert_to_jpeg(asset.raw_composite_filepath, asset.final_composite_filepath, 80)
 
 				pdf.image(name=asset.final_composite_filepath, x=0, y=0, w=res[0], h=res[1])
-				composite.composite_pdf_asset_info(pdf)
+				composite.composite_pdf_asset_info(pdf, asset.name)
+		
+		pdf.page = 1
+		composite.composite_pdf_summary(pdf)
+
+		pdf.page = composite.curr_page
 		
 		pdf_file = path.join(context.scene.lm_render_path, 'lineup.pdf')
 		pdf.output(pdf_file)
@@ -630,3 +631,25 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		self.report({'INFO'}, 'Lineup Maker : PDF File exported correctly : "{}"'.format(pdf_file))
 
 		return {'FINISHED'}
+	
+	def set_chapter(self, chapter_nc, asset_nc):
+		match = True
+		if len(chapter_nc.naming_convention['name']):
+			for word in chapter_nc.naming_convention['name']:
+				if word not in asset_nc.naming_convention['name']:
+					match = False
+					break
+		else:
+			match = False
+		
+		if not match:
+			self.chapter = ''
+			for i,word in enumerate(chapter_nc.word_list):
+				if i < len(chapter_nc.word_list) - 1:
+					self.chapter += asset_nc.naming_convention[word].upper() + '_'
+				else:
+					self.chapter += asset_nc.naming_convention[word].upper()
+			
+			return True
+		else:
+			return False

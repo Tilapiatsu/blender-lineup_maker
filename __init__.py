@@ -85,8 +85,8 @@ classes = (
     LM_Keywords_UIList,
     LM_KeywordValues_UIList,
     LM_Cameras_UIList,
-    LM_UI_UseKeywordAsChapter,
-    LM_UI_ClearChapterKeyword,
+    LM_UI_AddChapterKeyword,
+    LM_UI_RemoveChapterKeyword,
     LM_UI_MoveCameraKeyword,
     LM_UI_RenameCameraKeyword,
     LM_UI_ClearCameraKeyword,
@@ -321,7 +321,7 @@ def register():
     bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
     bpy.types.Scene.lm_shader_name = bpy.props.StringProperty(name="Add Shader", update=update_shader_name)
     bpy.types.Scene.lm_camera_keyword_name = bpy.props.StringProperty(name="Add Keyword for selected Chamera", update=update_camera_keyword_name)
-    bpy.types.Scene.lm_chapter_name = bpy.props.StringProperty(name="Chapter")
+    bpy.types.Scene.lm_chapter_naming_convention = bpy.props.StringProperty(name="Chapter")
 
     bpy.types.Scene.lm_linear_channel = bpy.props.BoolProperty(name="Linear Channel")
     bpy.types.Scene.lm_normalMap_channel = bpy.props.BoolProperty(name="NormalMap Channel")
@@ -397,7 +397,7 @@ def unregister():
     del bpy.types.Scene.lm_asset_naming_convention
     del bpy.types.Scene.lm_default_camera
     del bpy.types.Scene.lm_camera_keyword_name
-    del bpy.types.Scene.lm_chapter_name
+    del bpy.types.Scene.lm_chapter_naming_convention
     del bpy.types.Scene.lm_asset_collection
     del bpy.types.Scene.lm_render_collection
     del bpy.types.Scene.lm_asset_path
