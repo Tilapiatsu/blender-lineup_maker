@@ -311,26 +311,14 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			
 
 			elif self.rendering  and self.composite_node is None and self.need_render_asset[0].need_render is False and self.need_render_asset[0].rendered is True:
-				asset = self.need_render_asset[0]
-				composite = C.LM_Composite_Image(context, self.asset_number)
-				composite.build_composite_nodegraph(asset.name)
-				self.composite_node = composite.output
-
-			elif self.rendering and self.remaining_assets and self.composite_node is not None:
 				self.unregister_render_handler()
+
 				asset = self.need_render_asset[0]
-				print('Lineup Maker : Rendering composited image of "{}"'.format(asset.name))
+				composite = C.LM_Composite_Image(context)
+				composite.composite_asset(asset)
 				
-				bpy.ops.render.render(write_still=False)
-
-				self.composite_node.mute = True
-				
-				self.composite_node = None
-
 				asset.render_date = time.time()
 				asset.need_write_info = True
-
-				C.LM_Composite_Image(context, self.asset_number).composite_asset_info(asset.name)
 
 				self.rendered_assets.append(asset)
 
@@ -341,7 +329,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				self.asset_number += 1
 
 				self.rendering = False
-				
+
 				self.register_render_handler()
 
 			elif self.rendering is False and self.composite_node is None: 
@@ -590,7 +578,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 
 	def execute(self, context):
 		composite = C.LM_Composite_Image(context)
-		res = composite.res
+		res = composite.composite_res
 		orientation = 'P' if res[1] < res[0] else 'L'
 		pdf = FPDF(orientation, 'pt', (res[0], res[1]))
 		
@@ -613,17 +601,12 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 				composite.curr_page += 1
 				composite.composite_pdf_chapter(pdf, self.chapter)
 
-			if asset.raw_composite_filepath != '':
-				pdf.add_page()
-				composite.curr_page += 1
-
-				composite.convert_to_jpeg(asset.raw_composite_filepath, asset.final_composite_filepath, 80)
-
-				pdf.image(name=asset.final_composite_filepath, x=0, y=0, w=res[0], h=res[1])
-				composite.composite_pdf_asset_info(pdf, asset.name)
+			pdf.add_page()
+			composite.curr_page += 1
+			composite.composite_pdf_asset_info(pdf, asset.name)
 		
 		pdf.page = 1
-		composite.composite_pdf_summary(pdf)
+		composite.composite_pdf_toc(pdf)
 
 		pdf.page = composite.curr_page
 		
@@ -633,6 +616,6 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		self.report({'INFO'}, 'Lineup Maker : PDF File exported correctly : "{}"'.format(pdf_file))
 
 		if context.scene.lm_open_pdf_when_exported:
-			subprocess.call(pdf_file)
+			os.system("start " + pdf_file)
 
 		return {'FINISHED'}
