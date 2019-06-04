@@ -12,10 +12,25 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
-#   - Create a summary and a chapter creator
-#   - Create PDF at the end of the compositing process
-#   - Create an operator to update/import render and compoosite in a row
-#   - Create a render selected asset operator
+#   - Create an operator to update/import render and export PDF in a row
+#   - Add Material name in the lineup PDF
+#   - Better import : Remove assets that is not there anymore on the drive
+# 
+#   - Create an asset manager
+#       - List all asset
+#       - Remove asset : Remove from the scene and on the drive
+#       - Create a render selected asset operator
+#       - Color Code the asset that Need Update or Need Render in the list
+# 
+#   - Log and repport
+#       - Unified class to print message to Blender and to write a log file for the entire addon
+#       - Pop up message at the end to notify what is happening
+# 
+#   - Statistics
+#       - Number of asset
+#       - Number of need Render asset
+#       - Number of need Update asset
+
 
 #  DEPENDENCIES :
 #      pyfpdf : pip install fpdf
