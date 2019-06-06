@@ -465,9 +465,8 @@ class BpyAsset(object):
 			H.set_active_collection(self.context, V.LM_ASSET_COLLECTION)
 		if self.asset_name in self.param['lm_asset_list']:
 			for mat in self.param['lm_asset_list'][self.asset_name].material_list:
-				print(mat)
-				print(dir(mat))
-				print('toto')
+				# Trying to remove material to avoid doubles
+				# bpy.data.materials.remove(mat.material)
 			
 
 	# Properties
