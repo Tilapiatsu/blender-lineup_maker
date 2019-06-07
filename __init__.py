@@ -12,6 +12,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
+#   - Improve the camera assignment to be able to assign a camera for multiple keyword at once
+#       - FullSet_003 --> category = Fullset   /  incr = 003
 #   - Create an operator to update/import render and export PDF in a row
 #   - Add Material name in the lineup PDF
 #   - Better import : Remove assets that is not there anymore on the drive
@@ -351,6 +353,8 @@ def register():
     bpy.types.Scene.lm_text_background_color = bpy.props.FloatVectorProperty(name='Text Background Color', subtype='COLOR', default=(0, 0, 0), min=0, max=1)
     bpy.types.Scene.lm_font_color = bpy.props.FloatVectorProperty(name='Font Color', subtype='COLOR', default=(0.85,0.85,0.85), min=0, max=1)
 
+    bpy.types.Scene.lm_override_frames = bpy.props.BoolProperty(name='override rendered frames', default=True)
+    bpy.types.Scene.lm_precomposite_frames = bpy.props.BoolProperty(name='Precomposite frames', default=True)
     bpy.types.Scene.lm_open_pdf_when_exported = bpy.props.BoolProperty(name="Open PDF File When Exported", default=True)
 
     for cls in classes:
@@ -387,6 +391,8 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
     del bpy.types.Scene.lm_open_pdf_when_exported
+    del bpy.types.Scene.lm_precomposite_frames
+    del bpy.types.Scene.lm_override_frames
     del bpy.types.Scene.lm_override_material_roughness
     del bpy.types.Scene.lm_override_material_color
     del bpy.types.Scene.lm_avoid_update

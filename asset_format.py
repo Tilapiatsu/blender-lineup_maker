@@ -332,6 +332,7 @@ class BpyAsset(object):
 							texture_name = None
 							texture_path = None
 							t_naming_convention = N.NamingConvention(self.context, '', self.param['lm_texture_naming_convention'])
+							channel = ''
 						else:
 							texture_name = path.splitext(texture['file'])[0]
 							texture_path = path.join(self.get_asset_texture_folder(mesh_name), texture['file'])
@@ -465,8 +466,9 @@ class BpyAsset(object):
 			H.set_active_collection(self.context, V.LM_ASSET_COLLECTION)
 		if self.asset_name in self.param['lm_asset_list']:
 			for mat in self.param['lm_asset_list'][self.asset_name].material_list:
+				pass
 				# Trying to remove material to avoid doubles
-				# bpy.data.materials.remove(mat.material)
+				bpy.data.materials.remove(mat.material)
 			
 
 	# Properties

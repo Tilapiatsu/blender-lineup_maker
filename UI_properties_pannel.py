@@ -47,6 +47,8 @@ class LM_PT_main(bpy.types.Panel):
         b.operator("scene.lm_importassets", icon='IMPORT', text=text)
 
         if imported:
+            b.prop(scn, 'lm_precomposite_frames')
+            b.prop(scn, 'lm_override_frames')
             row = b.row()
             
             row.prop(scn, 'lm_force_render', text='Force')

@@ -281,6 +281,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.clear_composite_tree(context)
 		self.context = context
 
+		bpy.context.scene.render.use_overwrite = context.scene.lm_override_frames
+
 		self.register_render_handler()
 		
 		bpy.context.window_manager.modal_handler_add(self)
@@ -308,17 +310,18 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				self.rendered_assets = []
 				return {"FINISHED"} 
 
-			
 
 			elif self.rendering  and self.composite_node is None and self.need_render_asset[0].need_render is False and self.need_render_asset[0].rendered is True:
-				self.unregister_render_handler()
-
 				asset = self.need_render_asset[0]
-				composite = C.LM_Composite_Image(context)
-				composite.composite_asset(asset)
-				
-				asset.render_date = time.time()
-				asset.need_write_info = True
+				if context.scene.lm_precomposite_frames:
+					self.unregister_render_handler()
+					
+					composite = C.LM_Composite_Image(context)
+					composite.composite_asset(asset)
+					
+					asset.render_date = time.time()
+					asset.need_write_info = True
+					self.register_render_handler()
 
 				self.rendered_assets.append(asset)
 
@@ -329,8 +332,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				self.asset_number += 1
 
 				self.rendering = False
-
-				self.register_render_handler()
+				
 
 			elif self.rendering is False and self.composite_node is None: 
 				self.render(context)
