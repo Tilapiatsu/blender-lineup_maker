@@ -55,6 +55,7 @@ from .OP_files import *
 from .UI_properties_pannel import *
 from .preferences import *
 from .properties import *
+from .OP_ui_list_asset import *
 from .OP_ui_list_texture import *
 from .OP_ui_list_channel import *
 from .OP_ui_list_shader import *
@@ -80,6 +81,7 @@ classes = (
     LM_OP_UpdateLineup,
     LM_OP_ImportAssets,
     LM_OP_RenderAssets,
+    LM_OP_RenderSelectedAssets,
     LM_OP_OpenFolder,
     LM_OP_CompositeRenders,
     LM_OP_ExportPDF,
@@ -89,6 +91,7 @@ classes = (
     LM_PT_Chapter,
     LM_PT_CompositLayout,
     LM_PT_main,
+    LM_PT_AssetList,
     LM_Render_List,
     LM_Material_List,
     LM_MeshObject_List,
@@ -107,6 +110,10 @@ classes = (
     LM_Keywords_UIList,
     LM_KeywordValues_UIList,
     LM_Cameras_UIList,
+    LM_AssetList_UIList,
+    LM_UI_MoveAsset,
+    LM_UI_ClearAssetList,
+    LM_UI_RemoveAsset,
     LM_UI_AddChapterKeyword,
     LM_UI_RemoveChapterKeyword,
     LM_UI_MoveCameraKeyword,
@@ -338,6 +345,8 @@ def register():
     bpy.types.Scene.lm_channel_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_shader_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_camera_idx = bpy.props.IntProperty()
+
+    bpy.types.Scene.lm_asset_list_idx = bpy.props.IntProperty()
     
     bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_texture_channel_name)
     bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
@@ -415,6 +424,7 @@ def unregister():
     del bpy.types.Scene.lm_keyword_value
     del bpy.types.Scene.lm_shader_name
     del bpy.types.Scene.lm_shader_idx
+    del bpy.types.Scene.lm_asset_list_idx
     del bpy.types.Scene.lm_camera_idx
     del bpy.types.Scene.lm_channel_name
     del bpy.types.Scene.lm_channel_idx

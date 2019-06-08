@@ -127,3 +127,10 @@ class LM_Cameras_UIList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
         row.label(text='"{}" will render asset which "{}" = "{}"'.format(item.camera.name, item.keyword, item.keyword_value))
+
+class LM_AssetList_UIList(bpy.types.UIList):
+    bl_idname = "LM_UL_asset_list"
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        row = layout.split(factor=0.7)
+        row.label(text='{}'.format(item.name))

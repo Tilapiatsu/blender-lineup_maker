@@ -53,7 +53,7 @@ class LM_PT_main(bpy.types.Panel):
             
             row.prop(scn, 'lm_force_render', text='Force')
             row.scale_x = 3
-            row.operator("scene.lm_renderassets", icon='OUTPUT', text='Render all assets')
+            row.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets')
             
             # b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets')
             row = b.row()
@@ -351,3 +351,34 @@ class LM_PT_Chapter(bpy.types.Panel):
         row = b.row()
         row.prop(scn, 'lm_chapter_naming_convention', text='Chapter Keywords')
         row.operator('scene.lm_remove_chapter_keyword', icon='X', text="")
+
+
+
+class LM_PT_AssetList(bpy.types.Panel):          
+    bl_label = "Asset List"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = 'Lineup Maker'
+
+    
+    def draw(self, context):
+        scn = context.scene
+        layout = self.layout
+
+        col = layout.column(align=True)
+        b = col.box()
+        b.label(text='Asset List')
+        
+        row = b.row()
+        rows = len(scn.lm_asset_list) if len(scn.lm_asset_list) > 2 else 2
+        
+        row.template_list('LM_UL_asset_list', '', scn, 'lm_asset_list', scn, 'lm_asset_list_idx', rows=rows)
+        c = row.column(align=True)
+        c.operator("scene.lm_move_asset", text="", icon='TRIA_UP').direction = "UP"
+        c.operator("scene.lm_move_asset", text="", icon='TRIA_DOWN').direction = "DOWN"
+
+        c.separator()
+        c.operator("scene.lm_clear_asset_list", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_remove_asset", text="", icon='X')
+
+
