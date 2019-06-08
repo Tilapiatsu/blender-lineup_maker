@@ -24,9 +24,6 @@
 #   - Better import : Remove assets that is not there anymore on the drive ?
 # 
 #   - Create an asset manager
-#       - List all asset
-#       - Remove asset : Remove from the scene and on the drive
-#       - Create a render selected asset operator
 #       - Color Code the asset that Need Update or Need Render in the list
 # 
 #   - Log and repport
