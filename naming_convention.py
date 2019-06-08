@@ -75,7 +75,7 @@ class NamingConvention(object):
 	
 	@property
 	def word_list(self):
-		return [w.group(2).lower() for w in self.words]
+		return [w.group(2).lower() for w in self.words if w.group(2) is not None]
 	
 	@property
 	def optionnal_words(self):
@@ -94,7 +94,7 @@ class NamingConvention(object):
 	
 	@property
 	def name_list(self):
-		return [n.group(1) for n in self.names]
+		return [n.group(1).lower() for n in self.names]
 
 	@property
 	def channels(self):
@@ -124,9 +124,9 @@ class NamingConvention(object):
 				keywords.update({k.name:[]})
 			for k in self.param['lm_keyword_values']:
 				if k.keyword not in keywords.keys():
-					keywords.update({k.keyword:[k.name]})
+					keywords.update({k.keyword:[k.name.lower()]})
 				else:
-					keywords[k.keyword].append(k.name)
+					keywords[k.keyword].append(k.name.lower())
 
 			self._keywords = keywords
 		
@@ -176,7 +176,7 @@ class NamingConvention(object):
 			
 			return return_dict, assigned
 			
-		naming_convention = {'name':[], 'fullname': self.fullname, 'hardcoded':[], 'match':True, 'included':[], 'optionnal':[]}
+		naming_convention = {'name':[], 'fullname': self.fullname, 'hardcoded':[], 'match':True, 'included':[], 'optionnal':[], 'keywords':self.word_list}
 
 		if self.filepath:
 			naming_convention.update({'file':self.filepath})

@@ -12,7 +12,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
-#   - Correctly filter asset to import based on their keywords name
 #   - Improve the camera assignment to be able to assign a camera for multiple keyword at once
 #       - FullSet_003 --> category = Fullset   /  incr = 003
 #   - Compositing method

@@ -466,23 +466,6 @@ class BpyAsset(object):
 					name = name + separator
 			o.name = name
 
-	def compare_naming_conventions(self, n1, n2):
-		if n1[1] in n1[0].keys() and n2[1] in n2[0].keys():
-			return n1[0][n1[1]] == n2[0][n2[1]]
-		else:
-			if n1[1] in V.LM_NAMING_CONVENTION_KEYWORDS_COMMON or n2[1] in V.LM_NAMING_CONVENTION_KEYWORDS_COMMON:
-				return False
-			else:
-				return True
-
-	def matching_gender(self, g1, g2):
-		for gg1 in g1:
-			for gg2 in g2:
-				if gg1 == gg2:
-					return True
-		else:
-			return False
-
 	def remove_asset(self):
 		if self.asset_name in bpy.data.collections:
 			bpy.data.collections.remove(bpy.data.collections[self.asset_name])
