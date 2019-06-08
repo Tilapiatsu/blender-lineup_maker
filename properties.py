@@ -26,6 +26,7 @@ class LM_Texture_List(bpy.types.PropertyGroup):
 
 class LM_Asset_List(bpy.types.PropertyGroup):
     render_date = bpy.props.FloatProperty(name="Last Render")
+    import_date = bpy.props.FloatProperty(name="Import Date")
     mesh_list = bpy.props.CollectionProperty(type=LM_MeshFile_List)
     material_list = bpy.props.CollectionProperty(type=LM_Material_List)
     texture_list = bpy.props.CollectionProperty(type=LM_Texture_List)
@@ -133,4 +134,7 @@ class LM_AssetList_UIList(bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
-        row.label(text='{}'.format(item.name))
+        text = item.name
+        if item.rendered:
+            text += ' - Rendered'
+        row.label(text='{}'.format(text))

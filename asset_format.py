@@ -84,6 +84,8 @@ class BpyAsset(object):
 			if 'hasUV2' in self.json_data[name].keys():
 				self.scn_asset.has_uv2 = self.json_data[name]['hasUV2']
 
+		global_import_date = 0.0
+
 		for i,f in enumerate(self.meshes):
 			file = path.basename(f)
 			name,ext = path.splitext(path.basename(f))
@@ -108,8 +110,10 @@ class BpyAsset(object):
 			curr_mesh_list = self.scn_asset.mesh_list.add()
 			curr_mesh_list.name = name
 			curr_mesh_list.file_path = f
-			curr_mesh_list.import_date = path.getctime(f)
+			curr_mesh_list.import_date = path.getmtime(f)
 			curr_mesh_list.file_size = path.getsize(f)
+
+			global_import_date += path.getctime(f)
 			
 
 			# Updating Materials
@@ -132,6 +136,10 @@ class BpyAsset(object):
 					curr_mesh_material_list.name = m.material.name.lower()
 					curr_mesh_material_list.material = m.material
 		
+		if len(self.meshes):
+			self.scn_asset.import_date = global_import_date / len(self.meshes)
+		else:
+			self.scn_asset.import_date = 0.0
 		self.asset = self.get_asset()
 		# self.param['lm_asset_list'][self.asset_name] = self.scn_asset
 	
@@ -145,7 +153,7 @@ class BpyAsset(object):
 		need_update = False
 		for f in self.meshes:
 			file_name = path.splitext(path.basename(f))[0]
-			file_time = path.getctime(f)
+			file_time = path.getmtime(f)
 			file_size = path.getsize(f)
 			try:
 				mesh_time = curr_asset.mesh_list[file_name].import_date

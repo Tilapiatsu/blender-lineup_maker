@@ -53,7 +53,7 @@ class LM_PT_main(bpy.types.Panel):
             
             row.prop(scn, 'lm_force_render', text='Force')
             row.scale_x = 3
-            row.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets')
+            row.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets').render_list = 'ALL'
             
             # b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets')
             row = b.row()
@@ -381,4 +381,21 @@ class LM_PT_AssetList(bpy.types.Panel):
         c.operator("scene.lm_clear_asset_list", text="", icon='LOOP_BACK')
         c.operator("scene.lm_remove_asset", text="", icon='X')
 
+        row.separator()
+        b.operator("scene.lm_add_asset_to_render", text='Add selected asset to render queue', icon='SORT_ASC')
+        row.separator()
+        b.label(text='Render Queue')
+        row = b.row()
+        rows = len(scn.lm_asset_to_render_list) if len(scn.lm_asset_to_render_list) > 2 else 2
+        row.template_list('LM_UL_asset_list', '', scn, 'lm_asset_to_render_list', scn, 'lm_asset_to_render_list_idx', rows=rows)
+        c = row.column(align=True)
+        c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_UP').direction = "UP"
+        c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_DOWN').direction = "DOWN"
+
+        c.separator()
+        c.operator("scene.lm_clear_asset_to_render_list", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_remove_asset_to_render", text="", icon='X')
+
+        if len(scn.lm_asset_to_render_list):
+            b.operator('scene.lm_render_assets', text='Render queued list', icon='OUTPUT').render_list = 'QUEUED'
 

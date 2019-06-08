@@ -12,6 +12,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
+#   - Correctly filter asset to import based on their keywords name
 #   - Improve the camera assignment to be able to assign a camera for multiple keyword at once
 #       - FullSet_003 --> category = Fullset   /  incr = 003
 #   - Compositing method
@@ -20,7 +21,7 @@
 #       - Lineup
 #   - Create an operator to update/import render and export PDF in a row
 #   - Add Material name in the lineup PDF
-#   - Better import : Remove assets that is not there anymore on the drive
+#   - Better import : Remove assets that is not there anymore on the drive ?
 # 
 #   - Create an asset manager
 #       - List all asset
@@ -56,6 +57,7 @@ from .UI_properties_pannel import *
 from .preferences import *
 from .properties import *
 from .OP_ui_list_asset import *
+from .OP_ui_list_asset_to_render import *
 from .OP_ui_list_texture import *
 from .OP_ui_list_channel import *
 from .OP_ui_list_shader import *
@@ -81,7 +83,6 @@ classes = (
     LM_OP_UpdateLineup,
     LM_OP_ImportAssets,
     LM_OP_RenderAssets,
-    LM_OP_RenderSelectedAssets,
     LM_OP_OpenFolder,
     LM_OP_CompositeRenders,
     LM_OP_ExportPDF,
@@ -111,6 +112,10 @@ classes = (
     LM_KeywordValues_UIList,
     LM_Cameras_UIList,
     LM_AssetList_UIList,
+    LM_UI_AddAssetToRender,
+    LM_UI_MoveAssetToRender,
+    LM_UI_ClearAssetToRenderList,
+    LM_UI_RemoveAssetToRender,
     LM_UI_MoveAsset,
     LM_UI_ClearAssetList,
     LM_UI_RemoveAsset,
@@ -347,6 +352,7 @@ def register():
     bpy.types.Scene.lm_camera_idx = bpy.props.IntProperty()
 
     bpy.types.Scene.lm_asset_list_idx = bpy.props.IntProperty()
+    bpy.types.Scene.lm_asset_to_render_list_idx = bpy.props.IntProperty()
     
     bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_texture_channel_name)
     bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
@@ -375,6 +381,7 @@ def register():
         bpy.utils.register_class(cls)
     
     bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
+    bpy.types.Scene.lm_asset_to_render_list = bpy.props.CollectionProperty(type=LM_Asset_List)
 
     bpy.types.Scene.lm_initial_view_layer = bpy.props.StringProperty(name="Initial ViewLayer")
 
@@ -400,6 +407,7 @@ def unregister():
     del bpy.types.Scene.lm_texture_channels
     del bpy.types.Scene.lm_initial_view_layer
     del bpy.types.Scene.lm_asset_list
+    del bpy.types.Scene.lm_asset_to_render_list
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
@@ -425,6 +433,7 @@ def unregister():
     del bpy.types.Scene.lm_shader_name
     del bpy.types.Scene.lm_shader_idx
     del bpy.types.Scene.lm_asset_list_idx
+    del bpy.types.Scene.lm_asset_to_render_list_idx
     del bpy.types.Scene.lm_camera_idx
     del bpy.types.Scene.lm_channel_name
     del bpy.types.Scene.lm_channel_idx

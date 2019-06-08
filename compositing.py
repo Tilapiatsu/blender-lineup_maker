@@ -60,7 +60,7 @@ class LM_Composite(object):
 
 		initial_pos = (self.character_size_title[0], self.character_size_title[1])
 
-		asset_name_list = [a.name for a in self.context.scene.lm_asset_list]
+		asset_name_list = [a.name for a in self.context.scene.lm_asset_list if a.rendered]
 		asset_name_list.sort()
 		
 		i = 0
@@ -223,9 +223,6 @@ class LM_Composite_Image(LM_Composite):
 
 		composite_image.convert('RGB').save(composite_filepath)
 
-
-
-
 	def build_composite_nodegraph(self, name):
 		print('Lineup Maker : Generating composite nodegraph')
 		tree = self.context.scene.node_tree
@@ -370,76 +367,77 @@ class LM_Composite_Image(LM_Composite):
 			converted.save(self.context.scene.lm_asset_list[name].final_composite_filepath, "JPEG", quality=80)
 
 	def composite_pdf_asset_info(self, pdf, name):
-		print('Lineup Maker : Compositing pdf asset info for "{}"'.format(name))
 		asset = self.context.scene.lm_asset_list[name]
-		pdf.image(asset.final_composite_filepath, x=0, y=0, type='JPEG')
+		if asset.final_composite_filepath != '':
+			print('Lineup Maker : Compositing pdf asset info for "{}"'.format(name))
+			pdf.image(asset.final_composite_filepath, x=0, y=0, type='JPEG')
 
-		pdf.add_font(family='UbuntuMono-Bold', style='', fname=self.font_file, uni=True)
-		pdf.set_font('UbuntuMono-Bold', size=self.font_size_title)
-		pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
-		pdf.set_fill_color(r=self.text_background_color[0], g=self.text_background_color[1], b=self.text_background_color[2])
-
-		pdf.rect(x=0, y=0, w=self.composite_res[0], h=self.composite_res[2] - self.character_size_paragraph[1], style='F')
-		pdf.rect(x=0, y=self.composite_res[1] - self.character_size_paragraph[1]*1.5, w=self.composite_res[0], h=self.composite_res[1], style='F')
-
-		# Asset Name
-		text = name
-		position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1])
-		pdf.text(x=position[0], y=position[1], txt=text)
-
-		# WIP
-		text = 'WIP'
-		if self.context.scene.lm_asset_list[name].wip:
-			pdf.set_text_color(r=200, g=50, b=0)
-			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1] * 2)
-			pdf.text(x=position[0], y=position[1], txt=text)
+			pdf.add_font(family='UbuntuMono-Bold', style='', fname=self.font_file, uni=True)
+			pdf.set_font('UbuntuMono-Bold', size=self.font_size_title)
 			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
+			pdf.set_fill_color(r=self.text_background_color[0], g=self.text_background_color[1], b=self.text_background_color[2])
 
-		pdf.set_font_size(self.font_size_paragraph)
+			pdf.rect(x=0, y=0, w=self.composite_res[0], h=self.composite_res[2] - self.character_size_paragraph[1], style='F')
+			pdf.rect(x=0, y=self.composite_res[1] - self.character_size_paragraph[1]*1.5, w=self.composite_res[0], h=self.composite_res[1], style='F')
 
-		# Geometry_Info : Triangles
-		text = 'Triangle Count : {}'.format(self.context.scene.lm_asset_list[name].triangles)
-		position = (self.character_size_paragraph[0], self.character_size_paragraph[1])
-		pdf.text(x=position[0], y=position[1], txt=text)
-
-		# Geometry_Info : Vertices
-		text = 'Vertices Count : {}'.format(self.context.scene.lm_asset_list[name].vertices)
-		position = self.add_position(position, (0, self.character_size_paragraph[1]))
-		pdf.text(x=position[0], y=position[1], txt=text)
-
-		# Geometry_Info : Has UV2
-		text = 'UV2 : {}'.format(self.context.scene.lm_asset_list[name].has_uv2)
-		position = self.add_position(position, (0, self.character_size_paragraph[1]))
-		pdf.text(x=position[0], y=position[1], txt=text)
-
-		# Geometry_Info : asset number
-		text = 'Asset Number : {} / {}'.format(self.context.scene.lm_asset_list[name].asset_number, self.asset_count)
-		position = self.add_position(position, (0, self.character_size_paragraph[1]))
-		pdf.text(x=position[0], y=position[1], txt=text)
-
-		initial_pos = (self.composite_res[0] - self.character_size_paragraph[0], self.character_size_paragraph[1])
-		# texture_Info : Normal map
-		for i, texture in enumerate(self.context.scene.lm_asset_list[name].texture_list):
-			text = '{} : {}'.format(texture.channel, texture.file_path)
-			position = self.add_position(initial_pos, (-len(text) * self.character_size_paragraph[0], self.character_size_paragraph[1] * i))
+			# Asset Name
+			text = name
+			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1])
 			pdf.text(x=position[0], y=position[1], txt=text)
 
-		# Updated date
-		text = 'Updated : {}'.format(time.ctime(self.context.scene.lm_asset_list[name].import_date))
-		position = (self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)
-		pdf.text(x=position[0], y=position[1], txt=text)
+			# WIP
+			text = 'WIP'
+			if self.context.scene.lm_asset_list[name].wip:
+				pdf.set_text_color(r=200, g=50, b=0)
+				position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1] * 2)
+				pdf.text(x=position[0], y=position[1], txt=text)
+				pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
 
-		# Render date
-		text = 'Rendered : {}'.format(time.ctime(self.context.scene.lm_asset_list[name].render_date))
-		position = (self.composite_res[0]/2 - len(text) * self.character_size_paragraph[0] / 2, self.composite_res[1] - self.character_size_paragraph[1]/2)
-		pdf.text(x=position[0], y=position[1], txt=text)
+			pdf.set_font_size(self.font_size_paragraph)
 
-		# Page
-		text = '{}'.format(pdf.page_no())
-		position = (self.composite_res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)
-		pdf.text(x=position[0], y=position[1], txt=text)
+			# Geometry_Info : Triangles
+			text = 'Triangle Count : {}'.format(self.context.scene.lm_asset_list[name].triangles)
+			position = (self.character_size_paragraph[0], self.character_size_paragraph[1])
+			pdf.text(x=position[0], y=position[1], txt=text)
 
-		page_link = pdf.add_link()
-		self.pages[name] = [page_link, pdf.page_no()]
-		pdf.set_link(self.pages[name][0], self.pages[name][1])
-		
+			# Geometry_Info : Vertices
+			text = 'Vertices Count : {}'.format(self.context.scene.lm_asset_list[name].vertices)
+			position = self.add_position(position, (0, self.character_size_paragraph[1]))
+			pdf.text(x=position[0], y=position[1], txt=text)
+
+			# Geometry_Info : Has UV2
+			text = 'UV2 : {}'.format(self.context.scene.lm_asset_list[name].has_uv2)
+			position = self.add_position(position, (0, self.character_size_paragraph[1]))
+			pdf.text(x=position[0], y=position[1], txt=text)
+
+			# Geometry_Info : asset number
+			text = 'Asset Number : {} / {}'.format(self.context.scene.lm_asset_list[name].asset_number, self.asset_count)
+			position = self.add_position(position, (0, self.character_size_paragraph[1]))
+			pdf.text(x=position[0], y=position[1], txt=text)
+
+			initial_pos = (self.composite_res[0] - self.character_size_paragraph[0], self.character_size_paragraph[1])
+			# texture_Info : Normal map
+			for i, texture in enumerate(self.context.scene.lm_asset_list[name].texture_list):
+				text = '{} : {}'.format(texture.channel, texture.file_path)
+				position = self.add_position(initial_pos, (-len(text) * self.character_size_paragraph[0], self.character_size_paragraph[1] * i))
+				pdf.text(x=position[0], y=position[1], txt=text)
+
+			# Updated date
+			text = 'Updated : {}'.format(time.ctime(self.context.scene.lm_asset_list[name].import_date))
+			position = (self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)
+			pdf.text(x=position[0], y=position[1], txt=text)
+
+			# Render date
+			text = 'Rendered : {}'.format(time.ctime(self.context.scene.lm_asset_list[name].render_date))
+			position = (self.composite_res[0]/2 - len(text) * self.character_size_paragraph[0] / 2, self.composite_res[1] - self.character_size_paragraph[1]/2)
+			pdf.text(x=position[0], y=position[1], txt=text)
+
+			# Page
+			text = '{}'.format(pdf.page_no())
+			position = (self.composite_res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)
+			pdf.text(x=position[0], y=position[1], txt=text)
+
+			page_link = pdf.add_link()
+			self.pages[name] = [page_link, pdf.page_no()]
+			pdf.set_link(self.pages[name][0], self.pages[name][1])
+			

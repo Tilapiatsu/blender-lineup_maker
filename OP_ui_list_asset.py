@@ -8,8 +8,8 @@ def get_assets(context):
 
     return idx, assets, active
 
-def remove_asset(context, asset, index, remove=True):
-    print('Remove {}'.format(asset.name))
+def remove_asset(self, context, asset, index, remove=True):
+    self.report({'INFO'},'Remove {}'.format(asset.name))
     for o in context.scene.lm_asset_list[asset.name].collection.all_objects:
         bpy.ops.object.select_all(action='DESELECT')
         bpy.data.objects[o.name].select_set(True)
@@ -54,7 +54,7 @@ class LM_UI_ClearAssetList(bpy.types.Operator):
 
     def execute(self, context):
         for i,asset in enumerate(context.scene.lm_asset_list):
-            remove_asset(context, asset, 0, remove=False)
+            remove_asset(self, context, asset, 0, remove=False)
         
         context.scene.lm_asset_list.clear()
 
@@ -74,6 +74,6 @@ class LM_UI_RemoveAsset(bpy.types.Operator):
     def execute(self, context):
         idx, asset, _ = get_assets(context)
 
-        remove_asset(context, asset[idx], idx)
+        remove_asset(self, context, asset[idx], idx)
 
         return {'FINISHED'}
