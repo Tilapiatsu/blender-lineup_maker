@@ -12,7 +12,7 @@ def remove_asset(context, asset, index):
     print('Remove {}'.format(asset.name))
     for o in context.scene.lm_asset_list[asset.name].collection.all_objects:
         bpy.ops.object.select_all(action='DESELECT')
-        bpy.data.objects[o.name].select_set(True) # Blender 2.8x
+        bpy.data.objects[o.name].select_set(True)
         bpy.ops.object.delete() 
     bpy.data.collections.remove(context.scene.lm_asset_list[asset.name].collection)
     context.scene.lm_asset_list.remove(index)
