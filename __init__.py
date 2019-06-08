@@ -18,7 +18,7 @@
 #   - Compositing method
 #       - None
 #       - Solid --> Use lm_content_background_color
-#       - Lineup
+#       - Lineup --> composite each frame on the same image
 #   - Create an operator to update/import render and export PDF in a row
 #   - Add Material name in the lineup PDF
 #   - Better import : Remove assets that is not there anymore on the drive ?
