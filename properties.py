@@ -71,10 +71,13 @@ class LM_KeywordValues(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
     keyword: bpy.props.StringProperty()
 
-class LM_Cameras(bpy.types.PropertyGroup):
-    camera: bpy.props.PointerProperty(type=bpy.types.Object)
+class LM_CamerasKeywords(bpy.types.PropertyGroup):
     keyword: bpy.props.StringProperty()
     keyword_value: bpy.props.StringProperty()
+
+class LM_Cameras(bpy.types.PropertyGroup):
+    camera: bpy.props.PointerProperty(type=bpy.types.Object)
+    keywords = bpy.props.CollectionProperty(type=LM_CamerasKeywords)
 
 # UI List
 
@@ -127,7 +130,12 @@ class LM_Cameras_UIList(bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
-        row.label(text='"{}" will render asset which "{}" = "{}"'.format(item.camera.name, item.keyword, item.keyword_value))
+        text = ''
+        for i,keyword in enumerate(item.keywords):
+            text += '"{}" = "{}"'.format(keyword.keyword, keyword.keyword_value)
+            if i < len(item.keywords) - 1:
+                text += ' and '
+        row.label(text='"{}" : {}'.format(item.camera.name, text))
 
 class LM_AssetList_UIList(bpy.types.UIList):
     bl_idname = "LM_UL_asset_list"

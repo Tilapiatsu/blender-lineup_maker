@@ -30,44 +30,6 @@ class LM_UI_MoveCameraKeyword(bpy.types.Operator):
         return {'FINISHED'}
 
 
-
-class LM_UI_RenameCameraKeyword(bpy.types.Operator):
-    bl_idname = "scene.lm_rename_camera_keyword"
-    bl_label = "Rename Camera keyword"
-    bl_options = {'REGISTER', 'UNDO'}
-    bl_description = "Rename the selected Camera keyword Name"
-
-    newmatname: bpy.props.StringProperty(name="New Name")
-
-    def check(self, context):
-        return True
-
-    @classmethod
-    def poll(cls, context):
-        return context.scene.lm_cameras
-
-    def draw(self, context):
-        layout = self.layout
-
-        column = layout.column()
-
-        column.prop(self, "newmatname")
-
-    def invoke(self, context, event):
-        _, _, self.active = get_camera_keywords(context)
-
-        self.newmatname = self.active.keyword_value
-
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
-
-    def execute(self, context):
-        if self.newmatname:
-            self.active.keyword_value = self.newmatname
-
-        return {'FINISHED'}
-
-
 class LM_UI_ClearCameraKeyword(bpy.types.Operator):
     bl_idname = "scene.lm_clear_camera_keywords"
     bl_label = "Clear All Camera keyword"

@@ -12,8 +12,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
-#   - Improve the camera assignment to be able to assign a camera for multiple keyword at once
-#       - FullSet_003 --> category = Fullset   /  incr = 003
 #   - Compositing method
 #       - None
 #       - Solid --> Use lm_content_background_color
@@ -21,7 +19,8 @@
 #   - Create an operator to update/import render and export PDF in a row
 #   - Add Material name in the lineup PDF
 #   - Better import : Remove assets that is not there anymore on the drive ?
-# 
+#   
+#   - The rename camera keyword operator is gone need to find a way to make it work
 #   - Create an asset manager
 #       - Color Code the asset that Need Update or Need Render in the list
 # 
@@ -100,6 +99,7 @@ classes = (
     LM_Shaders,
     LM_Keywords,
     LM_KeywordValues,
+    LM_CamerasKeywords,
     LM_Cameras,
     LM_TextureSet_UIList,
     LM_Channel_UIList,
@@ -118,7 +118,6 @@ classes = (
     LM_UI_AddChapterKeyword,
     LM_UI_RemoveChapterKeyword,
     LM_UI_MoveCameraKeyword,
-    LM_UI_RenameCameraKeyword,
     LM_UI_ClearCameraKeyword,
     LM_UI_RemoveCameraKeyword,
     LM_UI_MoveKeyword,
@@ -278,11 +277,31 @@ def update_camera_keyword_name(self, context):
             scn.lm_avoid_update = True
             scn.lm_camera_keyword_name = 'You need to select a Camera First'
             return
-        elif scn.lm_camera_keyword_name and scn.lm_camera_keyword_name not in scn.lm_cameras:
-            c = scn.lm_cameras.add()
-            c.keyword_value = scn.lm_camera_keyword_name
-            c.camera = bpy.context.active_object
-            c.keyword = scn.lm_keywords[scn.lm_keyword_idx].name
+        elif scn.lm_camera_keyword_name:
+            try:
+                keywords = [k.keyword for k in scn.lm_cameras[scn.lm_camera_idx].keywords]
+                keyword_values = [k.keyword_value for k in scn.lm_cameras[scn.lm_camera_idx].keywords]
+            except IndexError:
+                keywords = []
+                keyword_values = []
+
+            if not len(keywords) or scn.lm_cameras[scn.lm_camera_idx].camera != bpy.context.active_object:
+                c = scn.lm_cameras.add()
+                c.camera = bpy.context.active_object
+                kw = c.keywords.add()
+                kw.keyword = scn.lm_keywords[scn.lm_keyword_idx].name
+                kw.keyword_value = scn.lm_camera_keyword_name
+            else:
+                doubles = False
+                for keyword, keyword_value in zip(keywords, keyword_values):
+                    if keyword == scn.lm_keywords[scn.lm_keyword_idx].name and keyword_value == scn.lm_camera_keyword_name:
+                        doubles = True
+                        break
+                
+                if not doubles:
+                    kw = scn.lm_cameras[scn.lm_camera_idx].keywords.add()
+                    kw.keyword = scn.lm_keywords[scn.lm_keyword_idx].name
+                    kw.keyword_value = scn.lm_camera_keyword_name
 
             scn.lm_camera_idx = len(scn.lm_cameras) - 1
 

@@ -323,7 +323,6 @@ class LM_PT_Cameras(bpy.types.Panel):
         c.operator("scene.lm_clear_camera_keywords", text="", icon='LOOP_BACK')
         c.operator("scene.lm_remove_camera_keyword", text="", icon='X')
         c.separator()
-        c.operator("scene.lm_rename_camera_keyword", text="", icon='OUTLINER_DATA_FONT')
         b.prop(scn, 'lm_camera_keyword_name', text='Camera Keyword')
 
 

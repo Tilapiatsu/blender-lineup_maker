@@ -194,6 +194,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		for number,name in enumerate(asset_name_list):
 			context.scene.lm_asset_list[name].asset_number = number + 1
 
+
 class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_render_assets"
 	bl_label = "Lineup Maker: Render all assets in the scene"
@@ -458,8 +459,13 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
 
 		for camera_keyword in context.scene.lm_cameras:
+			match = True
+			for keyword in camera_keyword.keywords:
+				if naming_convention.naming_convention[keyword.keyword] != keyword.keyword_value.lower():
+					match = False
+					break
 			
-			if naming_convention.naming_convention[camera_keyword.keyword] == camera_keyword.keyword_value.lower():
+			if match:		
 				cam = camera_keyword.camera
 				break
 
@@ -590,6 +596,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
 		nodes.clear()
+
 
 class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_idname = "scene.lm_export_pdf"
