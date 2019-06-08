@@ -68,3 +68,9 @@ def set_chapter(self, chapter_nc, asset_nc):
 		return True
 	else:
 		return False
+
+def remove_bpy_struct_item(bpy_struct, name):
+	for i,item in enumerate(bpy_struct):
+		if item.name == name:
+			bpy_struct.remove(i)
+			return i

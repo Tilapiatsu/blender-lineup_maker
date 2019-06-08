@@ -114,31 +114,33 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 				if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
 					curr_asset.import_asset()
 					H.set_active_collection(context, asset_collection.name)
+					updated = True
 				else:
-					curr_asset.update_asset()
+					updated = curr_asset.update_asset()
 					H.set_active_collection(context, asset_collection.name)
 
-				assigned = False
-				for mesh_name in curr_asset.asset.keys():
-					for mat in context.scene.lm_asset_list[curr_asset.asset_name].mesh_list[mesh_name].material_list:
-						if len(curr_asset.asset[mesh_name][1].keys()) == 0:
-							curr_asset.feed_material(mat.material)
-							continue
-						for t in curr_asset.asset[mesh_name][1].keys():
-							# TODO : Check if this is compatible with Json
-							tnc = N.NamingConvention(context, t, context.scene.lm_texture_naming_convention)
-							mnc = N.NamingConvention(context, mat.name.lower(), context.scene.lm_texture_naming_convention)
+				if updated:
+					assigned = False
+					for mesh_name in curr_asset.asset.keys():
+						for mat in context.scene.lm_asset_list[curr_asset.asset_name].mesh_list[mesh_name].material_list:
+							if len(curr_asset.asset[mesh_name][1].keys()) == 0:
+								curr_asset.feed_material(mat.material)
+								continue
+							for t in curr_asset.asset[mesh_name][1].keys():
+								# TODO : Check if this is compatible with Json
+								tnc = N.NamingConvention(context, t, context.scene.lm_texture_naming_convention)
+								mnc = N.NamingConvention(context, mat.name.lower(), context.scene.lm_texture_naming_convention)
 
-							if tnc == mnc:
-								curr_asset.feed_material(mat.material, curr_asset.asset[mesh_name][1][t])
-								assigned = True
-								break
-						else:
-							if not assigned:
-								# curr_asset.feed_material(mat.material)
-								print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
+								if tnc == mnc:
+									curr_asset.feed_material(mat.material, curr_asset.asset[mesh_name][1][t])
+									assigned = True
+									break
+							else:
+								if not assigned:
+									# curr_asset.feed_material(mat.material)
+									print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
 
-				del assigned
+					del assigned
 
 				curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
 				# Store asset colection view layer

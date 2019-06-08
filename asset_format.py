@@ -56,8 +56,10 @@ class BpyAsset(object):
 		self.import_texture()
 	
 	def update_asset(self):
-		self.update_mesh()
+		updated = self.update_mesh()
 		self.update_texture()
+
+		return updated
 
 	@check_length
 	def import_mesh(self, update=False):
@@ -66,6 +68,21 @@ class BpyAsset(object):
 		curr_asset_collection, _ = H.create_asset_collection(self.context, self.asset_name)
 
 		H.set_active_collection(self.context, self.asset_name)
+
+		# register the mesh in scene variable
+		self.scn_asset = self.context.scene.lm_asset_list.add()
+		self.scn_asset.name = self.asset_name
+		self.scn_asset.collection = curr_asset_collection
+
+		if name in self.json_data.keys():
+			if 'isWip' in self.json_data[name].keys():
+				self.scn_asset.wip = self.json_data[name]['isWip']
+			if 'triangles' in self.json_data[name].keys():
+				self.scn_asset.triangles = self.json_data[name]['triangles']
+			if 'vertices' in self.json_data[name].keys():
+				self.scn_asset.vertices = self.json_data[name]['vertices']
+			if 'hasUV2' in self.json_data[name].keys():
+				self.scn_asset.has_uv2 = self.json_data[name]['hasUV2']
 
 		for i,f in enumerate(self.meshes):
 			file = path.basename(f)
@@ -87,37 +104,19 @@ class BpyAsset(object):
 			else:
 				print('Lineup Maker : Skipping file "{}"\n     Incompatible format'.format(f))
 				continue
-			
-			# register the mesh in scene variable
-			if update or self.asset_name in self.param['lm_asset_list']:
-				self.scn_asset = self.param['lm_asset_list'][self.asset_name]
-				self.scn_asset.collection = curr_asset_collection
-			else:
-				self.scn_asset = self.param['lm_asset_list'].add()
-				self.scn_asset.name = self.asset_name
-				self.scn_asset.collection = curr_asset_collection
-			
-			self.scn_asset.import_date = path.getmtime(f)
-
-			if name in self.json_data.keys():
-				if 'isWip' in self.json_data[name].keys():
-					self.scn_asset.wip = self.json_data[name]['isWip']
-				if 'triangles' in self.json_data[name].keys():
-					self.scn_asset.triangles = self.json_data[name]['triangles']
-				if 'vertices' in self.json_data[name].keys():
-					self.scn_asset.vertices = self.json_data[name]['vertices']
-				if 'hasUV2' in self.json_data[name].keys():
-					self.scn_asset.has_uv2 = self.json_data[name]['hasUV2']
 
 			curr_mesh_list = self.scn_asset.mesh_list.add()
-			curr_mesh_list.file_path = f
 			curr_mesh_list.name = name
-
+			curr_mesh_list.file_path = f
+			curr_mesh_list.import_date = path.getctime(f)
+			curr_mesh_list.file_size = path.getsize(f)
 			
+
 			# Updating Materials
 			for o in curr_asset_collection.objects:
-				curr_mesh_list.mesh_name = o.name.lower()
-				curr_mesh_list.mesh = o
+				curr_mesh_object_list = curr_mesh_list.mesh_object_list.add()
+				curr_mesh_object_list.mesh_name = o.name.lower()
+				curr_mesh_object_list.mesh = o
 
 				for m in o.material_slots:
 					if m.name not in self.scn_asset.material_list:
@@ -125,37 +124,54 @@ class BpyAsset(object):
 						material_list.name = m.material.name.lower()
 						material_list.material = m.material
 
-					curr_mesh_material_list = curr_mesh_list.material_list.add()
-					curr_mesh_material_list.name = m.material.name
+						material_list = curr_mesh_list.material_list.add()
+						material_list.name = m.material.name.lower()
+						material_list.material = m.material
+
+					curr_mesh_material_list = curr_mesh_object_list.material_list.add()
+					curr_mesh_material_list.name = m.material.name.lower()
 					curr_mesh_material_list.material = m.material
-			
+		
 		self.asset = self.get_asset()
 		# self.param['lm_asset_list'][self.asset_name] = self.scn_asset
 	
 	@check_length
 	def update_mesh(self):
-		_, created = H.create_asset_collection(self.context, self.asset_name)
+		# _, created = H.create_asset_collection(self.context, self.asset_name)
 		H.set_active_collection(self.context, self.asset_name)
 
 		curr_asset = self.param['lm_asset_list'][self.asset_name]
 
 		need_update = False
-		
 		for f in self.meshes:
-			if curr_asset.import_date < path.getmtime(f):
+			file_name = path.splitext(path.basename(f))[0]
+			file_time = path.getctime(f)
+			file_size = path.getsize(f)
+			try:
+				mesh_time = curr_asset.mesh_list[file_name].import_date
+				mesh_size = curr_asset.mesh_list[file_name].file_size
+			except KeyError:
+				# The mesh was not there so we need to update
+				need_update = True
+				break
+			if mesh_time + 4 < file_time and mesh_size != file_size:
 				need_update = True
 				break
 
-		if need_update or not created:
-			print('Lineup Maker : Updating asset "{}" : {}'.format(self.asset_name, time.ctime(curr_asset.import_date)))
+		if need_update:
+			print('Lineup Maker : Updating asset "{}"'.format(self.asset_name))
 
 			self.remove_asset()
-			# self.context.scene.update()
 			self.import_mesh(update=True)
 			# Dirty fix to avoid bad mesh naming when updating asset
 			self.rename_objects()
+			updated = True
 		else:
+			self.scn_asset = self.context.scene.lm_asset_list[self.asset_name]
+			self.asset = self.get_asset()
 			print('Lineup Maker : Asset "{}" is already up to date'.format(self.asset_name))
+			updated = False
+		
 
 	def import_texture(self):
 		# print(P.get_prefs().textureSet_albedo_keyword)
@@ -167,11 +183,10 @@ class BpyAsset(object):
 	def update_texture(self):
 		pass
 		
-
 	def feed_material(self, material, texture_set=None):
 		M.create_bsdf_material(self.context, material, texture_set)
 
-	def create_exposure_node(world):
+	def create_exposure_node(self, world):
 		# create a group
 		exposure_group = bpy.data.node_groups.new('Exposure', 'ShaderNodeTree')
 		
@@ -465,10 +480,12 @@ class BpyAsset(object):
 			bpy.data.collections.remove(bpy.data.collections[self.asset_name])
 			H.set_active_collection(self.context, V.LM_ASSET_COLLECTION)
 		if self.asset_name in self.param['lm_asset_list']:
-			for mat in self.param['lm_asset_list'][self.asset_name].material_list:
-				pass
+			for i,mat in enumerate(self.param['lm_asset_list'][self.asset_name].material_list):
 				# Trying to remove material to avoid doubles
 				bpy.data.materials.remove(mat.material)
+			
+			H.remove_bpy_struct_item(self.context.scene.lm_asset_list, self.asset_name)
+			# self.param['lm_asset_list'][self.asset_name].material_list.clear()
 			
 
 	# Properties
