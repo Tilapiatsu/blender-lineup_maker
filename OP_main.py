@@ -110,8 +110,21 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 						texture_files[m] = []
 						print('Lineup Maker : folder dosn\'t exist in "{}"'.format(subfolder))
 				asset_name = path.basename(subfolder)
+
 				curr_asset = A.BpyAsset(context, mesh_files, texture_files, json_files)
+
+				# To avoid import asset that doesn't match naming convention
+				# skip = False
+				# curr_asset = A.BpyAsset(context, mesh_files, texture_files, json_files)
+				# nc = curr_asset.asset_naming_convention
+				# for keyword in context.scene.lm_keywords:
+				# 	if keyword.name not in nc.keys() and keyword.name not in nc['optionnal']:
+				# 		skip = True
+				# 		break
 				
+				# if skip:
+				# 	continue
+
 				if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
 					curr_asset.import_asset()
 					H.set_active_collection(context, asset_collection.name)

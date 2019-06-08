@@ -176,7 +176,7 @@ class NamingConvention(object):
 			
 			return return_dict, assigned
 			
-		naming_convention = {'name':[], 'fullname': self.fullname, 'hardcoded':[], 'match':True, 'included':[]}
+		naming_convention = {'name':[], 'fullname': self.fullname, 'hardcoded':[], 'match':True, 'included':[], 'optionnal':[]}
 
 		if self.filepath:
 			naming_convention.update({'file':self.filepath})
@@ -211,6 +211,7 @@ class NamingConvention(object):
 						naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
 						remaining = remaining -1
 					else: # Optionnal
+						naming_convention['optionnal'].append(keyword.lower())
 						if len(self.keywords[keyword.lower()]): # If the Optionnal Keyword have a list or keyword values
 							if names[i] in self.keywords[keyword.lower()]: # if the name is in the keyword values
 								naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
