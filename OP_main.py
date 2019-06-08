@@ -63,6 +63,7 @@ class LM_OP_UpdateLineup(bpy.types.Operator):
 
 		return {"PASS_THROUGH"}
 
+
 class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_importassets"
 	bl_label = "Lineup Maker: Import all assets from source folder"
@@ -196,7 +197,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	disablerbbutton = False
 	need_render_asset = None
 	asset_number = 0
-	composite_node = None
 	output_node = None
 	context = None
 	initial_view_layer = None
@@ -284,6 +284,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.context = context
 
 		bpy.context.scene.render.use_overwrite = context.scene.lm_override_frames
+		
+		context.scene.render.film_transparent = True
 
 		self.register_render_handler()
 		
@@ -313,7 +315,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				return {"FINISHED"} 
 
 
-			elif self.rendering  and self.composite_node is None and self.need_render_asset[0].need_render is False and self.need_render_asset[0].rendered is True:
+			elif self.rendering  and self.need_render_asset[0].need_render is False and self.need_render_asset[0].rendered is True:
 				asset = self.need_render_asset[0]
 				if context.scene.lm_precomposite_frames:
 					self.unregister_render_handler()
@@ -336,15 +338,13 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				self.rendering = False
 				
 
-			elif self.rendering is False and self.composite_node is None: 
+			elif self.rendering is False: 
 				self.render(context)
 
 		return {"PASS_THROUGH"}
 
 	def render(self, context):
 		scn = bpy.context.scene 	
-
-		scn.render.film_transparent = True
 
 		asset = self.need_render_asset[0]
 
@@ -361,8 +361,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.output_node = self.build_output_nodegraph(context, self.asset_number, asset)
 		bpy.context.scene.render.filepath = self.render_filename + context.scene.camera.name + '_'
 		self.output_node.mute = True
-
-		# self.context = context
 
 		bpy.ops.render.render("INVOKE_DEFAULT", animation=True, write_still=False, layer=asset.view_layer)
 

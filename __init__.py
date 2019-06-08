@@ -14,6 +14,10 @@
 # TODO: 
 #   - Improve the camera assignment to be able to assign a camera for multiple keyword at once
 #       - FullSet_003 --> category = Fullset   /  incr = 003
+#   - Compositing method
+#       - None
+#       - Solid --> Use lm_content_background_color
+#       - Lineup
 #   - Create an operator to update/import render and export PDF in a row
 #   - Add Material name in the lineup PDF
 #   - Better import : Remove assets that is not there anymore on the drive
