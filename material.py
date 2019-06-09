@@ -18,7 +18,7 @@ def feed_input_indices(context, input_indices):
 	
 	return input_indices
 
-def create_bsdf_material(context, material, texture_set=None):
+def create_bsdf_material(context, asset, material, texture_set=None):
 	input_indices = {'Base Color':{'index':0},
 					'Metallic':{'index':4},
 					'Roughness':{'index':7},
@@ -62,6 +62,10 @@ def create_bsdf_material(context, material, texture_set=None):
 			
 			if t is None:
 				continue
+
+			material_texture = context.scene.lm_asset_list[asset.asset_name].material_list[material.name.lower()].texture_list.add()
+			material_texture.file_path = t
+			material_texture.channel = channel
 
 			dir_name = os.path.dirname(t)
 			file_name = os.path.basename(t)

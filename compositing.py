@@ -28,6 +28,8 @@ class LM_Composite(object):
 		self.character_size_title = (math.ceil(self.font_size_title/2), self.font_size_title)
 		self.font_size_paragraph = int(math.floor(self.composite_res[0]*25/self.composite_res[1]))
 		self.character_size_paragraph = (math.ceil(self.font_size_paragraph/2), self.font_size_paragraph)
+		self.font_size_texture = int(math.floor(self.composite_res[0]*17/self.composite_res[1]))
+		self.character_size_texture = (math.ceil(self.font_size_texture/2), self.font_size_texture)
 
 		self.font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Fonts')
 		self.font_file = os.path.join(self.font_path, 'UbuntuMono-Bold.ttf')
@@ -202,9 +204,10 @@ class LM_Composite(object):
 		return (math.floor(self.composite_res[1] / self.character_size_title[1])- 1) * 2
 
 	def get_toc_page_count(self):
-		asset_count = len(self.context.scene.lm_asset_list)
+		rendered_assets = [a for a in self.context.scene.lm_asset_list if a.rendered]
+		asset_count = len(rendered_assets)
 		chapter_count = 0
-		for asset in self.context.scene.lm_asset_list:
+		for asset in rendered_assets:
 			chapter_naming_convention = N.NamingConvention(self.context, self.chapter, self.context.scene.lm_chapter_naming_convention)
 			asset_naming_convention = N.NamingConvention(self.context, asset.name, self.context.scene.lm_asset_naming_convention)
 
@@ -466,22 +469,21 @@ class LM_Composite_Image(LM_Composite):
 			position = self.add_position(position, (0, self.character_size_paragraph[1]))
 			pdf.text(x=position[0], y=position[1], txt=text)
 
-			initial_pos = (self.composite_res[0] - self.character_size_paragraph[0], self.character_size_paragraph[1])
-			# texture_Info : Normal map
-			for i, texture in enumerate(self.context.scene.lm_asset_list[name].texture_list):
-				text = '{} : {}'.format(texture.channel, texture.file_path)
-				position = self.add_position(initial_pos, (-len(text) * self.character_size_paragraph[0], self.character_size_paragraph[1] * i))
-				pdf.text(x=position[0], y=position[1], txt=text)
+			pdf.set_font_size(self.font_size_texture)
+			initial_pos = (self.composite_res[0] - self.character_size_texture[0], self.character_size_texture[1])
+			i = 0
+			for material in self.context.scene.lm_asset_list[name].material_list:
+				material_name = '{} - '.format(material.material.name)
+				textures = material.texture_list
+				for j,texture in enumerate(textures):
+					filename = path.basename(texture.file_path)
+					text = '{}{} : {}'.format(material_name, texture.channel, filename)
+					position = self.add_position(initial_pos, (-len(text) * self.character_size_texture[0], self.character_size_texture[1] * i ))
+					pdf.text(x=position[0], y=position[1], txt=text)
+					material_name = ''
+					i += 1
 
-			# for i, material in enumerate(self.context.scene.lm_asset_list[name].material_list):
-			# 	material_name = '{} - '.format(material.material.name)
-			# 	textures = material.texture_list
-			# 	for texture in textures:
-			# 		text = '{}{} : {}'.format(material_name, texture.channel, texture.file_path)
-			# 		position = self.add_position(initial_pos, (-len(text) * self.character_size_paragraph[0], self.character_size_paragraph[1] * i))
-			# 		pdf.text(x=position[0], y=position[1], txt=text)
-			# 		material_name = ''
-
+			pdf.set_font_size(self.font_size_paragraph)
 			# Updated date
 			text = 'Updated : {}'.format(time.ctime(self.context.scene.lm_asset_list[name].import_date))
 			position = (self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)

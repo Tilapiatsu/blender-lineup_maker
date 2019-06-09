@@ -191,8 +191,8 @@ class BpyAsset(object):
 	def update_texture(self):
 		pass
 		
-	def feed_material(self, material, texture_set=None):
-		M.create_bsdf_material(self.context, material, texture_set)
+	def feed_material(self, asset, material, texture_set=None):
+		M.create_bsdf_material(self.context, asset, material, texture_set)
 
 	def create_exposure_node(self, world):
 		# create a group
@@ -331,10 +331,6 @@ class BpyAsset(object):
 					texture = self.scn_asset.texture_list.add()
 					texture.channel = channel
 					texture.file_path = t
-					
-					texture = self.scn_asset.material_list[basename].texture_list.add()
-					texture.file_path = t
-					texture.channel = channel
 
 					if 'channels' in texture_naming_convention[basename].keys():
 						if len(texture_naming_convention[basename]['channels'].keys()):

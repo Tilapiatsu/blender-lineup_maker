@@ -138,7 +138,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 					for mesh_name in curr_asset.asset.keys():
 						for mat in context.scene.lm_asset_list[curr_asset.asset_name].mesh_list[mesh_name].material_list:
 							if len(curr_asset.asset[mesh_name][1].keys()) == 0:
-								curr_asset.feed_material(mat.material)
+								curr_asset.feed_material(curr_asset, mat.material)
 								continue
 							for t in curr_asset.asset[mesh_name][1].keys():
 								# TODO : Check if this is compatible with Json
@@ -146,7 +146,8 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 								mnc = N.NamingConvention(context, mat.name.lower(), context.scene.lm_texture_naming_convention)
 
 								if tnc == mnc:
-									curr_asset.feed_material(mat.material, curr_asset.asset[mesh_name][1][t])
+									# creating materials with the proper textures
+									curr_asset.feed_material(curr_asset, mat.material, curr_asset.asset[mesh_name][1][t])
 									assigned = True
 									break
 							else:
