@@ -135,7 +135,7 @@ class BpyAsset(object):
 					curr_mesh_material_list = curr_mesh_object_list.material_list.add()
 					curr_mesh_material_list.name = m.material.name.lower()
 					curr_mesh_material_list.material = m.material
-		
+
 		if len(self.meshes):
 			self.scn_asset.import_date = global_import_date / len(self.meshes)
 		else:
@@ -331,6 +331,10 @@ class BpyAsset(object):
 					texture = self.scn_asset.texture_list.add()
 					texture.channel = channel
 					texture.file_path = t
+					
+					texture = self.scn_asset.material_list[basename].texture_list.add()
+					texture.file_path = t
+					texture.channel = channel
 
 					if 'channels' in texture_naming_convention[basename].keys():
 						if len(texture_naming_convention[basename]['channels'].keys()):
@@ -362,12 +366,19 @@ class BpyAsset(object):
 
 							t_naming_convention = N.NamingConvention(self.context, texture_name, self.param['lm_texture_naming_convention'])
 							channel = texture['channel']
+
 							# Feed scn_asset
 							scn_texture = self.scn_asset.texture_list.add()
 							scn_texture.channel = channel
 							scn_texture.file_path = texture['file']
 
-							
+							# try to feed textures per material
+							try:
+								scn_texture = self.scn_asset.material_list[material_name.lower()].texture_list.add()
+								scn_texture.channel = channel
+								scn_texture.file_path = texture['file']
+							except KeyError:
+								print('Lineup Maker : The material "{}" is not registered in the asset or is not applied on the mesh'.format(material_name))
 
 						t_naming_convention.naming_convention['channel'] = channel
 

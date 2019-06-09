@@ -473,6 +473,15 @@ class LM_Composite_Image(LM_Composite):
 				position = self.add_position(initial_pos, (-len(text) * self.character_size_paragraph[0], self.character_size_paragraph[1] * i))
 				pdf.text(x=position[0], y=position[1], txt=text)
 
+			# for i, material in enumerate(self.context.scene.lm_asset_list[name].material_list):
+			# 	material_name = '{} - '.format(material.material.name)
+			# 	textures = material.texture_list
+			# 	for texture in textures:
+			# 		text = '{}{} : {}'.format(material_name, texture.channel, texture.file_path)
+			# 		position = self.add_position(initial_pos, (-len(text) * self.character_size_paragraph[0], self.character_size_paragraph[1] * i))
+			# 		pdf.text(x=position[0], y=position[1], txt=text)
+			# 		material_name = ''
+
 			# Updated date
 			text = 'Updated : {}'.format(time.ctime(self.context.scene.lm_asset_list[name].import_date))
 			position = (self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)

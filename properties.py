@@ -3,9 +3,14 @@ import bpy
 class LM_Render_List(bpy.types.PropertyGroup):
     render_filepath = bpy.props.StringProperty(name="Render path", subtype='FILE_PATH')
 
+class LM_Texture_List(bpy.types.PropertyGroup):
+    file_path = bpy.props.StringProperty(name='Texture File')
+    channel = bpy.props.StringProperty(name='channel')
+
 class LM_Material_List(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(name="Material Name")
     material = bpy.props.PointerProperty(name='Material', type=bpy.types.Material)
+    texture_list = bpy.props.CollectionProperty(type=LM_Texture_List)
 
 class LM_MeshObject_List(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(name="File Name")
@@ -19,10 +24,6 @@ class LM_MeshFile_List(bpy.types.PropertyGroup):
     file_size = bpy.props.FloatProperty(name="File Size")
     import_date = bpy.props.FloatProperty(name="Last Import")
     material_list = bpy.props.CollectionProperty(type=LM_Material_List)
-
-class LM_Texture_List(bpy.types.PropertyGroup):
-    file_path = bpy.props.StringProperty(name='Texture File')
-    channel = bpy.props.StringProperty(name='channel')
 
 class LM_Asset_List(bpy.types.PropertyGroup):
     render_date = bpy.props.FloatProperty(name="Last Render")

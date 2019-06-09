@@ -14,14 +14,14 @@ class LM_PT_main(bpy.types.Panel):
         render_path = bpy.path.abspath(scn.lm_render_path)
         layout = self.layout
 
-        
+        b = layout.box()
         if path.isdir(asset_path):
             icon = "DOWNARROW_HLT"
         else:
             icon = "BLANK1"
-        layout.prop(scn, 'lm_asset_path', text='Asset Path', icon=icon)
+        b.prop(scn, 'lm_asset_path', text='Asset Path', icon=icon)
         
-        row = layout.row(align=True)
+        row = b.row(align=True)
         if path.isdir(render_path):
             icon = "DOWNARROW_HLT"
         else:
@@ -33,11 +33,11 @@ class LM_PT_main(bpy.types.Panel):
             row.scale_x = 0.3
             row.operator("scene.lm_openfolder", icon='WINDOW', text='Open Folder').folder_path = render_path
             
-        layout.prop(scn, 'lm_render_collection', text='Render Collection', icon='LIGHT')
-        layout.separator()
+        b.prop(scn, 'lm_render_collection', text='Render Collection', icon='LIGHT')
+        
         b = layout.box()
-        b.operator("scene.lm_update_lineup", icon='SHADERFX', text="Create / Update Lineup")
-        b.separator()
+        # b.operator("scene.lm_update_lineup", icon='SHADERFX', text="Create / Update Lineup")
+        # b.separator()
         if len(scn.lm_asset_list) == 0:
             text = 'Import all assets'
             imported = False
@@ -47,18 +47,17 @@ class LM_PT_main(bpy.types.Panel):
         b.operator("scene.lm_importassets", icon='IMPORT', text=text)
 
         if imported:
+            b = layout.box()
             b.prop(scn, 'lm_precomposite_frames')
             b.prop(scn, 'lm_override_frames')
-            row = b.row()
             
-            row.prop(scn, 'lm_force_render', text='Force')
-            row.scale_x = 3
-            row.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets').render_list = 'ALL'
+            b.prop(scn, 'lm_force_render', text='Force')
+            b.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets').render_list = 'ALL'
             
             # b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets')
-            row = b.row()
-            row.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
-            row.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
+            b = layout.box()
+            b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
+            b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
 
 
 class LM_PT_CompositLayout(bpy.types.Panel):          

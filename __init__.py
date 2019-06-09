@@ -89,10 +89,10 @@ classes = (
     LM_PT_main,
     LM_PT_AssetList,
     LM_Render_List,
+    LM_Texture_List,
     LM_Material_List,
     LM_MeshObject_List,
     LM_MeshFile_List,
-    LM_Texture_List,
     LM_Asset_List,
     LM_TextureChannels,
     LM_Channels,
@@ -388,7 +388,7 @@ def register():
     bpy.types.Scene.lm_text_background_color = bpy.props.FloatVectorProperty(name='Text Background Color', subtype='COLOR', default=(0, 0, 0), min=0, max=1)
     bpy.types.Scene.lm_font_color = bpy.props.FloatVectorProperty(name='Font Color', subtype='COLOR', default=(0.85,0.85,0.85), min=0, max=1)
 
-    bpy.types.Scene.lm_override_frames = bpy.props.BoolProperty(name='override rendered frames', default=True)
+    bpy.types.Scene.lm_override_frames = bpy.props.BoolProperty(name='Override rendered frames', default=True)
     bpy.types.Scene.lm_precomposite_frames = bpy.props.BoolProperty(name='Precomposite frames', default=True)
     bpy.types.Scene.lm_open_pdf_when_exported = bpy.props.BoolProperty(name="Open PDF File When Exported", default=True)
 
