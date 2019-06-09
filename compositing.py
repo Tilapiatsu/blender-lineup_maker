@@ -28,7 +28,7 @@ class LM_Composite(object):
 		self.character_size_title = (math.ceil(self.font_size_title/2), self.font_size_title)
 		self.font_size_paragraph = int(math.floor(self.composite_res[0]*25/self.composite_res[1]))
 		self.character_size_paragraph = (math.ceil(self.font_size_paragraph/2), self.font_size_paragraph)
-		self.font_size_texture = int(math.floor(self.composite_res[0]*17/self.composite_res[1]))
+		self.font_size_texture = int(math.floor(self.composite_res[0]*20/self.composite_res[1]))
 		self.character_size_texture = (math.ceil(self.font_size_texture/2), self.font_size_texture)
 
 		self.font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Fonts')
@@ -469,13 +469,14 @@ class LM_Composite_Image(LM_Composite):
 			position = self.add_position(position, (0, self.character_size_paragraph[1]))
 			pdf.text(x=position[0], y=position[1], txt=text)
 
+			self.set_texture_text_size(name)
 			pdf.set_font_size(self.font_size_texture)
 			initial_pos = (self.composite_res[0] - self.character_size_texture[0], self.character_size_texture[1])
 			i = 0
 			for material in self.context.scene.lm_asset_list[name].material_list:
 				material_name = '{} - '.format(material.material.name)
 				textures = material.texture_list
-				for j,texture in enumerate(textures):
+				for texture in textures:
 					filename = path.basename(texture.file_path)
 					text = '{}{} : {}'.format(material_name, texture.channel, filename)
 					position = self.add_position(initial_pos, (-len(text) * self.character_size_texture[0], self.character_size_texture[1] * i ))
@@ -499,4 +500,16 @@ class LM_Composite_Image(LM_Composite):
 			page_link = pdf.add_link()
 			self.pages[name] = [page_link, pdf.page_no()]
 			pdf.set_link(self.pages[name][0], self.pages[name][1])
-			
+	
+	def set_texture_text_size(self, name):
+		texture_count = 0
+		for material in self.context.scene.lm_asset_list[name].material_list:
+			texture_count += len(material.texture_list)
+		
+		if texture_count:
+			if texture_count > 6:
+				self.font_size_texture = int(math.floor(self.composite_res[2]*0.83/texture_count))
+				self.character_size_texture = (math.ceil(self.font_size_texture/2), self.font_size_texture)
+			else:
+				self.font_size_texture = int(math.floor(self.composite_res[0]*20/self.composite_res[1]))
+				self.character_size_texture = (math.ceil(self.font_size_texture/2), self.font_size_texture)
