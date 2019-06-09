@@ -39,8 +39,33 @@ class LM_Composite(object):
 
 		self.curr_page = 0
 		self.pages = {}
-		
+
+		self._max_item_per_toc_page = None
 	
+	@property
+	def max_item_per_toc_page(self):
+		if self._max_item_per_toc_page is None:
+			self._max_item_per_toc_page = self.get_max_item_per_toc_page()
+		
+		return self._max_item_per_toc_page
+
+	def create_empty_toc_pages(self, pdf):
+		toc_page_count = self.get_toc_page_count()
+
+		for i in range(toc_page_count):
+			pdf.add_page()
+			page_link = pdf.add_link()
+			toc_name = 'toc_{}'.format(str(i+1).zfill(2))
+			self.pages[toc_name] = [page_link, pdf.page_no()]
+			self.curr_page += 1
+
+	def write_pdf_page_number(self, pdf):
+		pdf.set_font_size(self.font_size_paragraph)
+		# Page
+		text = '{}'.format(pdf.page_no())
+		position = (self.composite_res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)
+		pdf.text(x=position[0], y=position[1], txt=text)
+
 	def composite_pdf_toc(self, pdf):
 		print('Lineup Maker : Compositing Summary')
 		pdf.add_font(family='UbuntuMono-Bold', style='', fname=self.font_file, uni=True)
@@ -50,11 +75,7 @@ class LM_Composite(object):
 
 		pdf.rect(x=0, y=0, w=self.composite_res[0], h=self.composite_res[1], style='F')
 
-		pdf.set_font_size(self.font_size_paragraph)
-		# Page
-		text = '{}'.format(pdf.page_no())
-		position = (self.composite_res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)
-		pdf.text(x=position[0], y=position[1], txt=text)
+		self.write_pdf_page_number(pdf)
 
 		pdf.set_font_size(self.font_size_title)
 
@@ -71,19 +92,28 @@ class LM_Composite(object):
 			new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
 
 			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
+
+			# Change page if max_item_per_toc_page is reached
+			if i > self.max_item_per_toc_page:
+				pdf.page += 1
+				pdf.rect(x=0, y=0, w=self.composite_res[0], h=self.composite_res[1], style='F')
+				self.write_pdf_page_number(pdf)
+				pdf.set_font_size(self.font_size_title)
+				i = 0
 			
+			# Create a new chapter if needed
 			if new_chapter:
-				column = (self.character_size_title[1] * i) % self.composite_res[1]
+				column = (self.character_size_title[1] * i) % (self.composite_res[1] - self.character_size_title[1])
 				text = self.chapter
-				position = self.add_position(initial_pos, (0 if (self.character_size_title[1] * i) < self.composite_res[1] else int(self.composite_res[0]/2), column))
+				position = self.add_position(initial_pos, (0 if (self.character_size_title[1] * i) < self.composite_res[1] - self.character_size_title[1] else int(self.composite_res[0]/2), column))
 				pdf.text(x=position[0], y=position[1], txt=text)
 				pdf.link(x=position[0], y=position[1] - self.character_size_title[1], w=len(text)*self.character_size_title[0], h=self.character_size_title[1], link=self.pages[self.chapter][0])
 				i += 1
 			
 			pdf.set_text_color(r=self.text_summary_color[0], g=self.text_summary_color[1], b=self.text_summary_color[2])
-			column = (self.character_size_title[1] * i) % self.composite_res[1]
+			column = (self.character_size_title[1] * i) % (self.composite_res[1] - self.character_size_title[1])
 			text = asset
-			position = self.add_position(initial_pos, (100 if (self.character_size_title[1] * i) < self.composite_res[1] else 100 + int(self.composite_res[0]/2), column))
+			position = self.add_position(initial_pos, (100 if (self.character_size_title[1] * i) < self.composite_res[1] - self.character_size_title[1] else 100 + int(self.composite_res[0]/2), column))
 			pdf.text(x=position[0], y=position[1], txt=text)
 			pdf.link(x=position[0], y=position[1] - self.character_size_title[1], w=len(text)*self.character_size_title[0], h=self.character_size_title[1], link=self.pages[asset][0])
 			i += 1
@@ -102,11 +132,7 @@ class LM_Composite(object):
 		position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_chapter[0] * math.ceil(len(text)/2), int(math.ceil(self.composite_res[1]/2)) - self.character_size_chapter[1]/2)
 		pdf.text(x=position[0], y=position[1], txt=text)
 
-		pdf.set_font_size(self.font_size_paragraph)
-		# Page
-		text = '{}'.format(pdf.page_no())
-		position = (self.composite_res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)
-		pdf.text(x=position[0], y=position[1], txt=text)
+		self.write_pdf_page_number(pdf)
 
 		page_link = pdf.add_link()
 		self.pages[chapter_name] = [page_link, pdf.page_no()]
@@ -172,6 +198,30 @@ class LM_Composite(object):
 	def get_current_frame_range(self):
 		return self.context.scene.frame_end + 1 - self.context.scene.frame_start
 
+	def get_max_item_per_toc_page(self):
+		return (math.floor(self.composite_res[1] / self.character_size_title[1])- 1) * 2
+
+	def get_toc_page_count(self):
+		asset_count = len(self.context.scene.lm_asset_list)
+		chapter_count = 0
+		for asset in self.context.scene.lm_asset_list:
+			chapter_naming_convention = N.NamingConvention(self.context, self.chapter, self.context.scene.lm_chapter_naming_convention)
+			asset_naming_convention = N.NamingConvention(self.context, asset.name, self.context.scene.lm_asset_naming_convention)
+
+			new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
+
+			if new_chapter:
+				chapter_count += 1
+
+		max_item = self.max_item_per_toc_page
+
+		if max_item:
+			toc_page_count = math.ceil((asset_count + chapter_count) / max_item)
+		else:
+			toc_page_count = 1
+		
+		return toc_page_count
+	
 	def add_position(self, p1, p2):
 		return (p1[0] + p2[0], p1[1] + p2[1])
 
@@ -188,6 +238,7 @@ class LM_Composite(object):
 		for c in color:
 			result += (c*value,)
 		return result
+
 class LM_Composite_Image(LM_Composite):
 	def __init__(self, context, index=0):
 		super(LM_Composite_Image, self).__init__(context)
@@ -432,10 +483,7 @@ class LM_Composite_Image(LM_Composite):
 			position = (self.composite_res[0]/2 - len(text) * self.character_size_paragraph[0] / 2, self.composite_res[1] - self.character_size_paragraph[1]/2)
 			pdf.text(x=position[0], y=position[1], txt=text)
 
-			# Page
-			text = '{}'.format(pdf.page_no())
-			position = (self.composite_res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)
-			pdf.text(x=position[0], y=position[1], txt=text)
+			self.write_pdf_page_number(pdf)
 
 			page_link = pdf.add_link()
 			self.pages[name] = [page_link, pdf.page_no()]

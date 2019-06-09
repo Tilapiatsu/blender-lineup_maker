@@ -122,6 +122,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 						break
 				
 				if skip:
+					print('Lineup Maker : Asset "{}" is not valid.\nSkipping file'.format(asset_name))
 					continue
 
 				if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
@@ -615,8 +616,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		asset_name_list.sort()
 
 		# create TOC
-		pdf.add_page()
-		composite.curr_page += 1
+		composite.create_empty_toc_pages(pdf)
 
 		for name in asset_name_list:
 			asset = context.scene.lm_asset_list[name]
