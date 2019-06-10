@@ -401,5 +401,12 @@ class LM_PT_AssetList(bpy.types.Panel):
         c.operator("scene.lm_remove_asset_to_render", text="", icon='X')
 
         if len(scn.lm_asset_to_render_list):
+            b = layout.box()
+            b.prop(scn, 'lm_precomposite_frames')
+            b.prop(scn, 'lm_override_frames')
+            b.prop(scn, 'lm_force_render', text='Force')
             b.operator('scene.lm_render_assets', text='Render queued list', icon='OUTPUT').render_list = 'QUEUED'
+            b = layout.box()
+            b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
+            b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
 
