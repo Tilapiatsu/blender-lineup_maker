@@ -47,7 +47,8 @@ def create_bsdf_material(context, asset, material, texture_set=None):
 		shader.inputs[0].default_value = (context.scene.lm_default_material_color[0], context.scene.lm_default_material_color[1], context.scene.lm_default_material_color[2], 1)
 	if context.scene.lm_override_material_roughness:
 		shader.inputs[7].default_value = context.scene.lm_default_material_roughness
-
+	if context.scene.lm_override_material_specular:
+		shader.inputs[5].default_value = context.scene.lm_default_material_specular
 	location = (location[0] - incr - 400, location[1])
 
 	tree.links.new(shader.outputs[0], output.inputs[0])

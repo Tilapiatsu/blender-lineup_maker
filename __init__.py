@@ -383,6 +383,8 @@ def register():
     bpy.types.Scene.lm_default_material_color = bpy.props.FloatVectorProperty(name='Default Material Color', subtype='COLOR', default=(0.5,0.5,0.5), min=0, max=1)
     bpy.types.Scene.lm_override_material_roughness = bpy.props.BoolProperty(name="Override Material Roughness", default=True)
     bpy.types.Scene.lm_default_material_roughness = bpy.props.FloatProperty(name='Default Material Roughness', default=0.6, min=0, max=1)
+    bpy.types.Scene.lm_override_material_specular = bpy.props.BoolProperty(name="Override Material Roughness", default=True)
+    bpy.types.Scene.lm_default_material_specular = bpy.props.FloatProperty(name='Default Material Roughness', default=0.5, min=0, max=1)
 
     bpy.types.Scene.lm_content_background_color = bpy.props.FloatVectorProperty(name='Content Background Color', subtype='COLOR', default=(0.05,0.05,0.05), min=0, max=1)
     bpy.types.Scene.lm_text_background_color = bpy.props.FloatVectorProperty(name='Text Background Color', subtype='COLOR', default=(0, 0, 0), min=0, max=1)
@@ -430,6 +432,8 @@ def unregister():
     del bpy.types.Scene.lm_open_pdf_when_exported
     del bpy.types.Scene.lm_precomposite_frames
     del bpy.types.Scene.lm_override_frames
+    del bpy.types.Scene.lm_override_material_specular
+    del bpy.types.Scene.lm_default_material_specular 
     del bpy.types.Scene.lm_override_material_roughness
     del bpy.types.Scene.lm_override_material_color
     del bpy.types.Scene.lm_avoid_update

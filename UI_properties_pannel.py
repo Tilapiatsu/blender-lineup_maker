@@ -286,6 +286,12 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         r.scale_x = 3
         r.prop(scn, 'lm_default_material_roughness',text='')
 
+        r = b.row(align=True)
+        r.prop(scn, 'lm_override_material_specular', text='Override Material Specular')
+        r.scale_x = 3
+        r.prop(scn, 'lm_default_material_specular',text='')
+        
+
 
 class LM_PT_Cameras(bpy.types.Panel):          
     bl_label = "Camera Assignment"
