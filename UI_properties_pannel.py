@@ -371,6 +371,8 @@ class LM_PT_AssetList(bpy.types.Panel):
 
         col = layout.column(align=True)
         b = col.box()
+        b.operator('scene.lm_refresh_rendering_status', text='Refresh Rendering Status')
+        b = col.box()
         b.label(text='Asset List')
         
         row = b.row()

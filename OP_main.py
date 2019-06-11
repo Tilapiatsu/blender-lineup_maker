@@ -279,16 +279,19 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			# Set  need_render status for each assets
 			need_render = True
 			if not scene.lm_force_render:
-				if asset.render_date:
-					need_render = False
-					rendered_files = os.listdir(render_path)
-					if len(rendered_files) < self.get_current_frame_range(context):
-						need_render = True
+				if not asset.rendered:
+					if asset.render_date:
+						need_render = False
+						rendered_files = os.listdir(render_path)
+						if len(rendered_files) < H.get_current_frame_range(self, context):
+							need_render = True
+						else:
+							for f in os.listdir(render_path):
+								if asset.render_date < asset.import_date:
+									need_render = True
+									break
 					else:
-						for f in os.listdir(render_path):
-							if asset.render_date < asset.import_date:
-								need_render = True
-								break
+						asset.need_render = True
 				else:
 					asset.need_render = True
 			else:
@@ -299,7 +302,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.asset_number = 0
 		self.initial_view_layer = context.window.view_layer
 
-		self.frame_range = self.get_current_frame_range(context)
+		self.frame_range = H.get_current_frame_range(self, context)
 		self.remaining_frames = self.frame_range
 		
 		self.clear_composite_tree(context)
@@ -452,9 +455,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			asset.need_render = False
 			asset.render_date = time.time()
 			asset.rendered = False
-		
-	def get_current_frame_range(self, context):
-		return context.scene.frame_end + 1 - context.scene.frame_start
 
 	def set_rendering_camera(self, context, asset):
 		cam = context.scene.lm_default_camera
@@ -591,14 +591,10 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 		for a in self.composited_asset:
 			self.report({'INFO'}, "Lineup Maker : {} composited".format(a.name))
 
-	def get_current_frame_range(self, context):
-		return context.scene.frame_end + 1 - context.scene.frame_start
-
 	def clear_composite_tree(self, context):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
 		nodes.clear()
-
 
 class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_idname = "scene.lm_export_pdf"
@@ -648,4 +644,30 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		if context.scene.lm_open_pdf_when_exported:
 			os.system("start " + pdf_file)
 
+		return {'FINISHED'}
+
+
+class LM_OP_RefreshRenderingStatus(bpy.types.Operator):
+	bl_idname = "scene.lm_refresh_rendering_status"
+	bl_label = "Lineup Maker: Refresh rendering status"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	def execute(self, context):
+		context.scene.lm_render_path
+
+		for asset in context.scene.lm_asset_list:
+			self.report({'INFO'}, 'Lineup Maker : Refresh rendreing status for : "{}"'.format(asset.name))
+			rendered_asset = path.join(context.scene.lm_render_path, asset.name)
+			if path.isdir(rendered_asset):
+				render_path = rendered_asset
+				rendered_files = [r for r in os.listdir(render_path)]
+
+				if len(rendered_files) == H.get_current_frame_range(self, context):
+					asset.rendered = True
+				
+				asset.render_list.clear()
+				for file in rendered_files:
+					render_filepath = asset.render_list.add()
+					render_filepath.render_filepath = file
+		
 		return {'FINISHED'}

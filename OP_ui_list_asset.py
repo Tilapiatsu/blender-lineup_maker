@@ -10,6 +10,7 @@ def get_assets(context):
 
 def remove_asset(self, context, asset, index, remove=True):
     self.report({'INFO'},'Remove {}'.format(asset.name))
+    context.window.view_layer = context.scene.view_layers[asset.view_layer]
     for o in context.scene.lm_asset_list[asset.name].collection.all_objects:
         bpy.ops.object.select_all(action='DESELECT')
         bpy.data.objects[o.name].select_set(True)

@@ -81,6 +81,7 @@ classes = (
     LM_OP_OpenFolder,
     LM_OP_CompositeRenders,
     LM_OP_ExportPDF,
+    LM_OP_RefreshRenderingStatus,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,
     LM_PT_Cameras,

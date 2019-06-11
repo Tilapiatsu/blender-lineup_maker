@@ -72,7 +72,7 @@ class LM_UI_RemoveAssetToRender(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.scene.lm_asset_to_render_list
+        return context.scene.lm_asset_to_render_list and context.scene.lm_asset_to_render_list_idx is not None
 
     def execute(self, context):
         idx, _, _ = get_assets(context)

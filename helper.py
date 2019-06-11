@@ -74,3 +74,6 @@ def remove_bpy_struct_item(bpy_struct, name):
 		if item.name == name:
 			bpy_struct.remove(i)
 			return i
+
+def get_current_frame_range(self, context):
+	return context.scene.frame_end + 1 - context.scene.frame_start

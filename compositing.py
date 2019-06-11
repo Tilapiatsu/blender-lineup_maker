@@ -12,7 +12,7 @@ class LM_Composite(object):
 
 		self.asset_count = len(self.context.scene.lm_asset_list)
 
-		self.framecount = self.get_current_frame_range()
+		self.framecount = H.get_current_frame_range(self, context)
 
 		self.composite_res = self.get_composite_resolution()
 		self.render_res = self.get_render_resolution()
@@ -197,9 +197,6 @@ class LM_Composite(object):
 	def get_render_resolution(self):
 		return (bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y)
 
-	def get_current_frame_range(self):
-		return self.context.scene.frame_end + 1 - self.context.scene.frame_start
-
 	def get_max_item_per_toc_page(self):
 		return (math.floor(self.composite_res[1] / self.character_size_title[1])- 1) * 2
 
@@ -286,7 +283,7 @@ class LM_Composite_Image(LM_Composite):
 		incr = 300
 
 		self.render_res = (bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y)
-		framecount = self.get_current_frame_range()
+		framecount = H.get_current_frame_range(self, self.context)
 
 		composite_image = bpy.data.images.new(name='{}_composite'.format(name), width=self.composite_res[0], height=self.composite_res[1])
 		composite_image.generated_color = (self.content_background_color[0]/255, self.content_background_color[1]/255, self.content_background_color[2]/255, 1)
@@ -440,9 +437,18 @@ class LM_Composite_Image(LM_Composite):
 			pdf.text(x=position[0], y=position[1], txt=text)
 
 			# WIP
-			text = 'WIP'
+			text = ''
 			if self.context.scene.lm_asset_list[name].wip:
-				pdf.set_text_color(r=200, g=50, b=0)
+				text += 'WIP'
+			if self.context.scene.lm_asset_list[name].is_hd_done:
+				text += '    HD : Done'
+			if self.context.scene.lm_asset_list[name].is_ld_done:
+				text += '    LD : Done'
+			if self.context.scene.lm_asset_list[name].is_baking_done:
+				text += '    Baking : Done'
+			
+			if len(text):
+				# pdf.set_text_color(r=200, g=50, b=0)
 				position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1] * 2)
 				pdf.text(x=position[0], y=position[1], txt=text)
 				pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
