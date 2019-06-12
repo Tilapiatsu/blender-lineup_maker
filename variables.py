@@ -1,5 +1,6 @@
 import bpy
 from . import preferences as P
+from enum import Enum
 
 LM_MASTER_COLLECTION = "Master Collection"
 LM_ASSET_COLLECTION = "Assets_Collection"
@@ -31,3 +32,8 @@ class GetParam(object):
 				param.update({p:getattr(scn, p)})
 
 		self.param = param
+
+class Status(Enum):
+	NOT_STARTED = "Not Started"
+	WIP = "WIP"
+	DONE = "Done"

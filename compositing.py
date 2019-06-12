@@ -437,21 +437,45 @@ class LM_Composite_Image(LM_Composite):
 			pdf.text(x=position[0], y=position[1], txt=text)
 
 			# WIP
-			text = ''
-			if self.context.scene.lm_asset_list[name].wip:
-				text += 'WIP'
-			if self.context.scene.lm_asset_list[name].is_hd_done:
-				text += '    HD : Done'
-			if self.context.scene.lm_asset_list[name].is_ld_done:
-				text += '    LD : Done'
-			if self.context.scene.lm_asset_list[name].is_baking_done:
-				text += '    Baking : Done'
+			hd_status = getattr(V.Status, self.context.scene.lm_asset_list[name].hd).value
+			ld_status = getattr(V.Status, self.context.scene.lm_asset_list[name].ld).value
+			baking_status = getattr(V.Status, self.context.scene.lm_asset_list[name].baking).value
+
+			hd_text = 'HD : '
+			ld_text = '    LD : '
+			baking_text = '    Baking : '
+
+			hd = hd_text + hd_status
+			ld = ld_text + ld_status
+			baking = baking_text + baking_status
+
+			text_length = len(hd) + len(ld) + len(baking)
 			
-			if len(text):
-				# pdf.set_text_color(r=200, g=50, b=0)
-				position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1] * 2)
-				pdf.text(x=position[0], y=position[1], txt=text)
-				pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
+			self.set_status_color(pdf)
+			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(hd_text)), self.character_size_title[1] * 2)
+			pdf.text(x=position[0], y=position[1], txt=hd_text)
+
+			self.set_status_color(pdf, hd_status)
+			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1] * 2)
+			pdf.text(x=position[0], y=position[1], txt=hd_status)
+
+			self.set_status_color(pdf)
+			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(ld_text)), self.character_size_title[1] * 3)
+			pdf.text(x=position[0], y=position[1], txt=ld_text)
+
+			self.set_status_color(pdf, ld_status)
+			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1] * 3)
+			pdf.text(x=position[0], y=position[1], txt=ld_status)
+
+			self.set_status_color(pdf)
+			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(baking_text)), self.character_size_title[1] * 4)
+			pdf.text(x=position[0], y=position[1], txt=baking_text)
+
+			self.set_status_color(pdf, baking_status)
+			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1] * 4)
+			pdf.text(x=position[0], y=position[1], txt=baking_status)
+
+			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
 
 			pdf.set_font_size(self.font_size_paragraph)
 
@@ -507,6 +531,16 @@ class LM_Composite_Image(LM_Composite):
 			self.pages[name] = [page_link, pdf.page_no()]
 			pdf.set_link(self.pages[name][0], self.pages[name][1])
 	
+	def set_status_color(self, pdf, status=''):
+		if status == V.Status.NOT_STARTED.value:
+			pdf.set_text_color(r=200, g=50, b=0)
+		elif status == V.Status.WIP.value:
+			pdf.set_text_color(r=200, g=200, b=0)
+		elif status == V.Status.DONE.value:
+			pdf.set_text_color(r=50, g=200, b=0)
+		else:
+			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
+
 	def set_texture_text_size(self, name):
 		texture_count = 0
 		for material in self.context.scene.lm_asset_list[name].material_list:
