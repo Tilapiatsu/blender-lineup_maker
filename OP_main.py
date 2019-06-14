@@ -290,11 +290,11 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 								if asset.render_date < asset.import_date:
 									need_render = True
 									break
-					else:
+					else: # Asset has never been rendered
 						asset.need_render = True
-				else:
-					asset.need_render = True
-			else:
+				else: # Asset already Rendered
+					asset.need_render = False
+			else: # Force Render is True
 				asset.need_render = True
 		
 		self.need_render_asset = [a for a in scene.lm_asset_list if a.need_render]
@@ -374,6 +374,12 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		asset = self.need_render_asset[0]
 
 		self.render_path, self.render_filename = self.get_render_path(context, asset.name)
+
+		# # Try to Skip Existing Files
+		# render_files = [f for f in os.listdir(self.render_path) if path.splitext(f)[1] == self.get_curr_render_extension(context) and ]
+
+		# for files in render_files:
+		# 	pass
 
 		asset.need_render = True
 		asset.render_path = self.render_path
@@ -664,10 +670,17 @@ class LM_OP_RefreshRenderingStatus(bpy.types.Operator):
 
 				if len(rendered_files) == H.get_current_frame_range(self, context):
 					asset.rendered = True
+				else:
+					asset.rendered = False
 				
 				asset.render_list.clear()
 				for file in rendered_files:
 					render_filepath = asset.render_list.add()
 					render_filepath.render_filepath = file
+			else:
+				asset.rendered = False
+				asset.render_list.clear()
+
+
 		
 		return {'FINISHED'}

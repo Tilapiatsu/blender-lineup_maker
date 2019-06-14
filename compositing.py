@@ -436,7 +436,7 @@ class LM_Composite_Image(LM_Composite):
 			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(text)/2), self.character_size_title[1])
 			pdf.text(x=position[0], y=position[1], txt=text)
 
-			# WIP
+			# AssetStatus
 			hd_status = getattr(V.Status, self.context.scene.lm_asset_list[name].hd).value
 			ld_status = getattr(V.Status, self.context.scene.lm_asset_list[name].ld).value
 			baking_status = getattr(V.Status, self.context.scene.lm_asset_list[name].baking).value
