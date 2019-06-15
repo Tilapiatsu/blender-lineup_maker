@@ -12,17 +12,14 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
+#   - Create an operator to export an asset
+#       - Export FBX, json and texture file  
 #   - Compositing method
 #       - None
 #       - Solid --> Use lm_content_background_color
 #       - Lineup --> composite each frame on the same image
 #   - Create an operator to update/import render and export PDF in a row
-#   - Add Material name in the lineup PDF
-#   - Better import : Remove assets that is not there anymore on the drive ?
 #   
-#   - The rename camera keyword operator is gone need to find a way to make it work
-#   - Create an asset manager
-#       - Color Code the asset that Need Update or Need Render in the list
 # 
 #   - Log and repport
 #       - Unified class to print message to Blender and to write a log file for the entire addon
