@@ -1,4 +1,5 @@
 import bpy
+from os import path
 
 class LM_Render_List(bpy.types.PropertyGroup):
     render_filepath = bpy.props.StringProperty(name="Render path", subtype='FILE_PATH')
@@ -35,6 +36,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     need_render = bpy.props.BoolProperty()
     rendered = bpy.props.BoolProperty()
+    asset_path = bpy.props.StringProperty(subtype='DIR_PATH')
     render_path = bpy.props.StringProperty(subtype='DIR_PATH')
     
     raw_composite_filepath = bpy.props.StringProperty(subtype='FILE_PATH')
@@ -147,6 +149,11 @@ class LM_AssetList_UIList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
         text = item.name
+        if item.asset_path != "" :
+            if not path.exists(item.asset_path):
+                text += ' - Deleted On Drive'
+        else:
+            text += ' - Need Refresh'
         if item.rendered:
             text += ' - Rendered'
         row.label(text='{}'.format(text))

@@ -358,7 +358,7 @@ class LM_PT_Chapter(bpy.types.Panel):
 
 
 
-class LM_PT_AssetList(bpy.types.Panel):          
+class LM_PT_RenderQueue(bpy.types.Panel):          
     bl_label = "Asset List"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -386,23 +386,29 @@ class LM_PT_AssetList(bpy.types.Panel):
         c.separator()
         c.operator("scene.lm_clear_asset_list", text="", icon='LOOP_BACK')
         c.operator("scene.lm_remove_asset", text="", icon='X')
+        c.separator()
+        if path.isdir(scn.lm_asset_list[scn.lm_asset_list_idx].asset_path):
+            c.operator("scene.lm_open_asset_folder", text="", icon='SNAP_VOLUME')
+        if scn.lm_asset_list[scn.lm_asset_list_idx].rendered:
+            c.operator("scene.lm_open_render_folder", text="", icon='RENDER_RESULT')
+        
 
         row.separator()
-        b.operator("scene.lm_add_asset_to_render", text='Add selected asset to render queue', icon='SORT_ASC')
+        b.operator("scene.lm_add_asset_to_render_queue", text='Add selected asset to render queue', icon='SORT_ASC')
         row.separator()
         b.label(text='Render Queue')
         row = b.row()
-        rows = len(scn.lm_asset_to_render_list) if len(scn.lm_asset_to_render_list) > 2 else 2
-        row.template_list('LM_UL_asset_list', '', scn, 'lm_asset_to_render_list', scn, 'lm_asset_to_render_list_idx', rows=rows)
+        rows = len(scn.lm_render_queue) if len(scn.lm_render_queue) > 2 else 2
+        row.template_list('LM_UL_asset_list', '', scn, 'lm_render_queue', scn, 'lm_render_queue_idx', rows=rows)
         c = row.column(align=True)
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_UP').direction = "UP"
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
-        c.operator("scene.lm_clear_asset_to_render_list", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_clear_asset_to_render_queue_list", text="", icon='LOOP_BACK')
         c.operator("scene.lm_remove_asset_to_render", text="", icon='X')
 
-        if len(scn.lm_asset_to_render_list):
+        if len(scn.lm_render_queue):
             b = layout.box()
             b.prop(scn, 'lm_precomposite_frames')
             b.prop(scn, 'lm_override_frames')

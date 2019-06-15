@@ -271,7 +271,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		if self.render_list == 'ALL':
 			queued_list = scene.lm_asset_list
 		elif self.render_list == 'QUEUED':
-			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_asset_to_render_list]
+			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue]
 
 		for asset in queued_list:
 			render_path, render_filename = self.get_render_path(context, asset.name)
@@ -670,8 +670,10 @@ class LM_OP_RefreshRenderingStatus(bpy.types.Operator):
 
 				if len(rendered_files) == H.get_current_frame_range(self, context):
 					asset.rendered = True
+					asset.render_path = render_path
 				else:
 					asset.rendered = False
+					asset.render_path = ""
 				
 				asset.render_list.clear()
 				for file in rendered_files:
@@ -679,6 +681,7 @@ class LM_OP_RefreshRenderingStatus(bpy.types.Operator):
 					render_filepath.render_filepath = file
 			else:
 				asset.rendered = False
+				asset.render_path = ""
 				asset.render_list.clear()
 
 

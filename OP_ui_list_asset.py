@@ -78,3 +78,34 @@ class LM_UI_RemoveAsset(bpy.types.Operator):
         remove_asset(self, context, asset[idx], idx)
 
         return {'FINISHED'}
+
+
+class LM_UI_OpenRenderFolder(bpy.types.Operator):
+    bl_idname = "scene.lm_open_render_folder"
+    bl_label = "Open Render Folder"
+    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Open Render Folder"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.lm_asset_list and context.scene.lm_asset_list_idx is not None
+
+    def execute(self, context):
+        bpy.ops.scene.lm_openfolder(folder_path=context.scene.lm_asset_list[context.scene.lm_asset_list_idx].render_path)
+
+        return {'FINISHED'}
+
+class LM_UI_OpenAssetFolder(bpy.types.Operator):
+    bl_idname = "scene.lm_open_asset_folder"
+    bl_label = "Open Asset Folder"
+    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Open Render Folder"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.lm_asset_list and context.scene.lm_asset_list_idx is not None
+
+    def execute(self, context):
+        bpy.ops.scene.lm_openfolder(folder_path=context.scene.lm_asset_list[context.scene.lm_asset_list_idx].asset_path)
+
+        return {'FINISHED'}

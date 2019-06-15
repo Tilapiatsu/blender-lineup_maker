@@ -73,6 +73,7 @@ class BpyAsset(object):
 		self.scn_asset = self.context.scene.lm_asset_list.add()
 		self.scn_asset.name = self.asset_name
 		self.scn_asset.collection = curr_asset_collection
+		self.scn_asset.asset_path = path.dirname(self.meshes[0])
 
 		if name in self.json_data.keys():
 			if 'isWip' in self.json_data[name].keys():
