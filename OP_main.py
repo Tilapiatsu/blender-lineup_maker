@@ -58,7 +58,7 @@ class LM_OP_UpdateLineup(bpy.types.Operator):
 				self.exported = True
 			
 			else:
-				self.report({'INFO'}, 'Lineup Maker : Lineup Updated correctly ')
+				self.report({'INFO'}, 'Lineup Maker : Lineup Updated correctly')
 				return {"FINISHED"}
 
 		return {"PASS_THROUGH"}
@@ -684,6 +684,28 @@ class LM_OP_RefreshRenderingStatus(bpy.types.Operator):
 				asset.render_path = ""
 				asset.render_list.clear()
 
+		return {'FINISHED'}
 
-		
+
+class LM_OP_ExportSelectedAsset(bpy.types.Operator):
+	bl_idname = "scene.lm_export_selected_asset"
+	bl_label = "Lineup Maker: Export selected mesh to asset folder"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll(cls, context):
+		object_types = [o.type for o in context.selected_objects]
+		return len(object_types) and 'MESH' in object_types
+
+	def execute(self, context):
+		self.report({'INFO'}, 'Lineup Maker : Exporting selected objects to asset folder')
+		export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
+		export_filename = path.join(export_path, context.scene.lm_exported_asset_name + '.fbx')
+
+		H.create_folder_if_neeed(export_path)
+
+		bpy.ops.export_scene.fbx(filepath=export_filename, use_selection=True)
+
+		bpy.ops.scene.lm_openfolder(folder_path=export_path)
+
 		return {'FINISHED'}

@@ -167,7 +167,7 @@ class LM_PT_NamingConvention(bpy.types.Panel):
         c.operator("scene.lm_move_keyword", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
-        c.operator("scene.lm_clear_keywords", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_clear_keywords", text="", icon='TRASH')
         c.operator("scene.lm_remove_keyword", text="", icon='X')
         c.separator()
         c.operator("scene.lm_rename_keyword", text="", icon='OUTLINER_DATA_FONT')
@@ -188,7 +188,7 @@ class LM_PT_NamingConvention(bpy.types.Panel):
         c.operator("scene.lm_move_keyword_value", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
-        c.operator("scene.lm_clear_keyword_values", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_clear_keyword_values", text="", icon='TRASH')
         c.operator("scene.lm_remove_keyword_value", text="", icon='X')
         c.separator()
         c.operator("scene.lm_rename_keyword_value", text="", icon='OUTLINER_DATA_FONT')
@@ -220,7 +220,7 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         c.operator("scene.lm_move_shader", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
-        c.operator("scene.lm_clear_shaders", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_clear_shaders", text="", icon='TRASH')
         c.operator("scene.lm_remove_shader", text="", icon='X')
         c.separator()
         c.operator("scene.lm_rename_shader", text="", icon='OUTLINER_DATA_FONT')
@@ -240,7 +240,7 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         c.operator("scene.lm_move_channel", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
-        c.operator("scene.lm_clear_channels", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_clear_channels", text="", icon='TRASH')
         c.operator("scene.lm_remove_channel", text="", icon='X')
         c.separator()
         c.operator("scene.lm_rename_channel", text="", icon='OUTLINER_DATA_FONT')
@@ -264,7 +264,7 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
         c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
-        c.operator("scene.lm_clear_texture_channels", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_clear_texture_channels", text="", icon='TRASH')
         c.operator("scene.lm_remove_texture_channel", text="", icon='X')
         c.separator()
         c.operator("scene.lm_rename_texture_channel", text="", icon='OUTLINER_DATA_FONT')
@@ -298,6 +298,7 @@ class LM_PT_Cameras(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = 'Lineup Maker'
+    bl_options = {"DEFAULT_CLOSED"}
 
     
     def draw(self, context):
@@ -325,7 +326,7 @@ class LM_PT_Cameras(bpy.types.Panel):
         c.operator("scene.lm_move_camera_keyword", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
-        c.operator("scene.lm_clear_camera_keywords", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_clear_camera_keywords", text="", icon='TRASH')
         c.operator("scene.lm_remove_camera_keyword", text="", icon='X')
         c.separator()
         b.prop(scn, 'lm_camera_keyword_name', text='Camera Keyword')
@@ -336,6 +337,7 @@ class LM_PT_Chapter(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = 'Lineup Maker'
+    bl_options = {"DEFAULT_CLOSED"}
 
     
     def draw(self, context):
@@ -363,6 +365,7 @@ class LM_PT_RenderQueue(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = 'Lineup Maker'
+    bl_options = {"DEFAULT_CLOSED"}
 
     
     def draw(self, context):
@@ -384,7 +387,7 @@ class LM_PT_RenderQueue(bpy.types.Panel):
         c.operator("scene.lm_move_asset", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
-        c.operator("scene.lm_clear_asset_list", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_clear_asset_list", text="", icon='TRASH')
         c.operator("scene.lm_remove_asset", text="", icon='X')
         c.separator()
         if path.isdir(scn.lm_asset_list[scn.lm_asset_list_idx].asset_path):
@@ -405,7 +408,7 @@ class LM_PT_RenderQueue(bpy.types.Panel):
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
-        c.operator("scene.lm_clear_asset_to_render_queue_list", text="", icon='LOOP_BACK')
+        c.operator("scene.lm_clear_asset_to_render_queue_list", text="", icon='TRASH')
         c.operator("scene.lm_remove_asset_to_render", text="", icon='X')
 
         if len(scn.lm_render_queue):
@@ -418,3 +421,29 @@ class LM_PT_RenderQueue(bpy.types.Panel):
             b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
             b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
 
+
+class LM_PT_ExportAsset(bpy.types.Panel):          
+    bl_label = "Export Asset"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = 'Lineup Maker'
+    bl_options = {"DEFAULT_CLOSED"}
+
+    
+    def draw(self, context):
+        scn = context.scene
+        layout = self.layout
+        asset_path = bpy.path.abspath(scn.lm_asset_path)
+
+        col = layout.column(align=True)
+        b = col.box()
+
+        if path.isdir(asset_path):
+            icon = "DOWNARROW_HLT"
+        else:
+            icon = "BLANK1"
+            
+        b.prop(scn, 'lm_asset_path', text='Asset Path', icon=icon)
+        b.prop(scn, 'lm_exported_asset_name', text='Export Name')
+        if path.exists(asset_path):
+            b.operator('scene.lm_export_selected_asset', text='Export Selected Asset', icon='EXPORT')

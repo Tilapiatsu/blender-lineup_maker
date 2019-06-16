@@ -72,6 +72,7 @@ bl_info = {
 
 classes = (
     LM_Preferences,
+    LM_PT_ExportAsset,
     LM_OP_UpdateLineup,
     LM_OP_ImportAssets,
     LM_OP_RenderAssets,
@@ -79,6 +80,7 @@ classes = (
     LM_OP_CompositeRenders,
     LM_OP_ExportPDF,
     LM_OP_RefreshRenderingStatus,
+    LM_OP_ExportSelectedAsset,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,
     LM_PT_Cameras,
@@ -394,6 +396,8 @@ def register():
     bpy.types.Scene.lm_precomposite_frames = bpy.props.BoolProperty(name='Precomposite frames', default=True)
     bpy.types.Scene.lm_open_pdf_when_exported = bpy.props.BoolProperty(name="Open PDF File When Exported", default=True)
 
+    bpy.types.Scene.lm_exported_asset_name = bpy.props.StringProperty(name="Export Name")
+
     for cls in classes:
         bpy.utils.register_class(cls)
     
@@ -429,6 +433,7 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
+    del bpy.types.Scene.lm_exported_asset_name
     del bpy.types.Scene.lm_open_pdf_when_exported
     del bpy.types.Scene.lm_precomposite_frames
     del bpy.types.Scene.lm_override_frames
