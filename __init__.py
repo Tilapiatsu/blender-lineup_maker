@@ -101,13 +101,13 @@ classes = (
     LM_KeywordValues,
     LM_CamerasKeywords,
     LM_Cameras,
-    LM_TextureSet_UIList,
-    LM_Channel_UIList,
-    LM_Shader_UIList,
-    LM_Keywords_UIList,
-    LM_KeywordValues_UIList,
-    LM_Cameras_UIList,
-    LM_AssetList_UIList,
+    LM_UL_TextureSet_UIList,
+    LM_UL_Channel_UIList,
+    LM_UL_Shader_UIList,
+    LM_UL_Keywords_UIList,
+    LM_UL_KeywordValues_UIList,
+    LM_UL_Cameras_UIList,
+    LM_UL_AssetList_UIList,
     LM_HdStatus,
     LM_LdStatus,
     LM_BakingStatus,
@@ -421,8 +421,8 @@ def register():
     bpy.types.Scene.lm_cameras = bpy.props.CollectionProperty(type=LM_Cameras)
 
     bpy.types.Scene.lm_exported_hd_status = bpy.props.PointerProperty(type=LM_HdStatus)
-    bpy.types.Scene.lm_exported_ld_status = bpy.props.PointerProperty(name=LM_LdStatus)
-    bpy.types.Scene.lm_exported_baking_status = bpy.props.PointerProperty(name=LM_BakingStatus)
+    bpy.types.Scene.lm_exported_ld_status = bpy.props.PointerProperty(type=LM_LdStatus)
+    bpy.types.Scene.lm_exported_baking_status = bpy.props.PointerProperty(type=LM_BakingStatus)
     
     
     
