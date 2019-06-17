@@ -108,6 +108,9 @@ classes = (
     LM_KeywordValues_UIList,
     LM_Cameras_UIList,
     LM_AssetList_UIList,
+    LM_HdStatus,
+    LM_LdStatus,
+    LM_BakingStatus,
     LM_UI_AddAssetToRenderQueue,
     LM_UI_MoveAssetToRender,
     LM_UI_ClearAssetToRenderQueueList,
@@ -398,9 +401,11 @@ def register():
 
     bpy.types.Scene.lm_exported_asset_name = bpy.props.StringProperty(name="Export Name")
 
+
     for cls in classes:
         bpy.utils.register_class(cls)
     
+
     bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
     bpy.types.Scene.lm_render_queue = bpy.props.CollectionProperty(type=LM_Asset_List)
 
@@ -414,6 +419,10 @@ def register():
     bpy.types.Scene.lm_keyword_values =  bpy.props.CollectionProperty(type=LM_KeywordValues)
 
     bpy.types.Scene.lm_cameras = bpy.props.CollectionProperty(type=LM_Cameras)
+
+    bpy.types.Scene.lm_exported_hd_status = bpy.props.PointerProperty(type=LM_HdStatus)
+    bpy.types.Scene.lm_exported_ld_status = bpy.props.PointerProperty(name=LM_LdStatus)
+    bpy.types.Scene.lm_exported_baking_status = bpy.props.PointerProperty(name=LM_BakingStatus)
     
     
     
@@ -433,6 +442,9 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
+    del bpy.types.Scene.lm_exported_baking_status
+    del bpy.types.Scene.lm_exported_ld_status
+    del bpy.types.Scene.lm_exported_hd_status
     del bpy.types.Scene.lm_exported_asset_name
     del bpy.types.Scene.lm_open_pdf_when_exported
     del bpy.types.Scene.lm_precomposite_frames

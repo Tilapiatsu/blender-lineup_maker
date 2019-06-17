@@ -445,5 +445,8 @@ class LM_PT_ExportAsset(bpy.types.Panel):
             
         b.prop(scn, 'lm_asset_path', text='Asset Path', icon=icon)
         b.prop(scn, 'lm_exported_asset_name', text='Export Name')
+        b.prop(scn, 'lm_exported_hd_status', text='HD Status')
+        b.prop(scn, 'lm_exported_ld_status', text='LD Status')
+        b.prop(scn, 'lm_exported_baking_status', text='Baking Status')
         if path.exists(asset_path):
             b.operator('scene.lm_export_selected_asset', text='Export Selected Asset', icon='EXPORT')
