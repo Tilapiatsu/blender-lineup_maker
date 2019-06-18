@@ -86,54 +86,6 @@ class LM_Cameras(bpy.types.PropertyGroup):
     camera: bpy.props.PointerProperty(type=bpy.types.Object)
     keywords : bpy.props.CollectionProperty(type=LM_CamerasKeywords)
 
-def update_enum(self, context):
-    setattr(context.scene, self.status, self.enum_status)
-
-
-class LM_HdStatus(bpy.types.PropertyGroup):
-    status = 'lm_exported_hd_status'
-    enum = [
-        ('NOT_STARTED', V.Status.NOT_STARTED.value, '', 'NOT_STARTED', 0),
-        ('WIP', V.Status.WIP.value, '', 'WIP', 1),
-        ('DONE', V.Status.DONE.value, '', 'DONE', 2)
-    ]
-
-    enum_status : bpy.props.EnumProperty(
-        items=enum,
-        description="HD Status",
-        default='NOT_STARTED',
-        update=update_enum
-    )
-
-class LM_LdStatus(bpy.types.PropertyGroup):
-    status = 'lm_exported_ld_status'
-    enum = [
-        ('NOT_STARTED', V.Status.NOT_STARTED.value, '', 'NOT_STARTED', 0),
-        ('WIP', V.Status.WIP.value, '', 'WIP', 1),
-        ('DONE', V.Status.DONE.value, '', 'DONE', 2)
-    ]
-
-    enum_status : bpy.props.EnumProperty(
-        items=enum,
-        description="LD Status",
-        default='NOT_STARTED',
-        update=update_enum
-    )
-
-class LM_BakingStatus(bpy.types.PropertyGroup):
-    status = 'lm_exported_baking_status'
-    enum = [
-        ('NOT_STARTED', V.Status.NOT_STARTED.value, '', 'NOT_STARTED', 0),
-        ('WIP', V.Status.WIP.value, '', 'WIP', 1),
-        ('DONE', V.Status.DONE.value, '', 'DONE', 2)
-    ]
-
-    enum_status : bpy.props.EnumProperty(
-        items=enum,
-        description="Baking Status",
-        default='NOT_STARTED',
-        update=update_enum
-    )
 
 # UI List
 

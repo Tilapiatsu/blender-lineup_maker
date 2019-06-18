@@ -108,9 +108,6 @@ classes = (
     LM_UL_KeywordValues_UIList,
     LM_UL_Cameras_UIList,
     LM_UL_AssetList_UIList,
-    LM_HdStatus,
-    LM_LdStatus,
-    LM_BakingStatus,
     LM_UI_AddAssetToRenderQueue,
     LM_UI_MoveAssetToRender,
     LM_UI_ClearAssetToRenderQueueList,
@@ -420,15 +417,27 @@ def register():
 
     bpy.types.Scene.lm_cameras = bpy.props.CollectionProperty(type=LM_Cameras)
 
-    bpy.types.Scene.lm_exported_hd_status = bpy.props.PointerProperty(type=LM_HdStatus)
-    bpy.types.Scene.lm_exported_ld_status = bpy.props.PointerProperty(type=LM_LdStatus)
-    bpy.types.Scene.lm_exported_baking_status = bpy.props.PointerProperty(type=LM_BakingStatus)
-    
+    bpy.types.Scene.lm_exported_hd_status = bpy.props.EnumProperty(name="HD Status",
+                                                                    description="Choose in which status is the HD Mesh of the Asset",
+                                                                    items=V.STATUS,
+                                                                    default='NOT_STARTED')
+    bpy.types.Scene.lm_exported_ld_status = bpy.props.EnumProperty(name="HD Status",
+                                                                    description="Choose in which status is the LD Mesh of the Asset",
+                                                                    items=V.STATUS,
+                                                                    default='NOT_STARTED')
+    bpy.types.Scene.lm_exported_baking_status = bpy.props.EnumProperty(name="HD Status",
+                                                                    description="Choose in which status is the Baking Mesh of the Asset",
+                                                                    items=V.STATUS,
+                                                                    default='NOT_STARTED')
+
     
     
 
 
 def unregister():
+    del bpy.types.Scene.lm_exported_hd_status
+    del bpy.types.Scene.lm_exported_ld_status
+    del bpy.types.Scene.lm_exported_baking_status
     del bpy.types.Scene.lm_cameras
     del bpy.types.Scene.lm_keyword_values
     del bpy.types.Scene.lm_keywords
@@ -442,9 +451,6 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
-    del bpy.types.Scene.lm_exported_baking_status
-    del bpy.types.Scene.lm_exported_ld_status
-    del bpy.types.Scene.lm_exported_hd_status
     del bpy.types.Scene.lm_exported_asset_name
     del bpy.types.Scene.lm_open_pdf_when_exported
     del bpy.types.Scene.lm_precomposite_frames

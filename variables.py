@@ -35,5 +35,14 @@ class GetParam(object):
 
 class Status(Enum):
 	NOT_STARTED = "Not Started"
+	NOT_NEEDED = "Not Needed"
 	WIP = "WIP"
 	DONE = "Done"
+
+
+STATUS = [
+        ('NOT_STARTED', Status.NOT_STARTED.value, '', 'NOT_STARTED', 0),
+		('NOT_NEEDED', Status.NOT_NEEDED.value, '', 'NOT_NEEDED', 0),
+        ('WIP', Status.WIP.value, '', 'WIP', 1),
+        ('DONE', Status.DONE.value, '', 'DONE', 2)
+    	]
