@@ -138,14 +138,14 @@ class LM_BakingStatus(bpy.types.PropertyGroup):
 # UI List
 
 class LM_UL_Shader_UIList(bpy.types.UIList):
-    bl_idname : "LM_UL_shaders"
+    bl_idname = "LM_UL_shaders"
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
         row.label(text='{}'.format(item.name))
 
 class LM_UL_Channel_UIList(bpy.types.UIList):
-    bl_idname : "LM_UL_channels"
+    bl_idname = "LM_UL_channels"
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
@@ -161,28 +161,28 @@ class LM_UL_Channel_UIList(bpy.types.UIList):
         row.label(text='{} : {} {}'.format(item.shader, item.name, channel_format))
 
 class LM_UL_TextureSet_UIList(bpy.types.UIList):
-    bl_idname : "LM_UL_texturesets"
+    bl_idname = "LM_UL_texturesets"
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
         row.label(text='{} - {} : {}'.format(item.shader, item.channel, item.name))
 
 class LM_UL_Keywords_UIList(bpy.types.UIList):
-    bl_idname : "LM_UL_keywords"
+    bl_idname = "LM_UL_keywords"
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
         row.label(text='{}'.format(item.name))
 
 class LM_UL_KeywordValues_UIList(bpy.types.UIList):
-    bl_idname : "LM_UL_keyword_values"
+    bl_idname = "LM_UL_keyword_values"
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
         row.label(text='{} : {}'.format(item.keyword, item.name))
 
 class LM_UL_Cameras_UIList(bpy.types.UIList):
-    bl_idname : "LM_UL_cameras"
+    bl_idname = "LM_UL_cameras"
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
@@ -194,7 +194,7 @@ class LM_UL_Cameras_UIList(bpy.types.UIList):
         row.label(text='"{}" : {}'.format(item.camera.name, text))
 
 class LM_UL_AssetList_UIList(bpy.types.UIList):
-    bl_idname : "LM_UL_asset_list"
+    bl_idname = "LM_UL_asset_list"
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.split(factor=0.7)
