@@ -390,10 +390,11 @@ class LM_PT_RenderQueue(bpy.types.Panel):
         c.operator("scene.lm_clear_asset_list", text="", icon='TRASH')
         c.operator("scene.lm_remove_asset", text="", icon='X')
         c.separator()
-        if path.isdir(scn.lm_asset_list[scn.lm_asset_list_idx].asset_path):
-            c.operator("scene.lm_open_asset_folder", text="", icon='SNAP_VOLUME')
-        if scn.lm_asset_list[scn.lm_asset_list_idx].rendered:
-            c.operator("scene.lm_open_render_folder", text="", icon='RENDER_RESULT')
+        if len(scn.lm_asset_list):
+            if path.isdir(scn.lm_asset_list[scn.lm_asset_list_idx].asset_path):
+                c.operator("scene.lm_open_asset_folder", text="", icon='SNAP_VOLUME')
+            if scn.lm_asset_list[scn.lm_asset_list_idx].rendered:
+                c.operator("scene.lm_open_render_folder", text="", icon='RENDER_RESULT')
         
 
         row.separator()

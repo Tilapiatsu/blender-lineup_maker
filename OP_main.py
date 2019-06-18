@@ -69,6 +69,10 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_label = "Lineup Maker: Import all assets from source folder"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_render_collection and path.isdir(context.scene.lm_asset_path)
+
 	def execute(self, context):
 		folder_src = bpy.path.abspath(context.scene.lm_asset_path)
 
