@@ -1,5 +1,5 @@
 import bpy
-import os, time, math, subprocess
+import os, time, math, subprocess, json
 from fpdf import FPDF
 from os import path
 from . import variables as V
@@ -697,7 +697,7 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 
 	export_path = ''
-	export_filename = ''
+	json_data = []
 
 	@classmethod
 	def poll(cls, context):
@@ -707,13 +707,17 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 	def execute(self, context):
 		self.report({'INFO'}, 'Lineup Maker : Exporting selected objects to asset folder')
 		self.export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
-		self.export_filename = path.join(self.export_path, context.scene.lm_exported_asset_name + '.fbx')
 
+		H.delete_folder_if_exist(self.export_path)
 		H.create_folder_if_neeed(self.export_path)
 
 		self.copy_textures(context)
 
-		bpy.ops.export_scene.fbx(filepath=self.export_filename, use_selection=True)
+		for o in context.selected_objects:
+			export_filename = path.join(self.export_path, o.name + '.fbx')
+			bpy.ops.export_scene.fbx(filepath=export_filename, use_selection=True)
+
+		self.write_json(context)
 
 		bpy.ops.scene.lm_openfolder(folder_path=self.export_path)
 
@@ -731,13 +735,17 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 	
 	def get_textures(self, context):
 		texture_list = {}
+		scn = context.scene
 		for o in context.selected_objects:
 			material_slots = o.material_slots
 			name = o.name
+			json = {'name':name, 'materials':{}, 'hd_status':scn.lm_exported_hd_status, 'ld_status':scn.lm_exported_ld_status, 'baking_status':scn.lm_exported_baking_status}
 			for slot in material_slots:
 				mat = slot.material
 				node_tree = mat.node_tree
 				nodes = node_tree.nodes
+
+				json['materials'].update({'material':mat.name})
 
 				textures = [n for n in nodes if n.type == 'TEX_IMAGE']
 				for t in textures:
@@ -747,6 +755,16 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 					else:
 						texture_list[o.name].append(bpy.path.abspath(t.image.filepath))
 
+			self.json_data.append(json)
 
-		print(texture_list)
 		return texture_list
+
+
+	def write_json(self, context):
+		if len(self.json_data):
+			for j in self.json_data:
+				json_filepath = path.join(self.export_path, j['name'] + '.json')
+				with open(json_filepath, 'w', encoding='utf-8') as outfile:
+					json.dump(j, outfile, ensure_ascii=False, indent=4)
+
+	

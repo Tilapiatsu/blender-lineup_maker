@@ -1,8 +1,12 @@
-import bpy, os
+import bpy, os, shutil
 
 def create_folder_if_neeed(path):
 	if not os.path.exists(path):
 			os.makedirs(path)
+
+def delete_folder_if_exist(path):
+	if os.path.exists(path):
+		shutil.rmtree(path)
 
 def get_layer_collection(layer_collection, collection_name):
 	found = None
