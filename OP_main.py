@@ -745,6 +745,28 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 				node_tree = mat.node_tree
 				nodes = node_tree.nodes
 
+				# for n in nodes:
+				# 	print(n)
+				# 	for d in dir(n):
+				# 		print(d)
+				# 		print(getattr(n, d))
+
+				output_node = [n for n in nodes if n.type == "OUTPUT_MATERIAL"]
+
+				if len(output_node):
+					output_node = output_node[0]
+				else:
+					output_node = None
+
+				if output_node:
+					shaders = self.get_children_node(context, node_tree, output_node)
+
+					links = node_tree.links
+
+					# for l in links:
+					# 	print(l.from_node)
+					# 	print(dir(l))
+
 				json['materials'].update({'material':mat.name})
 
 				textures = [n for n in nodes if n.type == 'TEX_IMAGE']
@@ -767,4 +789,28 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 				with open(json_filepath, 'w', encoding='utf-8') as outfile:
 					json.dump(j, outfile, ensure_ascii=False, indent=4)
 
-	
+	def get_children_node(self, context, node_tree, node):
+		links = node_tree.links
+		children = []
+
+		for l in links:
+			if l.to_node == node:
+				children.append(l.from_node)
+
+		return children
+
+	def get_parents_node(self, context, node_tree, node):
+		links = node_tree.links
+		parents = []
+
+		for l in links:
+			if l.from_node == node:
+				parents.append(l.to_node)
+
+		return parents
+
+	def find_channel(self, context, node_tree,  node):
+		links = node_tree.links
+
+
+		
