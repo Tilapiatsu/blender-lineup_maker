@@ -7,6 +7,7 @@ from . import helper as H
 from . import asset_format as A
 from . import naming_convention as N
 from . import compositing as C
+from . import stats as S
 
 
 class LM_OP_UpdateLineup(bpy.types.Operator):
@@ -739,7 +740,8 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 		for o in context.selected_objects:
 			material_slots = o.material_slots
 			name = o.name
-			json = {'name':name, 'materials':{}, 'hd_status':getattr(V.Status, scn.lm_exported_hd_status).value, 'ld_status':getattr(V.Status, scn.lm_exported_ld_status).value, 'baking_status':getattr(V.Status, scn.lm_exported_baking_status).value}
+			stats = S.Stats(o)
+			json = {'name':name, 'hd_status':getattr(V.Status, scn.lm_exported_hd_status).value, 'ld_status':getattr(V.Status, scn.lm_exported_ld_status).value, 'baking_status':getattr(V.Status, scn.lm_exported_baking_status).value, 'triangles':stats.triangle_count, 'vertices':stats.vertex_count, 'materials':[]}
 			for slot in material_slots:
 				mat = slot.material
 				node_tree = mat.node_tree
@@ -751,31 +753,38 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 				# 		print(d)
 				# 		print(getattr(n, d))
 
-				output_node = [n for n in nodes if n.type == "OUTPUT_MATERIAL"]
+				output_nodes = [n for n in nodes if n.type == "OUTPUT_MATERIAL"]
 
-				if len(output_node):
-					output_node = output_node[0]
-				else:
-					output_node = None
+				output_node = output_nodes[0] if len(output_nodes) else None
 
 				if output_node:
 					shaders = self.get_children_node(context, node_tree, output_node)
+					
+					shader = shaders[0] if len(shaders) else None
 
-					links = node_tree.links
-
+					# links = node_tree.links
 					# for l in links:
 					# 	print(l.from_node)
 					# 	print(dir(l))
+					# 	print(l.to_socket)
+					# 	print(dir(l.to_socket))
+					# 	print(l.to_socket.name)
 
-				json['materials'].update({'material':mat.name})
-
-				textures = [n for n in nodes if n.type == 'TEX_IMAGE']
-				for t in textures:
-					if not len(texture_list.keys()) or o.name not in texture_list.keys():
-						texture_list[o.name] = [bpy.path.abspath(t.image.filepath)]
-						
+					json['materials'].append({'material':mat.name, 'textures':[]})
+					if shader:
+						textures = [n for n in nodes if n.type == 'TEX_IMAGE']
+						for t in textures:
+							channel = self.find_channel(context, node_tree, t, shader)
+							json['materials'][-1]['textures'].append({'file':path.basename(t.image.filepath), 'channel':channel})
+							if not len(texture_list.keys()) or o.name not in texture_list.keys():
+								texture_list[o.name] = [bpy.path.abspath(t.image.filepath)]
+							else:
+								texture_list[o.name].append(bpy.path.abspath(t.image.filepath))
 					else:
-						texture_list[o.name].append(bpy.path.abspath(t.image.filepath))
+						self.report({'WARRNING'}, 'Lineup Maker : No shader found in material "{}"'.format(mat.name))
+				
+				else:
+					self.report({'WARRNING'}, 'Lineup Maker : No output node found found in material "{}"'.format(mat.name))
 
 			self.json_data.append(json)
 
@@ -797,7 +806,10 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 			if l.to_node == node:
 				children.append(l.from_node)
 
-		return children
+		if len(children) == 0:
+			return None
+		else:
+			return children
 
 	def get_parents_node(self, context, node_tree, node):
 		links = node_tree.links
@@ -805,12 +817,36 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 
 		for l in links:
 			if l.from_node == node:
-				parents.append(l.to_node)
+				parents.append({'node':l.to_node, 'input':l.to_socket})
+		
+		if len(parents) == 0:
+			return None
+		else:
+			return parents
+	
 
-		return parents
-
-	def find_channel(self, context, node_tree,  node):
+	def find_channel(self, context, node_tree,  node, shader):
 		links = node_tree.links
 
+		found = False
+		curr_node = [{'node':node, 'input':None}]
+		channel = 'null'
+		while not found:
+			if len(curr_node) == 0:
+				return 'null'
+
+			nodes = self.get_parents_node(context, node_tree, curr_node.pop()['node'])
+
+			for n in nodes:
+				if n is None:
+					continue
+				if n['node'] == shader:
+					found = True
+					channel = n['input'].name
+					break
+				else:
+					curr_node = curr_node + n
+		
+		return channel
 
 		
