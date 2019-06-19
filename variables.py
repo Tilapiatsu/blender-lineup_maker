@@ -34,15 +34,15 @@ class GetParam(object):
 		self.param = param
 
 class Status(Enum):
-	NOT_STARTED = "Not Started"
-	NOT_NEEDED = "Not Needed"
-	WIP = "WIP"
-	DONE = "Done"
+	NOT_STARTED = 0
+	NOT_NEEDED = 1
+	WIP = 2
+	DONE = 3
 
 
 STATUS = [
-        ('NOT_STARTED', Status.NOT_STARTED.value, '', 'NOT_STARTED', 0),
-		('NOT_NEEDED', Status.NOT_NEEDED.value, '', 'NOT_NEEDED', 1),
-        ('WIP', Status.WIP.value, '', 'WIP', 2),
-        ('DONE', Status.DONE.value, '', 'DONE', 3)
+        ('NOT_STARTED', 'Not Started', '', 'NOT_STARTED', Status.NOT_STARTED.value),
+		('NOT_NEEDED', 'Not Needed', '', 'NOT_NEEDED', Status.NOT_NEEDED.value),
+        ('WIP', 'WIP', '', 'WIP', Status.WIP.value),
+        ('DONE', 'Done', '', 'DONE', Status.DONE.value)
     	]

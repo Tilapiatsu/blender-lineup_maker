@@ -739,7 +739,7 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 		for o in context.selected_objects:
 			material_slots = o.material_slots
 			name = o.name
-			json = {'name':name, 'materials':{}, 'hd_status':scn.lm_exported_hd_status, 'ld_status':scn.lm_exported_ld_status, 'baking_status':scn.lm_exported_baking_status}
+			json = {'name':name, 'materials':{}, 'hd_status':getattr(V.Status, scn.lm_exported_hd_status).value, 'ld_status':getattr(V.Status, scn.lm_exported_ld_status).value, 'baking_status':getattr(V.Status, scn.lm_exported_baking_status).value}
 			for slot in material_slots:
 				mat = slot.material
 				node_tree = mat.node_tree
