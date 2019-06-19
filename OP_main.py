@@ -696,20 +696,57 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 	bl_label = "Lineup Maker: Export selected mesh to asset folder"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	export_path = ''
+	export_filename = ''
+
 	@classmethod
 	def poll(cls, context):
 		object_types = [o.type for o in context.selected_objects]
-		return len(object_types) and 'MESH' in object_types
+		return len(object_types) and 'MESH' in object_types and len(context.scene.lm_exported_asset_name)
 
 	def execute(self, context):
 		self.report({'INFO'}, 'Lineup Maker : Exporting selected objects to asset folder')
-		export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
-		export_filename = path.join(export_path, context.scene.lm_exported_asset_name + '.fbx')
+		self.export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
+		self.export_filename = path.join(self.export_path, context.scene.lm_exported_asset_name + '.fbx')
 
-		H.create_folder_if_neeed(export_path)
+		H.create_folder_if_neeed(self.export_path)
 
-		bpy.ops.export_scene.fbx(filepath=export_filename, use_selection=True)
+		self.copy_textures(context)
 
-		bpy.ops.scene.lm_openfolder(folder_path=export_path)
+		bpy.ops.export_scene.fbx(filepath=self.export_filename, use_selection=True)
+
+		bpy.ops.scene.lm_openfolder(folder_path=self.export_path)
 
 		return {'FINISHED'}
+	
+	def copy_textures(self, context):
+		texture_list = self.get_textures(context)
+
+		for mesh, textures in texture_list.items():
+			destination_path = path.join(self.export_path, mesh)
+			H.create_folder_if_neeed(destination_path)
+			for t in textures:
+				subprocess.call("xcopy {} {}".format(t, destination_path))
+
+	
+	def get_textures(self, context):
+		texture_list = {}
+		for o in context.selected_objects:
+			material_slots = o.material_slots
+			name = o.name
+			for slot in material_slots:
+				mat = slot.material
+				node_tree = mat.node_tree
+				nodes = node_tree.nodes
+
+				textures = [n for n in nodes if n.type == 'TEX_IMAGE']
+				for t in textures:
+					if not len(texture_list.keys()) or o.name not in texture_list.keys():
+						texture_list[o.name] = [bpy.path.abspath(t.image.filepath)]
+						
+					else:
+						texture_list[o.name].append(bpy.path.abspath(t.image.filepath))
+
+
+		print(texture_list)
+		return texture_list
