@@ -741,7 +741,13 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 			material_slots = o.material_slots
 			name = o.name
 			stats = S.Stats(o)
-			json = {'name':name, 'hd_status':getattr(V.Status, scn.lm_exported_hd_status).value, 'ld_status':getattr(V.Status, scn.lm_exported_ld_status).value, 'baking_status':getattr(V.Status, scn.lm_exported_baking_status).value, 'triangles':stats.triangle_count, 'vertices':stats.vertex_count, 'materials':[]}
+			json = {'name':name, 'hd_status':getattr(V.Status, scn.lm_exported_hd_status).value, 
+					'ld_status':getattr(V.Status, scn.lm_exported_ld_status).value,
+					'baking_status':getattr(V.Status, scn.lm_exported_baking_status).value,
+					'triangles':stats.triangle_count,
+					'vertices':stats.vertex_count,
+					'hasUV2':stats.has_uv2,
+					'materials':[]}
 			for slot in material_slots:
 				mat = slot.material
 				node_tree = mat.node_tree
@@ -845,7 +851,7 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 					channel = n['input'].name
 					break
 				else:
-					curr_node = curr_node + n
+					curr_node = curr_node + [n]
 		
 		return channel
 

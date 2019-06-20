@@ -32,3 +32,9 @@ class Stats(object):
             edges.append([edge.vertices[0], edge.vertices[1]])
 
         return len(edges)
+
+    @property
+    def has_uv2(self):
+        has_uv = len(self.data.uv_layers)
+
+        return has_uv > 1
