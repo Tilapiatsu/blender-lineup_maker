@@ -12,8 +12,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
-#   - Create an operator to export an asset
-#       - Export FBX, json and texture file  
 #   - Compositing method
 #       - None
 #       - Solid --> Use lm_content_background_color
