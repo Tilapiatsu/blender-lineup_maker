@@ -746,7 +746,7 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 					'baking_status':getattr(V.Status, scn.lm_exported_baking_status).value,
 					'triangles':stats.triangle_count,
 					'vertices':stats.vertex_count,
-					'hasUV2':stats.has_uv2,
+					'hasUV2':stats.uv_count > 1,
 					'materials':[]}
 			for slot in material_slots:
 				mat = slot.material

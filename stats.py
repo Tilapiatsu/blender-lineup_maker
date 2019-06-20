@@ -34,7 +34,7 @@ class Stats(object):
         return len(edges)
 
     @property
-    def has_uv2(self):
-        has_uv = len(self.data.uv_layers)
+    def uv_count(self):
+        number = len(self.data.uv_layers)
 
-        return has_uv > 1
+        return number
