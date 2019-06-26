@@ -12,7 +12,7 @@ class LM_Composite(object):
 
 		self.asset_count = len(self.context.scene.lm_asset_list)
 
-		self.framecount = H.get_current_frame_range(self, context)
+		self.framecount = H.get_current_frame_range(context)
 
 		self.composite_res = self.get_composite_resolution()
 		self.render_res = self.get_render_resolution()
@@ -283,7 +283,7 @@ class LM_Composite_Image(LM_Composite):
 		incr = 300
 
 		self.render_res = (bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y)
-		framecount = H.get_current_frame_range(self, self.context)
+		framecount = H.get_current_frame_range(self.context)
 
 		composite_image = bpy.data.images.new(name='{}_composite'.format(name), width=self.composite_res[0], height=self.composite_res[1])
 		composite_image.generated_color = (self.content_background_color[0]/255, self.content_background_color[1]/255, self.content_background_color[2]/255, 1)

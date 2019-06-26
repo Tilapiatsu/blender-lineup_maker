@@ -286,14 +286,15 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			if not scene.lm_force_render:
 				if not asset.rendered:
 					if asset.render_date:
-						need_render = False
+						
 						rendered_files = os.listdir(render_path)
-						if len(rendered_files) < H.get_current_frame_range(self, context):
-							need_render = True
+						frame_range = H.get_current_frame_range(context)
+						if len(rendered_files) < frame_range:
+							asset.need_render = True
 						else:
 							for f in os.listdir(render_path):
 								if asset.render_date < asset.import_date:
-									need_render = True
+									asset.need_render = True
 									break
 					else: # Asset has never been rendered
 						asset.need_render = True
@@ -307,7 +308,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.asset_number = 0
 		self.initial_view_layer = context.window.view_layer
 
-		self.frame_range = H.get_current_frame_range(self, context)
+		self.frame_range = H.get_current_frame_range(context)
 		self.remaining_frames = self.frame_range
 		
 		self.clear_composite_tree(context)
@@ -678,7 +679,7 @@ class LM_OP_RefreshRenderingStatus(bpy.types.Operator):
 				render_path = rendered_asset
 				rendered_files = [r for r in os.listdir(render_path)]
 
-				if len(rendered_files) == H.get_current_frame_range(self, context):
+				if len(rendered_files) == H.get_current_frame_range(context):
 					asset.rendered = True
 					asset.render_path = render_path
 				else:
