@@ -669,6 +669,11 @@ class LM_OP_RefreshRenderingStatus(bpy.types.Operator):
 		for asset in context.scene.lm_asset_list:
 			self.report({'INFO'}, 'Lineup Maker : Refresh rendreing status for : "{}"'.format(asset.name))
 			rendered_asset = path.join(context.scene.lm_render_path, asset.name)
+			asset_path = path.join(context.scene.lm_asset_path, asset.name)
+
+			if path.isdir(asset_path):
+				asset.asset_path = asset_path
+
 			if path.isdir(rendered_asset):
 				render_path = rendered_asset
 				rendered_files = [r for r in os.listdir(render_path)]
