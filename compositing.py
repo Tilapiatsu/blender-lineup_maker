@@ -437,17 +437,23 @@ class LM_Composite_Image(LM_Composite):
 			pdf.text(x=position[0], y=position[1], txt=text)
 
 			# AssetStatus
-			hd_status = getattr(V.Status, self.context.scene.lm_asset_list[name].hd).value
-			ld_status = getattr(V.Status, self.context.scene.lm_asset_list[name].ld).value
-			baking_status = getattr(V.Status, self.context.scene.lm_asset_list[name].baking).value
+			hd_index = getattr(V.Status, self.context.scene.lm_asset_list[name].hd).value
+			ld_index = getattr(V.Status, self.context.scene.lm_asset_list[name].ld).value
+			baking_index = getattr(V.Status, self.context.scene.lm_asset_list[name].baking).value
+
+			hd_status = V.STATUS[hd_index][1]
+			ld_status = V.STATUS[ld_index][1]
+			baking_status = V.STATUS[baking_index][1]
+
 
 			hd_text = 'HD : '
 			ld_text = '    LD : '
 			baking_text = '    Baking : '
 
-			hd = hd_text + hd_status
-			ld = ld_text + ld_status
-			baking = baking_text + baking_status
+
+			hd = hd_text + V.STATUS[hd_index][1]
+			ld = ld_text + V.STATUS[ld_index][1]
+			baking = baking_text + V.STATUS[baking_index][1]
 
 			text_length = len(hd) + len(ld) + len(baking)
 			
@@ -530,6 +536,8 @@ class LM_Composite_Image(LM_Composite):
 			page_link = pdf.add_link()
 			self.pages[name] = [page_link, pdf.page_no()]
 			pdf.set_link(self.pages[name][0], self.pages[name][1])
+		else:
+			print('Lineup Maker : Skipping asset : "{}"'.format(asset.name))
 	
 	def set_status_color(self, pdf, status=''):
 		if status == V.Status.NOT_STARTED.value:

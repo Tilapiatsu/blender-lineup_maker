@@ -12,6 +12,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
+#   - Two image is render : Check output Node graph ( clear It )
+#   - Some material are not reimport properly ( Pink )
+#   - Need to create a fix Composite 
 #   - Compositing method
 #       - None
 #       - Solid --> Use lm_content_background_color
