@@ -24,6 +24,9 @@ LM_OUTPUT_EXTENSION = {'BMP':'.bmp',
 						'HDR':'.exr',
 						'TIFF':'.tif'}
 
+LM_FINAL_COMPOSITE_FOLDER_NAME = '00_Final_Composite'
+LM_FINAL_COMPOSITE_SUFFIX = '_final_composite'
+
 class GetParam(object):
 	def  __init__(self, scn):
 		param = {}
@@ -34,15 +37,22 @@ class GetParam(object):
 		self.param = param
 
 class Status(Enum):
+	NOT_SET = -1
 	NOT_STARTED = 0
 	NOT_NEEDED = 1
 	WIP = 2
 	DONE = 3
 
+STATUS_DICT = {str(Status.NOT_SET.value):('NOT_SET', 'Not Set', '', 'NOT_STARNOT_SETTED', Status.NOT_SET.value),
+				str(Status.NOT_STARTED.value):('NOT_STARTED', 'Not Started', '', 'NOT_STARTED', Status.NOT_STARTED.value),
+				str(Status.NOT_NEEDED.value):('NOT_NEEDED', 'Not Needed', '', 'NOT_NEEDED', Status.NOT_NEEDED.value),
+				str(Status.WIP.value):('WIP', 'WIP', '', 'WIP', Status.WIP.value),
+				str(Status.DONE.value):('DONE', 'Done', '', 'DONE', Status.DONE.value)
+				}
 
 STATUS = [
-        ('NOT_STARTED', 'Not Started', '', 'NOT_STARTED', Status.NOT_STARTED.value),
-		('NOT_NEEDED', 'Not Needed', '', 'NOT_NEEDED', Status.NOT_NEEDED.value),
-        ('WIP', 'WIP', '', 'WIP', Status.WIP.value),
-        ('DONE', 'Done', '', 'DONE', Status.DONE.value)
+        STATUS_DICT[str(Status.NOT_STARTED.value)],
+		STATUS_DICT[str(Status.NOT_NEEDED.value)],
+        STATUS_DICT[str(Status.WIP.value)],
+        STATUS_DICT[str(Status.DONE.value)]
     	]

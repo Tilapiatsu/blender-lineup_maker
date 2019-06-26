@@ -239,6 +239,12 @@ class LM_Composite(object):
 			result += (c*value,)
 		return result
 
+	def color_add(self, color, value):
+		result = ()
+		for c in color:
+			result += (c+value,)
+		return result
+
 class LM_Composite_Image(LM_Composite):
 	def __init__(self, context, index=0):
 		super(LM_Composite_Image, self).__init__(context)
@@ -263,16 +269,16 @@ class LM_Composite_Image(LM_Composite):
 			image = Image.open(render_filename)
 			composite_image.paste(image, offset, mask=image.split()[3])
 
-		composite_name = asset.name + '_final_composite.jpg'
-		composite_path = path.join(self.context.scene.lm_render_path, '00_Final_Composite')
+		composite_name = asset.name + '{}.jpg'.format(V.LM_FINAL_COMPOSITE_SUFFIX)
+		composite_path = path.join(self.context.scene.lm_render_path, V.LM_FINAL_COMPOSITE_FOLDER_NAME)
 
 		H.create_folder_if_neeed(composite_path)
 		
 		composite_filepath = path.join(composite_path, composite_name)
 
-		self.context.scene.lm_asset_list[asset.name].final_composite_filepath = composite_filepath
-
 		composite_image.convert('RGB').save(composite_filepath)
+		self.context.scene.lm_asset_list[asset.name].final_composite_filepath = composite_filepath
+		self.context.scene.lm_asset_list[asset.name].composited = True
 
 	def build_composite_nodegraph(self, name):
 		print('Lineup Maker : Generating composite nodegraph')
@@ -437,13 +443,13 @@ class LM_Composite_Image(LM_Composite):
 			pdf.text(x=position[0], y=position[1], txt=text)
 
 			# AssetStatus
-			hd_index = getattr(V.Status, self.context.scene.lm_asset_list[name].hd).value
-			ld_index = getattr(V.Status, self.context.scene.lm_asset_list[name].ld).value
-			baking_index = getattr(V.Status, self.context.scene.lm_asset_list[name].baking).value
+			hd_index = self.context.scene.lm_asset_list[name].hd
+			ld_index = self.context.scene.lm_asset_list[name].ld
+			baking_index = self.context.scene.lm_asset_list[name].baking
 
-			hd_status = V.STATUS[hd_index][1]
-			ld_status = V.STATUS[ld_index][1]
-			baking_status = V.STATUS[baking_index][1]
+			hd_status = V.STATUS_DICT[str(hd_index)][1]
+			ld_status = V.STATUS_DICT[str(ld_index)][1]
+			baking_status = V.STATUS_DICT[str(baking_index)][1]
 
 
 			hd_text = 'HD : '
@@ -451,9 +457,9 @@ class LM_Composite_Image(LM_Composite):
 			baking_text = '    Baking : '
 
 
-			hd = hd_text + V.STATUS[hd_index][1]
-			ld = ld_text + V.STATUS[ld_index][1]
-			baking = baking_text + V.STATUS[baking_index][1]
+			hd = hd_text + hd_status
+			ld = ld_text + ld_status
+			baking = baking_text + baking_status
 
 			text_length = len(hd) + len(ld) + len(baking)
 			
@@ -461,7 +467,7 @@ class LM_Composite_Image(LM_Composite):
 			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(hd_text)), self.character_size_title[1] * 2)
 			pdf.text(x=position[0], y=position[1], txt=hd_text)
 
-			self.set_status_color(pdf, hd_status)
+			self.set_status_color(pdf, hd_index)
 			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1] * 2)
 			pdf.text(x=position[0], y=position[1], txt=hd_status)
 
@@ -469,7 +475,7 @@ class LM_Composite_Image(LM_Composite):
 			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(ld_text)), self.character_size_title[1] * 3)
 			pdf.text(x=position[0], y=position[1], txt=ld_text)
 
-			self.set_status_color(pdf, ld_status)
+			self.set_status_color(pdf, ld_index)
 			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1] * 3)
 			pdf.text(x=position[0], y=position[1], txt=ld_status)
 
@@ -477,7 +483,7 @@ class LM_Composite_Image(LM_Composite):
 			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(baking_text)), self.character_size_title[1] * 4)
 			pdf.text(x=position[0], y=position[1], txt=baking_text)
 
-			self.set_status_color(pdf, baking_status)
+			self.set_status_color(pdf, baking_index)
 			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1] * 4)
 			pdf.text(x=position[0], y=position[1], txt=baking_status)
 
@@ -539,8 +545,14 @@ class LM_Composite_Image(LM_Composite):
 		else:
 			print('Lineup Maker : Skipping asset : "{}"'.format(asset.name))
 	
-	def set_status_color(self, pdf, status=''):
-		if status == V.Status.NOT_STARTED.value:
+	def set_status_color(self, pdf, status=-2):
+		if status == V.Status.NOT_SET.value or status == V.Status.NOT_NEEDED.value:
+			contrat_value = 50
+			add_color = contrat_value if (self.content_background_color[0]+self.content_background_color[1]+self.content_background_color[2])/3 < 128 else -contrat_value
+
+			color = self.color_add(self.content_background_color, add_color)
+			pdf.set_text_color(r=color[0], g=color[1], b=color[2])
+		elif status == V.Status.NOT_STARTED.value:
 			pdf.set_text_color(r=200, g=50, b=0)
 		elif status == V.Status.WIP.value:
 			pdf.set_text_color(r=200, g=200, b=0)

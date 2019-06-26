@@ -37,6 +37,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     collection : bpy.props.PointerProperty(type=bpy.types.Collection)
     need_render : bpy.props.BoolProperty()
     rendered : bpy.props.BoolProperty()
+    composited : bpy.props.BoolProperty()
     asset_path : bpy.props.StringProperty(subtype='DIR_PATH')
     render_path : bpy.props.StringProperty(subtype='DIR_PATH')
     
@@ -48,10 +49,9 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     info_written : bpy.props.BoolProperty(default=False)
 
     asset_number : bpy.props.IntProperty()
-    wip : bpy.props.BoolProperty(default=False)
-    hd : bpy.props.StringProperty(default='NOT_STARTED')
-    ld : bpy.props.StringProperty(default='NOT_STARTED')
-    baking : bpy.props.StringProperty(default='NOT_STARTED')
+    hd : bpy.props.IntProperty(default=-1)
+    ld : bpy.props.IntProperty(default=-1)
+    baking : bpy.props.IntProperty(default=-1)
     triangles : bpy.props.IntProperty()
     vertices : bpy.props.IntProperty()
     has_uv2 : bpy.props.BoolProperty(default=False)
@@ -158,4 +158,6 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
             text += ' - Need Refresh'
         if item.rendered:
             text += ' - Rendered'
+        if item.composited:
+            text += ' - Composited'
         row.label(text='{}'.format(text))

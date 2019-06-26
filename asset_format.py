@@ -84,12 +84,30 @@ class BpyAsset(object):
 				self.scn_asset.vertices = self.json_data[name]['vertices']
 			if 'hasUV2' in self.json_data[name].keys():
 				self.scn_asset.has_uv2 = self.json_data[name]['hasUV2']
+
 			if 'HD' in self.json_data[name].keys():
-				self.scn_asset.hd = self.json_data[name]['HD']
+				try:
+					self.scn_asset.hd = int(self.json_data[name]['HD'])
+				except ValueError as v:
+					self.scn_asset.hd = V.Status.NOT_SET.value
+			else:
+				self.scn_asset.hd = V.Status.NOT_SET.value
+
 			if 'LD' in self.json_data[name].keys():
-				self.scn_asset.ld = self.json_data[name]['LD']
+				try:
+					self.scn_asset.ld = int(self.json_data[name]['LD'])
+				except ValueError as v:
+					self.scn_asset.hd = V.Status.NOT_SET.value
+			else:
+				self.scn_asset.ld = V.Status.NOT_SET.value
+
 			if 'Baking' in self.json_data[name].keys():
-				self.scn_asset.baking = self.json_data[name]['Baking']
+				try:
+					self.scn_asset.baking = int(self.json_data[name]['Baking'])
+				except ValueError as v:
+					self.scn_asset.hd = V.Status.NOT_SET.value
+			else:
+				self.scn_asset.baking = V.Status.NOT_SET.value
 
 		global_import_date = 0.0
 

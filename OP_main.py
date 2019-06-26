@@ -355,7 +355,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 					composite.composite_asset(asset)
 					
 					asset.render_date = time.time()
-					asset.need_write_info = True
 					self.register_render_handler()
 
 				self.rendered_assets.append(asset)
@@ -621,7 +620,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		orientation = 'P' if res[1] < res[0] else 'L'
 		pdf = FPDF(orientation, 'pt', (res[0], res[1]))
 		
-		asset_name_list = [a.name for a in context.scene.lm_asset_list if a.rendered]
+		asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
 		asset_name_list.sort()
 
 		# create TOC
@@ -671,9 +670,14 @@ class LM_OP_RefreshRenderingStatus(bpy.types.Operator):
 			self.report({'INFO'}, 'Lineup Maker : Refresh rendreing status for : "{}"'.format(asset.name))
 			rendered_asset = path.join(context.scene.lm_render_path, asset.name)
 			asset_path = path.join(context.scene.lm_asset_path, asset.name)
+			composite_path = path.join(context.scene.lm_render_path, V.LM_FINAL_COMPOSITE_FOLDER_NAME, '{}{}.jpg'.format(asset.name, V.LM_FINAL_COMPOSITE_SUFFIX))
 
 			if path.isdir(asset_path):
 				asset.asset_path = asset_path
+
+			asset.composited = path.isfile(composite_path)
+			if asset.composited:
+				asset.final_composite_filepath = composite_path
 
 			if path.isdir(rendered_asset):
 				render_path = rendered_asset
