@@ -49,9 +49,9 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     info_written : bpy.props.BoolProperty(default=False)
 
     asset_number : bpy.props.IntProperty()
-    hd : bpy.props.IntProperty(default=-1)
-    ld : bpy.props.IntProperty(default=-1)
-    baking : bpy.props.IntProperty(default=-1)
+    hd_status : bpy.props.IntProperty(default=-1)
+    ld_status : bpy.props.IntProperty(default=-1)
+    baking_status : bpy.props.IntProperty(default=-1)
     triangles : bpy.props.IntProperty()
     vertices : bpy.props.IntProperty()
     has_uv2 : bpy.props.BoolProperty(default=False)

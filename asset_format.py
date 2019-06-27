@@ -85,29 +85,29 @@ class BpyAsset(object):
 			if 'hasUV2' in self.json_data[name].keys():
 				self.scn_asset.has_uv2 = self.json_data[name]['hasUV2']
 
-			if 'HD' in self.json_data[name].keys():
+			if 'HDStatus' in self.json_data[name].keys():
 				try:
-					self.scn_asset.hd = int(self.json_data[name]['HD'])
+					self.scn_asset.hd_status = int(self.json_data[name]['HDStatus'])
 				except ValueError as v:
-					self.scn_asset.hd = V.Status.NOT_SET.value
+					self.scn_asset.hd_status = V.Status.NOT_SET.value
 			else:
-				self.scn_asset.hd = V.Status.NOT_SET.value
+				self.scn_asset.hd_status = V.Status.NOT_SET.value
 
-			if 'LD' in self.json_data[name].keys():
+			if 'LDStatus' in self.json_data[name].keys():
 				try:
-					self.scn_asset.ld = int(self.json_data[name]['LD'])
+					self.scn_asset.ld_status = int(self.json_data[name]['LDStatus'])
 				except ValueError as v:
-					self.scn_asset.hd = V.Status.NOT_SET.value
+					self.scn_asset.ld_status = V.Status.NOT_SET.value
 			else:
 				self.scn_asset.ld = V.Status.NOT_SET.value
 
-			if 'Baking' in self.json_data[name].keys():
+			if 'BakingStatus' in self.json_data[name].keys():
 				try:
-					self.scn_asset.baking = int(self.json_data[name]['Baking'])
+					self.scn_asset.baking_status = int(self.json_data[name]['BakingStatus'])
 				except ValueError as v:
-					self.scn_asset.hd = V.Status.NOT_SET.value
+					self.scn_asset.baking_status = V.Status.NOT_SET.value
 			else:
-				self.scn_asset.baking = V.Status.NOT_SET.value
+				self.scn_asset.baking_status = V.Status.NOT_SET.value
 
 		global_import_date = 0.0
 
@@ -187,7 +187,7 @@ class BpyAsset(object):
 				# The mesh was not there so we need to update
 				need_update = True
 				break
-			if mesh_time + 4 < file_time and mesh_size != file_size:
+			if mesh_time + 20 < file_time and mesh_size != file_size:
 				need_update = True
 				break
 
@@ -505,7 +505,8 @@ class BpyAsset(object):
 		if self.asset_name in self.param['lm_asset_list']:
 			for i,mat in enumerate(self.param['lm_asset_list'][self.asset_name].material_list):
 				# Trying to remove material to avoid doubles
-				bpy.data.materials.remove(mat.material)
+				if mat.material is not None:
+					bpy.data.materials.remove(mat.material)
 			
 			H.remove_bpy_struct_item(self.context.scene.lm_asset_list, self.asset_name)
 			# self.param['lm_asset_list'][self.asset_name].material_list.clear()

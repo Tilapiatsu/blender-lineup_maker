@@ -443,9 +443,9 @@ class LM_Composite_Image(LM_Composite):
 			pdf.text(x=position[0], y=position[1], txt=text)
 
 			# AssetStatus
-			hd_index = self.context.scene.lm_asset_list[name].hd
-			ld_index = self.context.scene.lm_asset_list[name].ld
-			baking_index = self.context.scene.lm_asset_list[name].baking
+			hd_index = self.context.scene.lm_asset_list[name].hd_status
+			ld_index = self.context.scene.lm_asset_list[name].ld_status
+			baking_index = self.context.scene.lm_asset_list[name].baking_status
 
 			hd_status = V.STATUS_DICT[str(hd_index)][1]
 			ld_status = V.STATUS_DICT[str(ld_index)][1]

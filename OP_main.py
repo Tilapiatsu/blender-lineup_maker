@@ -192,6 +192,8 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		self.renumber_assets(context)
 
+		self.report({'INFO'}, 'Lineup Maker : Import/Update Completed')
+
 		return {'FINISHED'}
 
 	def renumber_assets(self, context):
@@ -262,6 +264,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		bpy.context.window_manager.event_timer_remove(self._timer)
 
 	def execute(self, context):
+		bpy.ops.scene.lm_refresh_rendering_status()
+
 		self.stop = False
 		self.rendering = False
 		scene = bpy.context.scene
@@ -615,6 +619,8 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	chapter = ''
 
 	def execute(self, context):
+		bpy.ops.scene.lm_refresh_rendering_status()
+
 		composite = C.LM_Composite_Image(context)
 		res = composite.composite_res
 		orientation = 'P' if res[1] < res[0] else 'L'
@@ -679,24 +685,30 @@ class LM_OP_RefreshRenderingStatus(bpy.types.Operator):
 			if asset.composited:
 				asset.final_composite_filepath = composite_path
 
-			if path.isdir(rendered_asset):
-				render_path = rendered_asset
-				rendered_files = [r for r in os.listdir(render_path)]
+			if asset.render_date > asset.import_date:
+				if path.isdir(rendered_asset):
+					render_path = rendered_asset
+					rendered_files = [r for r in os.listdir(render_path)]
 
-				if len(rendered_files) == H.get_current_frame_range(context):
-					asset.rendered = True
-					asset.render_path = render_path
+					if len(rendered_files) == H.get_current_frame_range(context):
+						asset.rendered = True
+						asset.render_path = render_path
+					else:
+						asset.rendered = False
+						asset.render_path = ''
+					
+					asset.render_list.clear()
+					for file in rendered_files:
+						render_filepath = asset.render_list.add()
+						render_filepath.render_filepath = file
 				else:
 					asset.rendered = False
-					asset.render_path = ""
-				
-				asset.render_list.clear()
-				for file in rendered_files:
-					render_filepath = asset.render_list.add()
-					render_filepath.render_filepath = file
+					asset.render_path = ''
+					asset.render_list.clear()
 			else:
 				asset.rendered = False
-				asset.render_path = ""
+				asset.composited = False
+				asset.render_path = ''
 				asset.render_list.clear()
 
 		return {'FINISHED'}

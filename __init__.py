@@ -18,6 +18,7 @@
 #   - Need to fix Composite text size
 #   - Need to create a recomposite rendered asset command
 #   - Need to show long number with space 1 000 000
+#   - Need to fix the delete asset command
 #   - Compositing method
 #       - None
 #       - Solid --> Use lm_content_background_color
