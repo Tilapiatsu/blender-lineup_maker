@@ -14,7 +14,8 @@
 # TODO: 
 #   - Two image is render : Check output Node graph ( clear It )
 #   - Some material are not reimport properly ( Pink )
-#   - Need to create a fix Composite
+#   - Need to create a fix Composite 
+#   - Need to fix Composite text size
 #   - Need to create a recomposite rendered asset command
 #   - Compositing method
 #       - None
