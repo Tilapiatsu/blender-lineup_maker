@@ -385,7 +385,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.render_path, self.render_filename = self.get_render_path(context, asset.name)
 
 		# # Try to Skip Existing Files
-		# render_files = [f for f in os.listdir(self.render_path) if path.splitext(f)[1] == self.get_curr_render_extension(context) and ]
+		# render_files = [f for f in os.listdir(self.render_path) if path.splitext(f)[1] == H.get_curr_render_extension(context) and ]
 
 		# for files in render_files:
 		# 	pass
@@ -409,17 +409,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		for a in self.rendered_assets:
 			self.report({'INFO'}, "Lineup Maker : {} rendered".format(a.name))
 
-	def isolate_collection_visibility(self, context, collections):
-		for asset in context.scene.lm_asset_list:
-			try:
-				view_layer = H.get_layer_collection(context.view_layer.layer_collection, collections[1])
-				if asset.view_layer in collections:
-					view_layer.exclude = False
-				else:
-					view_layer.exclude = True
-			except KeyError as e:
-				print('Lineup Maker : The collection "{}" doesn\'t exist' .format(asset.view_layer))
-	
 	def clear_composite_tree(self, context):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
@@ -460,9 +449,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		
 		return render_path, render_filename
 
-	def get_curr_render_extension(self, context):
-		return V.LM_OUTPUT_EXTENSION[bpy.context.scene.render.image_settings.file_format]
-
 	def revert_need_render(self, context):
 		need_render_asset = [a for a in context.scene.lm_asset_list if a.need_render]
 
@@ -494,25 +480,41 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 	bl_label = "Lineup Maker: composite all rendered assets"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	composite_list : bpy.props.EnumProperty(items=[("ALL", "All assets", ""), ("QUEUED", "Queded assets", "")])
+
 	_timer = None
+	shots = None
 	stop = None
-	compositing = None
-	context = None
-	need_compositing_asset = []
-	composited_asset = []
+	remaining_assets = None
+	rendering = None
+	disablerbbutton = False
+	need_composite_assets = None
 	asset_number = 0
-	info_written_asset = []
-	done = False
+	output_node = None
+	context = None
+	composited_assets = []
+	composite_filename = ''
+	composite_path = ''
+
+	composite_filepath = ''
 
 	def pre(self, dummy):
-		self.compositing = True
-		self.report({'INFO'}, "Lineup Maker : Rendering '{}'".format(os.path.join(self.need_compositing_asset[0].render_path, self.need_compositing_asset[0].name)))
+		self.rendering = True
+		self.report({'INFO'}, "Lineup Maker : Rendering '{}'".format(os.path.join(self.need_render_asset[0].render_path, self.need_render_asset[0].name)))
 		
 	def post(self, dummy):
-		self.composited_asset = self.need_compositing_asset
-		self.need_compositing_asset = []
-		self.compositing = False
-		self.asset_number += 1
+		if self.remaining_frames <= 1:
+			asset = self.need_render_asset[0]
+			asset.need_render = False
+			asset.rendered = True
+			
+			asset.render_list.clear()
+			for file in os.listdir(self.render_path):
+				render = asset.render_list.add()
+				render.render_filepath = os.path.join(self.render_path, file)
+
+		else:
+			self.remaining_frames -= 1
 
 	def cancelled(self, dummy):
 		self.stop = True
@@ -528,88 +530,152 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 		bpy.app.handlers.render_post.remove(self.post)
 		bpy.app.handlers.render_cancel.remove(self.cancelled)
 		bpy.context.window_manager.event_timer_remove(self._timer)
-	
+
 	def execute(self, context):
+		bpy.ops.scene.lm_refresh_rendering_status()
+
 		self.stop = False
 		self.compositing = False
-		self.clear_composite_tree(context)
+		scene = bpy.context.scene
+		wm = bpy.context.window_manager
+
+		# self.shots = [ o.name+'' for o in scene.lm_render_collection.all_objects.values() if o.type=='CAMERA' and o.visible_get() == True ]     
+
+		if self.composite_list == 'ALL':
+			queued_list = [a for a in scene.lm_asset_list if a.rendered]
+		elif self.composite_list == 'QUEUED':
+			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue if scene.lm_asset_list[a.name].rendered]
+
+		for asset in queued_list:
+
+			# Set  need_render status for each assets
+			if not scene.lm_force_composite:
+				if not asset.composited:
+					composite_file = asset.final_composite_filepath
+					if not path.isfile(composite_file):
+						asset.need_composite = True
+					else:
+						asset.need_composite = False
+				else: # Asset already composited
+					asset.need_composite = False
+			else: # Force composite is True
+				asset.need_composite = True
+		
+		self.need_composite_assets = [a for a in scene.lm_asset_list if a.need_render]
+		self.remaining_assets = len(self.need_composite_assets)
+		self.asset_number = 0
+		
+		H.clear_composite_tree(context)
 		self.context = context
-		self.composited_asset = []
-		self.need_compositing_asset = []
 
-		for asset in context.scene.lm_asset_list:
-			render_exist = True
-			if len(asset.render_list):
-				for render in asset.render_list:
-					if not os.path.exists(render.render_filepath):
-						render_exist = False
-						break
-			else:
-				self.report({'WARNING'}, 'Lineup Maker : No render found for asset "{}"'.format(asset.name))
-				render_exist = False
+		bpy.context.scene.render.use_overwrite = context.scene.lm_override_frames
+		
+		context.scene.render.film_transparent = True
 
-			if render_exist:
-				self.need_compositing_asset.append(asset)
+		self.register_render_handler()
+		
+		bpy.context.window_manager.modal_handler_add(self)
 
-		if len(self.need_compositing_asset):
-			for i,asset in enumerate(self.need_compositing_asset):
-				C.LM_Composite_Image(context, asset, self.asset_number).output(asset.name)
-				asset.need_write_info = False
-				asset.info_written = False
-
-			self.register_render_handler()
-			
-			bpy.context.window_manager.modal_handler_add(self)
-
-			return {"RUNNING_MODAL"}
-		else:
-			self.report({'WARNING'}, 'Lineup Maker : No render found for any assets')
-			return {"FINISHED"}
-
+		return {"RUNNING_MODAL"}
+	
 	def modal(self, context, event):
 		if event.type == 'TIMER':
 
-			if True in (not self.need_compositing_asset and self.done, self.stop is True): 
+			if True in (not self.need_composite_assets, self.stop is True): 
 
 				self.unregister_render_handler()
 				bpy.context.window_manager.event_timer_remove(self._timer)
 
 				if self.stop:
-					self.report({'WARNING'}, "Lineup Maker : Compositing cancelled by user")
+					self.report({'WARNING'}, "Lineup Maker : Render cancelled by user")
 					self.print_render_log()
 					
 				else:
-					self.report({'INFO'}, "Lineup Maker : Compositing completed")
+					self.report({'INFO'}, "Lineup Maker : Render completed")
 					self.print_render_log()
 
-				self.composited_asset = []
+				self.rendered_assets = []
 				return {"FINISHED"} 
-			
 
-			elif self.compositing is False and len(self.composited_asset):
-				for asset in context.scene.lm_asset_list:
-					composite = C.LM_Composite_Image(context, self.asset_number)
-					composite.composite_asset_info(asset.name)
-					asset.info_written = True
-					self.info_written_asset.append(asset)
-				
-				self.done = True
+			elif self.compositing is False: 
+				asset = self.need_render_asset[0]
+				if context.scene.lm_precomposite_frames:
+					self.unregister_render_handler()
+					
+					composite = C.LM_Composite_Image(context)
+					composite.composite_asset(asset)
+					
+					asset.render_date = time.time()
+					self.register_render_handler()
 
+				self.composited_assets.append(asset)
 
-			elif self.compositing is False and not len(self.composited_asset): 
-				bpy.ops.render.render("INVOKE_DEFAULT", write_still=False)
+				self.need_composite_assets.pop(0)
+
+				self.remaining_assets -= 1
+				self.asset_number += 1
+
+				self.compositing = False
 
 		return {"PASS_THROUGH"}
 
 	def print_render_log(self):
-		self.report({'INFO'}, "Lineup Maker : {} assets composited".format(len(self.composited_asset)))
-		for a in self.composited_asset:
+		self.report({'INFO'}, "Lineup Maker : {} assets composited".format(len(self.composited_assets)))
+		for a in self.composited_assets:
 			self.report({'INFO'}, "Lineup Maker : {} composited".format(a.name))
 
-	def clear_composite_tree(self, context):
+	def build_output_nodegraph(self, context, index, asset):
 		tree = context.scene.node_tree
 		nodes = tree.nodes
-		nodes.clear()
+
+		location = (0, -500 * index)
+		incr = 300
+
+		rl = nodes.new('CompositorNodeRLayers')
+		rl.location = location
+		rl.layer = asset.view_layer
+		out = nodes.new('CompositorNodeOutputFile')
+
+		sub_location = (location[0] + incr, location[1])
+		
+		out.location = sub_location
+
+		out.base_path = asset.render_path
+		out.file_slots[0].path = asset.name + '_'
+		# out.format.compression = 0
+
+		tree.links.new(rl.outputs[0], out.inputs[0])
+
+		location = (location[0], location[1] - incr)
+			
+		print('Lineup Maker : Output Node graph built')
+
+		return out
+
+	def revert_need_render(self, context):
+		need_render_asset = [a for a in context.scene.lm_asset_list if a.need_render]
+
+		for asset in need_render_asset:
+			asset.need_render = False
+			asset.render_date = time.time()
+			asset.rendered = False
+
+	def set_rendering_camera(self, context, asset):
+		cam = context.scene.lm_default_camera
+		naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
+
+		for camera_keyword in context.scene.lm_cameras:
+			match = True
+			for keyword in camera_keyword.keywords:
+				if naming_convention.naming_convention[keyword.keyword] != keyword.keyword_value.lower():
+					match = False
+					break
+			
+			if match:		
+				cam = camera_keyword.camera
+				break
+
+		context.scene.camera = bpy.data.objects[cam.name]
 
 class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_idname = "scene.lm_export_pdf"

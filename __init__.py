@@ -335,6 +335,7 @@ def register():
     bpy.types.Scene.lm_asset_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_default_camera = bpy.props.PointerProperty(type=bpy.types.Camera)
     bpy.types.Scene.lm_force_render = bpy.props.BoolProperty(name='Force Rendering of all assets')
+    bpy.types.Scene.lm_force_composite = bpy.props.BoolProperty(name='Force Composite of all assets')
     bpy.types.Scene.lm_asset_naming_convention = bpy.props.StringProperty(
                                     name="Asset Naming Convetion",
                                     subtype='NONE',

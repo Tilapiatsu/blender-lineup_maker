@@ -1,4 +1,5 @@
 import bpy, os, shutil
+from . import variables as V
 
 def create_folder_if_neeed(path):
 	if not os.path.exists(path):
@@ -81,3 +82,11 @@ def remove_bpy_struct_item(bpy_struct, name):
 
 def get_current_frame_range(context):
 	return context.scene.frame_end + 1 - context.scene.frame_start
+
+def get_curr_render_extension(context):
+	return V.LM_OUTPUT_EXTENSION[bpy.context.scene.render.image_settings.file_format]
+
+def clear_composite_tree(context):
+	tree = context.scene.node_tree
+	nodes = tree.nodes
+	nodes.clear()

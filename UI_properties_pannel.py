@@ -51,10 +51,10 @@ class LM_PT_main(bpy.types.Panel):
             b.prop(scn, 'lm_precomposite_frames')
             b.prop(scn, 'lm_override_frames')
             
-            b.prop(scn, 'lm_force_render', text='Force')
+            b.prop(scn, 'lm_force_render', text='Force Render')
             b.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets').render_list = 'ALL'
-            
-            # b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets')
+            b.prop(scn,'lm_force_composite', text='Force Composite')
+            b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'ALL'
             b = layout.box()
             b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
             b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
