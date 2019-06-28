@@ -24,7 +24,7 @@ class LM_Composite(object):
 
 		self.font_size_chapter = int(math.floor(self.composite_res[0]*100/self.composite_res[1]))
 		self.character_size_chapter = (math.ceil(self.font_size_chapter/2), self.font_size_chapter)
-		self.font_size_title = int(math.floor(self.composite_res[0]*50/self.composite_res[1]))
+		self.font_size_title = int(math.floor(self.composite_res[0]*45/self.composite_res[1]))
 		self.character_size_title = (math.ceil(self.font_size_title/2), self.font_size_title)
 		self.font_size_paragraph = int(math.floor(self.composite_res[0]*25/self.composite_res[1]))
 		self.character_size_paragraph = (math.ceil(self.font_size_paragraph/2), self.font_size_paragraph)
@@ -463,28 +463,30 @@ class LM_Composite_Image(LM_Composite):
 
 			text_length = len(hd) + len(ld) + len(baking)
 			
+			pdf.set_font_size(self.font_size_paragraph)
+
 			self.set_status_color(pdf)
-			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(hd_text)), self.character_size_title[1] * 2)
+			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_paragraph[0] * math.ceil(len(hd_text)), self.character_size_title[1]*1.2 + self.character_size_paragraph[1])
 			pdf.text(x=position[0], y=position[1], txt=hd_text)
 
 			self.set_status_color(pdf, hd_index)
-			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1] * 2)
+			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1]*1.2 + self.character_size_paragraph[1])
 			pdf.text(x=position[0], y=position[1], txt=hd_status)
 
 			self.set_status_color(pdf)
-			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(ld_text)), self.character_size_title[1] * 3)
+			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_paragraph[0] * math.ceil(len(ld_text)), self.character_size_title[1]*1.2 + self.character_size_paragraph[1] * 2)
 			pdf.text(x=position[0], y=position[1], txt=ld_text)
 
 			self.set_status_color(pdf, ld_index)
-			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1] * 3)
+			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1]*1.2 + self.character_size_paragraph[1] * 2)
 			pdf.text(x=position[0], y=position[1], txt=ld_status)
 
 			self.set_status_color(pdf)
-			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_title[0] * math.ceil(len(baking_text)), self.character_size_title[1] * 4)
+			position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_paragraph[0] * math.ceil(len(baking_text)), self.character_size_title[1]*1.2 + self.character_size_paragraph[1] * 3)
 			pdf.text(x=position[0], y=position[1], txt=baking_text)
 
 			self.set_status_color(pdf, baking_index)
-			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1] * 4)
+			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1]*1.2 + self.character_size_paragraph[1] * 3)
 			pdf.text(x=position[0], y=position[1], txt=baking_status)
 
 			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
