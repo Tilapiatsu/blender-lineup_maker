@@ -53,6 +53,7 @@ class LM_PT_main(bpy.types.Panel):
             
             b.prop(scn, 'lm_force_render', text='Force Render')
             b.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets').render_list = 'ALL'
+            b = layout.box()
             b.prop(scn,'lm_force_composite', text='Force Composite')
             b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'ALL'
             b = layout.box()
@@ -374,7 +375,7 @@ class LM_PT_RenderQueue(bpy.types.Panel):
 
         col = layout.column(align=True)
         b = col.box()
-        b.operator('scene.lm_refresh_rendering_status', text='Refresh Rendering Status')
+        b.operator('scene.lm_refresh_asset_status', text='Refresh Asset Status')
         b = col.box()
         b.label(text='Asset List')
         
@@ -418,6 +419,9 @@ class LM_PT_RenderQueue(bpy.types.Panel):
             b.prop(scn, 'lm_override_frames')
             b.prop(scn, 'lm_force_render', text='Force')
             b.operator('scene.lm_render_assets', text='Render queued list', icon='OUTPUT').render_list = 'QUEUED'
+            b = layout.box()
+            b.prop(scn,'lm_force_composite', text='Force Composite')
+            b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'QUEUED'
             b = layout.box()
             b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
             b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')

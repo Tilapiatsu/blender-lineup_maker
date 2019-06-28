@@ -22,6 +22,9 @@ class LM_UI_AddAssetToRenderQueue(bpy.types.Operator):
             c.name = scn.lm_asset_list[scn.lm_asset_list_idx].name
             c.rendered = scn.lm_asset_list[scn.lm_asset_list_idx].rendered
             c.render_path = scn.lm_asset_list[scn.lm_asset_list_idx].render_path
+            c.composited = scn.lm_asset_list[scn.lm_asset_list_idx].composited
+            c.final_composite_filepath = scn.lm_asset_list[scn.lm_asset_list_idx].final_composite_filepath
+            c.asset_path = scn.lm_asset_list[scn.lm_asset_list_idx].asset_path
             
             scn.lm_render_queue_idx = len(scn.lm_render_queue) - 1
 

@@ -13,9 +13,7 @@
 
 # TODO: 
 #   - Some material are not reimport properly ( Pink )
-#   - Need to create a fix Composite 
 #   - Need to fix Composite text size
-#   - Need to create a recomposite rendered asset command
 #   - Need to show long number with space 1 000 000
 #   - Need to fix the delete asset command
 #   - Compositing method
@@ -83,7 +81,7 @@ classes = (
     LM_OP_OpenFolder,
     LM_OP_CompositeRenders,
     LM_OP_ExportPDF,
-    LM_OP_RefreshRenderingStatus,
+    LM_OP_RefreshAssetStatus,
     LM_OP_ExportSelectedAsset,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,

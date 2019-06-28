@@ -264,7 +264,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		bpy.context.window_manager.event_timer_remove(self._timer)
 
 	def execute(self, context):
-		bpy.ops.scene.lm_refresh_rendering_status()
+		bpy.ops.scene.lm_refresh_asset_status()
 
 		self.stop = False
 		self.rendering = False
@@ -534,7 +534,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 		bpy.context.window_manager.event_timer_remove(self._timer)
 
 	def execute(self, context):
-		bpy.ops.scene.lm_refresh_rendering_status()
+		bpy.ops.scene.lm_refresh_asset_status()
 
 		self.stop = False
 		self.compositing = False
@@ -563,7 +563,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 			else: # Force composite is True
 				asset.need_composite = True
 		
-		self.need_composite_assets = [a for a in scene.lm_asset_list if a.need_render]
+		self.need_composite_assets = [a for a in scene.lm_asset_list if a.need_composite]
 		self.remaining_assets = len(self.need_composite_assets)
 		self.asset_number = 0
 		
@@ -600,7 +600,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 				return {"FINISHED"} 
 
 			elif self.compositing is False: 
-				asset = self.need_render_asset[0]
+				asset = self.need_composite_assets[0]
 				if context.scene.lm_precomposite_frames:
 					self.unregister_render_handler()
 					
@@ -687,7 +687,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	chapter = ''
 
 	def execute(self, context):
-		bpy.ops.scene.lm_refresh_rendering_status()
+		bpy.ops.scene.lm_refresh_asset_status()
 
 		composite = C.LM_Composite_Image(context)
 		res = composite.composite_res
@@ -732,15 +732,17 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		return {'FINISHED'}
 
 
-class LM_OP_RefreshRenderingStatus(bpy.types.Operator):
-	bl_idname = "scene.lm_refresh_rendering_status"
-	bl_label = "Lineup Maker: Refresh rendering status"
+class LM_OP_RefreshAssetStatus(bpy.types.Operator):
+	bl_idname = "scene.lm_refresh_asset_status"
+	bl_label = "Lineup Maker: Refresh asset status"
 	bl_options = {'REGISTER', 'UNDO'}
 
 	def execute(self, context):
 		context.scene.lm_render_path
 
-		for asset in context.scene.lm_asset_list:
+		need_update_list = [a for a in context.scene.lm_asset_list] + [ a for a in context.scene.lm_render_queue]
+
+		for asset in need_update_list:
 			self.report({'INFO'}, 'Lineup Maker : Refresh rendreing status for : "{}"'.format(asset.name))
 			rendered_asset = path.join(context.scene.lm_render_path, asset.name)
 			asset_path = path.join(context.scene.lm_asset_path, asset.name)
