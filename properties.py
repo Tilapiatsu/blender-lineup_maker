@@ -156,7 +156,7 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
             if not path.exists(item.asset_path):
                 text += ' - Deleted On Drive'
         else:
-            text += ' - Need Refresh'
+            text += ' - Need Rerender'
         if item.rendered:
             text += ' - Rendered'
         if item.composited:

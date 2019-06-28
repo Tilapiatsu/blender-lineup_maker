@@ -319,8 +319,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.context = context
 
 		bpy.context.scene.render.use_overwrite = context.scene.lm_override_frames
+		bpy.context.scene.render.filepath = bpy.path.abspath(r"c:\\tmp\\")
 		
-		context.scene.render.film_transparent = True
+		# context.scene.render.film_transparent = True
 
 		self.register_render_handler()
 		
@@ -372,7 +373,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				self.rendering = False
 				
 
-			elif self.rendering is False: 
+			elif self.rendering is False:
+				H.clear_composite_tree(context)
 				self.render(context)
 
 		return {"PASS_THROUGH"}
@@ -399,8 +401,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.set_rendering_camera(context, asset)
 
 		self.output_node = self.build_output_nodegraph(context, self.asset_number, asset)
-		bpy.context.scene.render.filepath = self.render_filename + context.scene.camera.name + '_'
-		self.output_node.mute = True
+		# bpy.context.scene.render.filepath = self.render_filename + context.scene.camera.name + '_'
+		# self.output_node.mute = True
 
 		bpy.ops.render.render("INVOKE_DEFAULT", animation=True, write_still=False, layer=asset.view_layer)
 
@@ -431,7 +433,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		out.location = sub_location
 
 		out.base_path = asset.render_path
-		out.file_slots[0].path = asset.name + '_'
+		out.file_slots[0].path = asset.name + '_' + context.scene.camera.name + '_'
 		# out.format.compression = 0
 
 		tree.links.new(rl.outputs[0], out.inputs[0])
