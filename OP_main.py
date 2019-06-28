@@ -831,9 +831,10 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 			material_slots = o.material_slots
 			name = o.name
 			stats = S.Stats(o)
-			json = {'name':name, 'hd_status':getattr(V.Status, scn.lm_exported_hd_status).value, 
-					'ld_status':getattr(V.Status, scn.lm_exported_ld_status).value,
-					'baking_status':getattr(V.Status, scn.lm_exported_baking_status).value,
+			json = {'name':name,
+					'HDStatus':getattr(V.Status, scn.lm_exported_hd_status).value, 
+					'LDStatus':getattr(V.Status, scn.lm_exported_ld_status).value,
+					'BakingStatus':getattr(V.Status, scn.lm_exported_baking_status).value,
 					'triangles':stats.triangle_count,
 					'vertices':stats.vertex_count,
 					'hasUV2':stats.uv_count > 1,

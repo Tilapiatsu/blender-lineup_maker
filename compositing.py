@@ -245,6 +245,27 @@ class LM_Composite(object):
 			result += (c+value,)
 		return result
 
+	def prettify_number(self, number, separator):
+		n_str = str(number)
+
+		n_reverse = list(reversed([n for n in n_str]))
+
+		pretty_reverse = []
+
+		for i,nn in enumerate(n_reverse):
+			pretty_reverse.append(nn)
+			
+			if i%3 == 2:
+				pretty_reverse.append(separator)
+
+		pretty_regular = n_reverse = list(reversed(pretty_reverse))
+
+		pretty_number = ''
+		for nn in pretty_regular:
+			pretty_number += nn
+			
+		return pretty_number
+
 class LM_Composite_Image(LM_Composite):
 	def __init__(self, context, index=0):
 		super(LM_Composite_Image, self).__init__(context)
@@ -494,12 +515,12 @@ class LM_Composite_Image(LM_Composite):
 			pdf.set_font_size(self.font_size_paragraph)
 
 			# Geometry_Info : Triangles
-			text = 'Triangle Count : {}'.format(self.context.scene.lm_asset_list[name].triangles)
+			text = 'Triangle Count : {}'.format(self.prettify_number(self.context.scene.lm_asset_list[name].triangles, ' '))
 			position = (self.character_size_paragraph[0], self.character_size_paragraph[1])
 			pdf.text(x=position[0], y=position[1], txt=text)
 
 			# Geometry_Info : Vertices
-			text = 'Vertices Count : {}'.format(self.context.scene.lm_asset_list[name].vertices)
+			text = 'Vertices Count : {}'.format(self.prettify_number(self.context.scene.lm_asset_list[name].vertices, ' '))
 			position = self.add_position(position, (0, self.character_size_paragraph[1]))
 			pdf.text(x=position[0], y=position[1], txt=text)
 
@@ -575,3 +596,4 @@ class LM_Composite_Image(LM_Composite):
 			else:
 				self.font_size_texture = int(math.floor(self.composite_res[0]*20/self.composite_res[1]))
 				self.character_size_texture = (math.ceil(self.font_size_texture/2), self.font_size_texture)
+
