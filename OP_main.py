@@ -218,7 +218,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	remaining_frames = None
 	remaining_assets = None
 	rendering = None
-	disablerbbutton = False
 	need_render_asset = None
 	asset_number = 0
 	output_node = None
@@ -489,7 +488,6 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 	stop = None
 	remaining_assets = None
 	rendering = None
-	disablerbbutton = False
 	need_composite_assets = None
 	asset_number = 0
 	output_node = None
