@@ -140,31 +140,16 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 				if updated:
 					assigned = False
-					if curr_asset.json_data is not None:
-						for mesh_name in curr_asset.json_data.keys():
-							for mat in curr_asset.asset[mesh_name]['Materials'].keys():
-								curr_asset.feed_material(curr_asset, mat.material, curr_asset.asset[mesh_name][1][t])
-								assigned = True
-						continue
-					else:
-						for mesh_name in curr_asset.asset.keys():
-							for mat in context.scene.lm_asset_list[curr_asset.asset_name].mesh_list[mesh_name].material_list:
+					for mesh_name in curr_asset.asset.keys():
+						for mat in curr_asset.asset[mesh_name][1]:
+							try:
 								if len(curr_asset.asset[mesh_name][1].keys()) == 0:
-									curr_asset.feed_material(curr_asset, mat.material)
-									continue
-								for t in curr_asset.asset[mesh_name][1].keys():
-									tnc = N.NamingConvention(context, t, context.scene.lm_texture_naming_convention)
-									mnc = N.NamingConvention(context, curr_asset.asset_name + '_' + mat.name, context.scene.lm_texture_naming_convention)
-
-									if tnc == mnc:
-										# creating materials with the proper textures
-										curr_asset.feed_material(curr_asset, mat.material, curr_asset.asset[mesh_name][1][t])
-										assigned = True
-										break
+									curr_asset.feed_material(curr_asset, context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material)
 								else:
-									if not assigned:
-										# curr_asset.feed_material(mat.material)
-										print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
+									curr_asset.feed_material(curr_asset, context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material, curr_asset.asset[mesh_name][1][mat])
+									assigned = True
+							except KeyError as k:
+								print('Lineup Maker : "{}"'.format(k))
 
 					del assigned
 
@@ -798,7 +783,6 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 
 	export_path = ''
-	json_data = []
 
 	@classmethod
 	def poll(cls, context):
@@ -807,6 +791,7 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 
 	def execute(self, context):
 		self.report({'INFO'}, 'Lineup Maker : Exporting selected objects to asset folder')
+		self.json_data = []
 		self.export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
 
 		H.delete_folder_if_exist(self.export_path)
@@ -822,6 +807,7 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 
 		bpy.ops.scene.lm_openfolder(folder_path=self.export_path)
 
+		
 		return {'FINISHED'}
 	
 	def copy_textures(self, context):
