@@ -12,7 +12,6 @@ import json, codecs
 
 class BpyAsset(object):
 	def __init__(self, context, meshes, textures, jsons):
-		self.separator = '_'
 		self.context = context
 		self.scn = context.scene
 		self.param = V.GetParam(self.scn).param
