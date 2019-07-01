@@ -13,8 +13,6 @@
 
 # TODO: 
 #   - Some material are not reimport properly ( Pink )
-#   - Need to fix Composite text size
-#   - Need to show long number with space 1 000 000
 #   - Need to fix the delete asset command
 #   - Compositing method
 #       - None
