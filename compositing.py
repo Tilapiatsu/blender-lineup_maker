@@ -281,7 +281,7 @@ class LM_Composite_Image(LM_Composite):
 
 		for i,f in enumerate(files):
 			pos_x = int(((i%(self.framecount/2)) * self.render_res[0]))
-			pos_y = int(self.composite_res[2] - self.character_size_paragraph[1] * 2 + (math.floor(i/self.framecount*2) * self.render_res[1]))
+			pos_y = int(self.composite_res[2] - self.character_size_paragraph[1] + (math.floor(i/self.framecount*2) * self.render_res[1]))
 
 			offset = (pos_x, pos_y)
 

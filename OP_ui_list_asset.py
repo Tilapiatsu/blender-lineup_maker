@@ -13,15 +13,25 @@ def remove_asset(self, context, asset, index, remove=True):
     try:
         context.window.view_layer = context.scene.view_layers[asset.view_layer]
     except KeyError as e:
-        pass
-    for o in context.scene.lm_asset_list[asset.name].collection.all_objects:
-        bpy.ops.object.select_all(action='DESELECT')
-        bpy.data.objects[o.name].select_set(True)
-        bpy.ops.object.delete() 
-    bpy.data.collections.remove(context.scene.lm_asset_list[asset.name].collection)
+        print(e)
+
+    if context.scene.lm_asset_list[asset.name].collection:
+        for m in context.scene.lm_asset_list[asset.name].material_list:
+            try:
+                if m.material:
+                    bpy.data.materials.remove(bpy.data.materials[m.material.name])
+            except KeyError as e:
+                print(e)
+        for o in context.scene.lm_asset_list[asset.name].collection.all_objects:
+            bpy.ops.object.select_all(action='DESELECT')
+            bpy.data.objects[o.name].select_set(True)
+            bpy.ops.object.delete() 
+        bpy.data.collections.remove(context.scene.lm_asset_list[asset.name].collection)
     context.scene.view_layers.remove(context.scene.view_layers[context.scene.lm_asset_list[asset.name].view_layer])
     if remove:
         context.scene.lm_asset_list.remove(index)
+    
+    
 
 
 class LM_UI_MoveAsset(bpy.types.Operator):

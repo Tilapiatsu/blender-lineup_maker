@@ -148,18 +148,22 @@ class BpyAsset(object):
 				curr_mesh_object_list.mesh = o
 
 				for m in o.material_slots:
+					mat_name = self.scn_asset.name + '_' + m.material.name
 					if m.name not in self.scn_asset.material_list:
 						material_list = self.scn_asset.material_list.add()
-						material_list.name = m.material.name.lower()
+						material_list.name = mat_name
 						material_list.material = m.material
 
 						material_list = curr_mesh_list.material_list.add()
-						material_list.name = m.material.name.lower()
+						material_list.name = mat_name
 						material_list.material = m.material
+						
 
 					curr_mesh_material_list = curr_mesh_object_list.material_list.add()
-					curr_mesh_material_list.name = m.material.name.lower()
+					curr_mesh_material_list.name = mat_name
 					curr_mesh_material_list.material = m.material
+					m.material.name = mat_name
+					print(m.material.name)
 
 		if len(self.meshes):
 			self.scn_asset.import_date = global_import_date / len(self.meshes)
@@ -372,7 +376,7 @@ class BpyAsset(object):
 				json = json_data[mesh_name]
 
 				for mat in json['materials']:
-					material_name = mat['material']
+					material_name = self.scn_asset.name + '_' + mat['material']
 					textures = mat['textures']
 					for texture in textures:
 						if texture['file'] == 'null':
@@ -395,7 +399,7 @@ class BpyAsset(object):
 
 							# try to feed textures per material
 							try:
-								scn_texture = self.scn_asset.material_list[material_name.lower()].texture_list.add()
+								scn_texture = self.scn_asset.material_list[material_name].texture_list.add()
 								scn_texture.channel = channel
 								scn_texture.file_path = texture['file']
 							except KeyError:
@@ -433,6 +437,9 @@ class BpyAsset(object):
 
 	def get_json_data(self):
 		json_data = {}
+		if not len(self.jsons):
+			return None
+		
 		for j in self.jsons:
 			json_name = path.splitext(path.basename(j))[0]
 			with open(j, 'r', encoding='utf-8-sig') as json_file:  

@@ -140,25 +140,31 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 				if updated:
 					assigned = False
-					for mesh_name in curr_asset.asset.keys():
-						for mat in context.scene.lm_asset_list[curr_asset.asset_name].mesh_list[mesh_name].material_list:
-							if len(curr_asset.asset[mesh_name][1].keys()) == 0:
-								curr_asset.feed_material(curr_asset, mat.material)
-								continue
-							for t in curr_asset.asset[mesh_name][1].keys():
-								# TODO : Check if this is compatible with Json
-								tnc = N.NamingConvention(context, t, context.scene.lm_texture_naming_convention)
-								mnc = N.NamingConvention(context, mat.name.lower(), context.scene.lm_texture_naming_convention)
+					if curr_asset.json_data is not None:
+						for mesh_name in curr_asset.json_data.keys():
+							for mat in curr_asset.asset[mesh_name]['Materials'].keys():
+								curr_asset.feed_material(curr_asset, mat.material, curr_asset.asset[mesh_name][1][t])
+								assigned = True
+						continue
+					else:
+						for mesh_name in curr_asset.asset.keys():
+							for mat in context.scene.lm_asset_list[curr_asset.asset_name].mesh_list[mesh_name].material_list:
+								if len(curr_asset.asset[mesh_name][1].keys()) == 0:
+									curr_asset.feed_material(curr_asset, mat.material)
+									continue
+								for t in curr_asset.asset[mesh_name][1].keys():
+									tnc = N.NamingConvention(context, t, context.scene.lm_texture_naming_convention)
+									mnc = N.NamingConvention(context, curr_asset.asset_name + '_' + mat.name, context.scene.lm_texture_naming_convention)
 
-								if tnc == mnc:
-									# creating materials with the proper textures
-									curr_asset.feed_material(curr_asset, mat.material, curr_asset.asset[mesh_name][1][t])
-									assigned = True
-									break
-							else:
-								if not assigned:
-									# curr_asset.feed_material(mat.material)
-									print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
+									if tnc == mnc:
+										# creating materials with the proper textures
+										curr_asset.feed_material(curr_asset, mat.material, curr_asset.asset[mesh_name][1][t])
+										assigned = True
+										break
+								else:
+									if not assigned:
+										# curr_asset.feed_material(mat.material)
+										print('Lineup Maker : No Texture found for material "{}"'.format(mat.name))
 
 					del assigned
 
@@ -304,6 +310,10 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				else: # Asset already Rendered
 					asset.need_render = False
 			else: # Force Render is True
+				H.delete_folder_if_exist(path.join(context.scene.lm_render_path, asset.name))
+				asset.rendered = False
+				asset.render_path = ''
+				asset.render_list.clear()
 				asset.need_render = True
 		
 		self.need_render_asset = [a for a in scene.lm_asset_list if a.need_render]

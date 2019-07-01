@@ -63,8 +63,10 @@ def create_bsdf_material(context, asset, material, texture_set=None):
 			
 			if t is None:
 				continue
+			if channel == 'Alpha':
+				material.blend_method = 'CLIP'
 
-			material_texture = context.scene.lm_asset_list[asset.asset_name].material_list[material.name.lower()].texture_list.add()
+			material_texture = context.scene.lm_asset_list[asset.asset_name].material_list[material.name].texture_list.add()
 			material_texture.file_path = t
 			material_texture.channel = channel
 
