@@ -137,19 +137,18 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 				else:
 					updated = curr_asset.update_asset()
 					H.set_active_collection(context, asset_collection.name)
-
 				if updated:
 					assigned = False
 					for mesh_name in curr_asset.asset.keys():
-						for mat in curr_asset.asset[mesh_name][1]:
-							try:
+						try:
+							for mat in curr_asset.asset[mesh_name][1]:
 								if len(curr_asset.asset[mesh_name][1].keys()) == 0:
 									curr_asset.feed_material(curr_asset, context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material)
 								else:
 									curr_asset.feed_material(curr_asset, context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material, curr_asset.asset[mesh_name][1][mat])
 									assigned = True
-							except KeyError as k:
-								print('Lineup Maker : "{}"'.format(k))
+						except KeyError as k:
+							print('Lineup Maker : "{}"'.format(k))
 
 					del assigned
 
