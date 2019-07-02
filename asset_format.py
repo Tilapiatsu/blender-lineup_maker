@@ -380,6 +380,10 @@ class BpyAsset(object):
 				for mat in json['materials']:
 					scene_materials = [m for m in bpy.data.materials if mat['material'] in m.name]
 					if len(scene_materials):
+						for m in scene_materials:
+							if len(m.name) == len(mat['material']) + 4:
+								incr = re.compile(r'[.][0-90-90-9]', re.IGNORECASE)
+								incr.finditer(m.name)
 						material_name = scene_materials.pop().name
 					else:
 						material_name = mat['material']
