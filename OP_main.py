@@ -746,10 +746,20 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 			asset.composited = path.isfile(composite_path)
 			if asset.composited:
 				asset.final_composite_filepath = composite_path
-
+			
+			render_path = rendered_asset
+			if asset.render_date == 0:
+				if path.isdir(rendered_asset):
+					rendered_files = [r for r in os.listdir(render_path)]
+					if len(rendered_files) == H.get_current_frame_range(context):
+						asset.render_date = path.getmtime(path.join(render_path, rendered_files.pop()))
+					else:
+						asset.rendered = False
+						asset.render_path = ''
+			
 			if asset.render_date > asset.import_date:
 				if path.isdir(rendered_asset):
-					render_path = rendered_asset
+					
 					rendered_files = [r for r in os.listdir(render_path)]
 
 					if len(rendered_files) == H.get_current_frame_range(context):

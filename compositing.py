@@ -198,7 +198,7 @@ class LM_Composite(object):
 		return (bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y)
 
 	def get_max_item_per_toc_page(self):
-		return (math.floor(self.composite_res[1] / self.character_size_title[1])- 1) * 2
+		return (math.floor(self.composite_res[1] / self.character_size_title[1])- 1) * 2 - 1
 
 	def get_toc_page_count(self):
 		rendered_assets = [a for a in self.context.scene.lm_asset_list if a.rendered]
@@ -216,7 +216,7 @@ class LM_Composite(object):
 		max_item = self.max_item_per_toc_page
 
 		if max_item:
-			toc_page_count = math.ceil((asset_count + chapter_count) / max_item)
+			toc_page_count = math.ceil((asset_count + chapter_count) / max_item) - 1
 		else:
 			toc_page_count = 1
 		

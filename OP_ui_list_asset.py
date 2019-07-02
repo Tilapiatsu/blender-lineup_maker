@@ -30,6 +30,11 @@ def remove_asset(self, context, asset, index, remove=True):
     context.scene.view_layers.remove(context.scene.view_layers[context.scene.lm_asset_list[asset.name].view_layer])
     if remove:
         context.scene.lm_asset_list.remove(index)
+    idx, _, _ = get_assets(context)
+    
+    if idx > 0 :
+        context.scene.lm_asset_list_idx = idx - 1
+
     
     
 

@@ -74,39 +74,40 @@ class BpyAsset(object):
 		self.scn_asset.collection = curr_asset_collection
 		self.scn_asset.asset_path = path.dirname(self.meshes[0])
 
-		if name in self.json_data.keys():
-			if 'isWip' in self.json_data[name].keys():
-				self.scn_asset.wip = self.json_data[name]['isWip']
-			if 'triangles' in self.json_data[name].keys():
-				self.scn_asset.triangles = self.json_data[name]['triangles']
-			if 'vertices' in self.json_data[name].keys():
-				self.scn_asset.vertices = self.json_data[name]['vertices']
-			if 'hasUV2' in self.json_data[name].keys():
-				self.scn_asset.has_uv2 = self.json_data[name]['hasUV2']
+		if self.json_data is not None:
+			if name in self.json_data.keys():
+				if 'isWip' in self.json_data[name].keys():
+					self.scn_asset.wip = self.json_data[name]['isWip']
+				if 'triangles' in self.json_data[name].keys():
+					self.scn_asset.triangles = self.json_data[name]['triangles']
+				if 'vertices' in self.json_data[name].keys():
+					self.scn_asset.vertices = self.json_data[name]['vertices']
+				if 'hasUV2' in self.json_data[name].keys():
+					self.scn_asset.has_uv2 = self.json_data[name]['hasUV2']
 
-			if 'HDStatus' in self.json_data[name].keys():
-				try:
-					self.scn_asset.hd_status = int(self.json_data[name]['HDStatus'])
-				except ValueError as v:
+				if 'HDStatus' in self.json_data[name].keys():
+					try:
+						self.scn_asset.hd_status = int(self.json_data[name]['HDStatus'])
+					except ValueError as v:
+						self.scn_asset.hd_status = V.Status.NOT_SET.value
+				else:
 					self.scn_asset.hd_status = V.Status.NOT_SET.value
-			else:
-				self.scn_asset.hd_status = V.Status.NOT_SET.value
 
-			if 'LDStatus' in self.json_data[name].keys():
-				try:
-					self.scn_asset.ld_status = int(self.json_data[name]['LDStatus'])
-				except ValueError as v:
-					self.scn_asset.ld_status = V.Status.NOT_SET.value
-			else:
-				self.scn_asset.ld = V.Status.NOT_SET.value
+				if 'LDStatus' in self.json_data[name].keys():
+					try:
+						self.scn_asset.ld_status = int(self.json_data[name]['LDStatus'])
+					except ValueError as v:
+						self.scn_asset.ld_status = V.Status.NOT_SET.value
+				else:
+					self.scn_asset.ld = V.Status.NOT_SET.value
 
-			if 'BakingStatus' in self.json_data[name].keys():
-				try:
-					self.scn_asset.baking_status = int(self.json_data[name]['BakingStatus'])
-				except ValueError as v:
+				if 'BakingStatus' in self.json_data[name].keys():
+					try:
+						self.scn_asset.baking_status = int(self.json_data[name]['BakingStatus'])
+					except ValueError as v:
+						self.scn_asset.baking_status = V.Status.NOT_SET.value
+				else:
 					self.scn_asset.baking_status = V.Status.NOT_SET.value
-			else:
-				self.scn_asset.baking_status = V.Status.NOT_SET.value
 
 		global_import_date = 0.0
 
@@ -148,6 +149,8 @@ class BpyAsset(object):
 
 				for m in o.material_slots:
 					mat_name = self.scn_asset.name + '_' + m.material.name
+					m.material.name = mat_name
+					
 					if m.name not in self.scn_asset.material_list:
 						material_list = self.scn_asset.material_list.add()
 						material_list.name = mat_name
@@ -161,8 +164,8 @@ class BpyAsset(object):
 					curr_mesh_material_list = curr_mesh_object_list.material_list.add()
 					curr_mesh_material_list.name = mat_name
 					curr_mesh_material_list.material = m.material
-					m.material.name = mat_name
-					print(m.material.name)
+					
+					# print(m.material.name)
 
 		if len(self.meshes):
 			self.scn_asset.import_date = global_import_date / len(self.meshes)
