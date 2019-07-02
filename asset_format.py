@@ -148,21 +148,21 @@ class BpyAsset(object):
 				curr_mesh_object_list.mesh = o
 
 				for m in o.material_slots:
-					mat_name = self.scn_asset.name + '_' + m.material.name
-					m.material.name = mat_name
+					# mat_name = self.scn_asset.name + '_' + m.material.name
+					# m.material.name = mat_name
 					
-					if m.name not in self.scn_asset.material_list:
+					if m.material.name not in self.scn_asset.material_list:
 						material_list = self.scn_asset.material_list.add()
-						material_list.name = mat_name
+						material_list.name = m.material.name
 						material_list.material = m.material
 
 						material_list = curr_mesh_list.material_list.add()
-						material_list.name = mat_name
+						material_list.name = m.material.name
 						material_list.material = m.material
 						
 
 					curr_mesh_material_list = curr_mesh_object_list.material_list.add()
-					curr_mesh_material_list.name = mat_name
+					curr_mesh_material_list.name = m.material.name
 					curr_mesh_material_list.material = m.material
 					
 					# print(m.material.name)
@@ -378,7 +378,11 @@ class BpyAsset(object):
 				json = json_data[mesh_name]
 
 				for mat in json['materials']:
-					material_name = self.scn_asset.name + '_' + mat['material']
+					scene_materials = [m for m in bpy.data.materials if mat['material'] in m.name]
+					if len(scene_materials):
+						material_name = scene_materials.pop().name
+					else:
+						material_name = mat['material']
 					textures = mat['textures']
 					for texture in textures:
 						if texture['file'] == 'null':
