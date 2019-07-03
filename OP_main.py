@@ -687,6 +687,19 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		pdf = FPDF(orientation, 'pt', (res[0], res[1]))
 		
 		asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
+		# chapter_name_dict = {}
+		# for i, asset in enumerate(asset_name_list):
+		# 	chapter_nc = N.NamingConvention(context, asset, context.scene.lm_chapter_naming_convention)
+		# 	new_name = ''
+		# 	for word in chapter_nc.naming_convention['name']:
+		# 		new_name += '_' + word
+		# 	chapter_name_dict[asset] = [new_name, i]
+
+		# chapter_name_list = chapter_name_dict.values()
+
+		# for i,name in enumerate(chapter_name_list):
+		# 	asset_name_list[name[1]] = name[0]
+
 		asset_name_list.sort()
 
 		# create TOC
