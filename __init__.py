@@ -12,6 +12,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
+#   - Normal Map isn't exported correctly in Export Selected Asset
 #   - Some material are not reimport properly ( Pink )
 #   - Need to fix the delete asset command
 #   - Compositing method
