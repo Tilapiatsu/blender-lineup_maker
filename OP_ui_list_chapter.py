@@ -1,4 +1,5 @@
 import bpy, re
+from . import logger as L
 
 def add_keyword(context, naming_convention, keyword):
     if len(naming_convention):

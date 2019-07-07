@@ -8,6 +8,7 @@ from . import asset_format as A
 from . import naming_convention as N
 from . import compositing as C
 from . import stats as S
+from . import logger as L
 
 
 class LM_OP_UpdateLineup(bpy.types.Operator):
@@ -75,6 +76,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		return context.scene.lm_render_collection and path.isdir(context.scene.lm_asset_path)
 
 	def execute(self, context):
+		log = L.Logger(context='IMPORT_ASSETS')
 		folder_src = bpy.path.abspath(context.scene.lm_asset_path)
 
 		H.set_active_collection(context, V.LM_MASTER_COLLECTION)
@@ -104,16 +106,27 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 				json_files = [path.join(subfolder, f) for f in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, f)) and path.splitext(f)[1].lower() == '.json']
 				texture_files = {}
 				mesh_names = [path.basename(path.splitext(t)[0]) for t in mesh_files]
+
+				asset_name = path.basename(subfolder)
+				pretty = '---------------------'
+
+				for c in asset_name:
+					pretty += '-'
+
+				log.info('----------------------------------------------------------' + pretty)
+				log.info('----------------------------- Processing Asset "{}" -----------------------------'.format(path.basename(subfolder)))
+				log.info('----------------------------------------------------------' + pretty)
+
 				for m in mesh_names:
 					try:
 						texture_files[m] = [path.join(subfolder, m, t) for t in os.listdir(path.join(subfolder, m)) if path.isfile(os.path.join(subfolder, m, t)) and path.splitext(t)[1].lower() in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
 						for mesh, textures in texture_files.items():
-							print('Lineup Maker : {} texture files found for mesh {}'.format(len(textures), mesh))
+							log.info('{} texture files found for mesh {}'.format(len(textures), mesh))
 							for t in textures:
-								print('Lineup Maker : 		{} '.format(t))
+								log.info(' 		{} '.format(t))
 					except FileNotFoundError as e:
 						texture_files[m] = []
-						print('Lineup Maker : folder dosn\'t exist in "{}"'.format(subfolder))
+						log.warning('folder dosn\'t exist in "{}"'.format(subfolder))
 				asset_name = path.basename(subfolder)
 
 				curr_asset = A.BpyAsset(context, mesh_files, texture_files, json_files)
@@ -127,30 +140,41 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 						break
 				
 				if skip:
-					print('Lineup Maker : Asset "{}" is not valid.\nSkipping file'.format(asset_name))
+					log.warning('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
 					continue
 
+				# Import new asset
 				if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
 					curr_asset.import_asset()
 					H.set_active_collection(context, asset_collection.name)
 					updated = True
+					log.store_success('Asset "{}" imported successfully'.format(asset_name))
+				# Update Existing asset
 				else:
 					updated = curr_asset.update_asset()
 					H.set_active_collection(context, asset_collection.name)
+					log.store_success('Asset "{}" updated successfully'.format(asset_name))
+				# Assign material to meshes if any change on the asset
 				if updated:
-					assigned = False
+					first = True
 					for mesh_name in curr_asset.asset.keys():
-						try:
-							for mat in curr_asset.asset[mesh_name][1]:
+						
+						for mat in curr_asset.asset[mesh_name][1]:
+							try:
 								if len(curr_asset.asset[mesh_name][1].keys()) == 0:
+									log.warning('Mesh "{}" have no material applied to it \n	Applying generic material'.format(mesh_name))
 									curr_asset.feed_material(curr_asset, context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material)
 								else:
+									log.info('Applying material "{}" to mesh "{}"'.format(mat, mesh_name))
 									curr_asset.feed_material(curr_asset, context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material, curr_asset.asset[mesh_name][1][mat])
-									assigned = True
-						except KeyError as k:
-							print('Lineup Maker : "{}"'.format(k))
+							except KeyError as k:
+								log.warning('"{}"'.format(k))
+								if first:
+									log.success.pop()
+								log.store_failure('Asset "{}" failed assign material "{}" with mesh "{}" :\n{}'.format(asset_name, mat, mesh_name, k))
+								first = False
 
-					del assigned
+				del updated
 
 				curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
 				# Store asset colection view layer
@@ -181,6 +205,12 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
 
 		self.renumber_assets(context)
+
+		log.info('Import/Update Completed with {} success and {} failure'.format(len(log.success),len(log.failure)))
+		for s in log.success:
+			log.info('{}'.format(s))
+		for f in log.failure:
+			log.info('{}'.format(f))
 
 		self.report({'INFO'}, 'Lineup Maker : Import/Update Completed')
 

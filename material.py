@@ -1,5 +1,6 @@
 import bpy
 import os
+from . import logger as L
 
 def print_node_inputs(node):
 	for i, node in enumerate(node.inputs):
@@ -19,6 +20,7 @@ def feed_input_indices(context, input_indices):
 	return input_indices
 
 def create_bsdf_material(context, asset, material, texture_set=None):
+	log = L.Logger(context='CREATE_BSDF_MATERIAL')
 	input_indices = {'Base Color':{'index':0},
 					'Metallic':{'index':4},
 					'Roughness':{'index':7},
@@ -58,7 +60,7 @@ def create_bsdf_material(context, asset, material, texture_set=None):
 			try:
 				t = texture_set[channel]['file']
 			except KeyError as k:
-				print('No texture found for channel "{}" in the material "{}".'.format(channel, material.name))
+				log.warning('No texture found for channel "{}" in the material "{}".'.format(channel, material.name))
 				continue
 			
 			if t is None:

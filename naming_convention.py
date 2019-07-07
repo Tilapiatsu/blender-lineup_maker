@@ -5,6 +5,7 @@ from os import path
 
 from . import variables as V
 from . import preferences as P
+from . import logger as L
 
 class NamingConvention(object):
 	def __init__(self, context, name, convention, filepath=None):

@@ -1,4 +1,5 @@
 import bpy
+from . import logger as L
 
 def get_assets(context):
     idx = context.scene.lm_asset_list_idx

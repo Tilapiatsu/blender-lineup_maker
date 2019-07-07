@@ -1,4 +1,5 @@
 import bpy
+from . import logger as L
 
 def get_channels(context):
     idx = context.scene.lm_channel_idx

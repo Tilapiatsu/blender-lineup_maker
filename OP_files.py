@@ -1,5 +1,6 @@
 import bpy
 import os, subprocess
+from . import logger as L
 
 class LM_OP_OpenFolder(bpy.types.Operator):
     bl_idname = "scene.lm_openfolder"

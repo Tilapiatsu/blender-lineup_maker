@@ -1,4 +1,5 @@
 import bpy
+from . import logger as L
 
 def get_keywords(context):
     idx = context.scene.lm_keyword_idx
