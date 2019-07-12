@@ -35,8 +35,8 @@ class Logger(object):
         logging.warning(message)
 
     def set_basic_config(self):
-        self.format = 'LINEUP MAKER : %(asctime)s - %(levelname)s : {} : %(message)s'.format(self.context)
-        logging.basicConfig(filename=self.log_file, level=logging.DEBUG, datefmt=self.timeformat)
+        self.format = 'LINEUP MAKER : %(asctime)s - %(levelname)s : {} :    %(message)s'.format(self.context)
+        logging.basicConfig(filename=self.log_file, level=logging.DEBUG, datefmt=self.timeformat, filemode='w', format=self.format)
 
     def store_success(self, success):
         self.success.append(success)

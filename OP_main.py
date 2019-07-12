@@ -133,14 +133,19 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 				# To avoid import asset that doesn't match naming convention
 				skip = False
-				nc = curr_asset.asset_naming_convention
-				for keyword in nc['keywords']:
-					if keyword not in nc.keys() and keyword not in nc['optionnal']:
+				a_nc = curr_asset.asset_naming_convention
+				kw_nc = N.NamingConvention(context, curr_asset.asset_name, context.scene.lm_asset_naming_convention)
+				keywords = '\n'
+				for keyword in a_nc['keywords']:
+					keywords += keyword + '\n'
+					if keyword not in a_nc.keys() and keyword not in kw_nc.optionnal_words:
 						skip = True
 						break
 				
 				if skip:
 					log.warning('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
+					log.warning(keywords)
+					log.store_failure('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
 					continue
 
 				# Import new asset
@@ -153,7 +158,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 				else:
 					updated = curr_asset.update_asset()
 					H.set_active_collection(context, asset_collection.name)
-					log.store_success('Asset "{}" updated successfully'.format(asset_name))
 				# Assign material to meshes if any change on the asset
 				if updated:
 					first = True
@@ -168,7 +172,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 									log.info('Applying material "{}" to mesh "{}"'.format(mat, mesh_name))
 									curr_asset.feed_material(curr_asset, context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material, curr_asset.asset[mesh_name][1][mat])
 							except KeyError as k:
-								log.warning('"{}"'.format(k))
+								log.warning('{}'.format(k))
 								if first:
 									log.success.pop()
 								log.store_failure('Asset "{}" failed assign material "{}" with mesh "{}" :\n{}'.format(asset_name, mat, mesh_name, k))
@@ -205,6 +209,12 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
 
 		self.renumber_assets(context)
+
+		log.info('')
+		log.info('----------------------------------------------------------')
+		log.info('----------------------------------------------------------')
+		log.info('----------------------------------------------------------')
+		log.info('')
 
 		log.info('Import/Update Completed with {} success and {} failure'.format(len(log.success),len(log.failure)))
 		for s in log.success:

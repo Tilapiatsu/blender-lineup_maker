@@ -13,6 +13,7 @@ import json, codecs
 
 class BpyAsset(object):
 	def __init__(self, context, meshes, textures, jsons):
+		self.log = L.Logger(context='ASSET_FORMAT')
 		self.context = context
 		self.scn = context.scene
 		self.param = V.GetParam(self.scn).param
@@ -37,14 +38,14 @@ class BpyAsset(object):
 			if self.asset_name in bpy.data.collections:
 				return func(self, *args, **kwargs)
 			else:
-				print('Lineup Maker : Asset doesn\'t exist in current scene')
+				self.log.info('Asset doesn\'t exist in current scene')
 				return None
 		return func_wrapper
 
 	def check_length(func):
 		def func_wrapper(self, *args, **kwargs):
 			if not len(self.meshes):
-				print('Lineup Maker : No file found in the asset folder')
+				self.log.info('No file found in the asset folder')
 				return None
 			else:
 				return func(self, *args, **kwargs)
@@ -119,9 +120,9 @@ class BpyAsset(object):
 			# Import asset
 			if ext.lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys():
 				if update:
-					print('Lineup Maker : Updating file "{}" : {}'.format(file, time.ctime(path.getmtime(f))))
+					self.log.info('Updating file "{}" : {}'.format(file, time.ctime(path.getmtime(f))))
 				else:
-					print('Lineup Maker : Importing mesh "{}"'.format(name))
+					self.log.info('Importing mesh "{}"'.format(name))
 				compatible_format = V.LM_COMPATIBLE_MESH_FORMAT[ext.lower()]
 				kwargs = {}
 				kwargs.update({'filepath':f})
@@ -130,7 +131,7 @@ class BpyAsset(object):
 				# run Import Command
 				compatible_format[0](**kwargs)
 			else:
-				print('Lineup Maker : Skipping file "{}"\n     Incompatible format'.format(f))
+				self.log.info('Skipping file "{}"\n     Incompatible format'.format(f))
 				continue
 
 			curr_mesh_list = self.scn_asset.mesh_list.add()
@@ -199,17 +200,19 @@ class BpyAsset(object):
 				break
 
 		if need_update:
-			print('Lineup Maker : Updating asset "{}"'.format(self.asset_name))
+			self.log.info('Updating asset "{}"'.format(self.asset_name))
 
 			self.remove_asset()
 			self.import_mesh(update=True)
 			# Dirty fix to avoid bad mesh naming when updating asset
 			self.rename_objects()
+			self.log.store_success('Asset "{}" updated successfully'.format(self.asset_name))
 			updated = True
+			
 		else:
 			self.scn_asset = self.context.scene.lm_asset_list[self.asset_name]
 			self.asset = self.get_asset()
-			print('Lineup Maker : Asset "{}" is already up to date'.format(self.asset_name))
+			self.log.store_success('Asset "{}" is already up to date'.format(self.asset_name))
 			updated = False
 		
 
@@ -349,7 +352,7 @@ class BpyAsset(object):
 					try:
 						channel = self.param['lm_texture_channels'][t_naming_convention.naming_convention['channel']].channel
 					except KeyError as k:
-						print('The channel name "{}" doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(t_naming_convention.naming_convention['channel'], t))
+						self.log.info('The channel name "{}" doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(t_naming_convention.naming_convention['channel'], t))
 						continue
 
 					basename = t_naming_convention.pop_name(t_naming_convention.naming_convention['channel'])['fullname'].lower()
@@ -414,7 +417,7 @@ class BpyAsset(object):
 								scn_texture.channel = channel
 								scn_texture.file_path = texture['file']
 							except KeyError:
-								print('Lineup Maker : The material "{}" is not registered in the asset or is not applied on the mesh'.format(material_name))
+								self.log.info('The material "{}" is not registered in the asset or is not applied on the mesh'.format(material_name))
 
 						t_naming_convention.naming_convention['channel'] = channel
 
@@ -604,6 +607,8 @@ class BpyAsset(object):
 			return asset
 
 		else:
-			print('Lineup Maker : Asset "{}" is not valid'.format(self.asset_name))
+			self.log.info('Asset "{}" is not valid'.format(self.asset_name))
+			self.log.info('		"{}"'.format(self.asset_naming_convention))
+			self.log.info('		"{}"'.format(self.mesh_naming_convention))
 			return None
 

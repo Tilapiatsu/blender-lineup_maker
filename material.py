@@ -78,7 +78,8 @@ def create_bsdf_material(context, asset, material, texture_set=None):
 			texture = nodes.new('ShaderNodeTexImage')
 
 			bpy.ops.image.open(filepath=t, directory=dir_name, show_multiview=False)
-				
+			material_texture.name = bpy.data.images[0].name
+			
 			texture.image = bpy.data.images[file_name]
 			texture.label = os.path.splitext(file_name)[0]
 

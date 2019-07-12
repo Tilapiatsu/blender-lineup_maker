@@ -80,7 +80,7 @@ class NamingConvention(object):
 	
 	@property
 	def optionnal_words(self):
-		return [False if w.group(3) is None else True for w in self.words]
+		return [False if w.group(3) is None else w.group(2).lower() for w in self.words]
 	
 	@property
 	def included_words(self):
