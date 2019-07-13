@@ -90,3 +90,14 @@ def clear_composite_tree(context):
 	tree = context.scene.node_tree
 	nodes = tree.nodes
 	nodes.clear()
+
+def get_different_items(list1, list2):
+	""" Compare the list1 and list2 and return the elements of list2 that is not in list1 """
+	difference = []
+	if len(list1) < len(list2):
+		for i in list2:
+			if i not in list1:
+				difference.append(i)
+	
+	return difference
+

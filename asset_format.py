@@ -23,6 +23,8 @@ class BpyAsset(object):
 		self.textures = textures
 		self.texture_set = {}
 		self.jsons = jsons
+		self.imported_materials = []
+		self.imported_textures = []
 		
 		self._asset_naming_convention = None
 		self._mesh_naming_convention = None
@@ -119,6 +121,9 @@ class BpyAsset(object):
 
 			# Import asset
 			if ext.lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys():
+				# Store the list of material in the blender file before importing the mesh
+				initial_scene_materials = list(bpy.data.materials)
+
 				if update:
 					self.log.info('Updating file "{}" : {}'.format(file, time.ctime(path.getmtime(f))))
 				else:
@@ -130,6 +135,16 @@ class BpyAsset(object):
 				
 				# run Import Command
 				compatible_format[0](**kwargs)
+
+				# Store the list of material in the blender file after importing the mesh
+				new_scene_materials = list(bpy.data.materials)
+				
+				# Get the imported materials
+				self.imported_materials = H.get_different_items(initial_scene_materials, new_scene_materials)
+
+				self.log.info('{} new materials imported'.format(len(self.imported_materials)))
+				for m in self.imported_materials:
+					self.log.info('		{}'.format(m.name))
 			else:
 				self.log.info('Skipping file "{}"\n     Incompatible format'.format(f))
 				continue
