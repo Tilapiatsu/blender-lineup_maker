@@ -7,6 +7,7 @@ class LM_Render_List(bpy.types.PropertyGroup):
 
 class LM_Texture_List(bpy.types.PropertyGroup):
     name : bpy.props.StringProperty(name='Texture name')
+    image : bpy.props.PointerProperty(name='Image', type=bpy.types.Image)
     file_path : bpy.props.StringProperty(name='Texture File')
     channel : bpy.props.StringProperty(name='channel')
 

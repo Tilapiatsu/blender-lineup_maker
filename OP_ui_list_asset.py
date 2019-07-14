@@ -1,5 +1,6 @@
 import bpy
 from os import path
+from . import helper as H
 from . import logger as L
 
 def get_assets(context):
@@ -18,30 +19,28 @@ def remove_asset(self, context, asset, index, remove=True):
         print(e)
 
     if context.scene.lm_asset_list[asset.name].collection:
-        for m in context.scene.lm_asset_list[asset.name].material_list:
-            try:
-                for t in context.scene.lm_asset_list[asset.name].material_list[m.material.name].texture_list:
-                    if t.name:
-                        bpy.data.images.remove(bpy.data.images[t.name])
+        H.remove_asset(context, asset.name, False)
+        # for m in context.scene.lm_asset_list[asset.name].material_list:
+        #     try:
+        #         for t in context.scene.lm_asset_list[asset.name].material_list[m.material.name].texture_list:
+        #             if t.name:
+        #                 bpy.data.images.remove(bpy.data.images[t.name])
 
-                if m.material:
-                    bpy.data.materials.remove(bpy.data.materials[m.material.name])
-            except KeyError as e:
-                print(e)
+        #         if m.material:
+        #             bpy.data.materials.remove(bpy.data.materials[m.material.name])
+        #     except KeyError as e:
+        #         print(e)
             
-        for o in context.scene.lm_asset_list[asset.name].collection.all_objects:
-            bpy.ops.object.select_all(action='DESELECT')
-            bpy.data.objects[o.name].select_set(True)
-            bpy.ops.object.delete() 
-        bpy.data.collections.remove(context.scene.lm_asset_list[asset.name].collection)
+        # for o in context.scene.lm_asset_list[asset.name].collection.all_objects:
+        #     bpy.ops.object.select_all(action='DESELECT')
+        #     bpy.data.objects[o.name].select_set(True)
+        #     bpy.ops.object.delete() 
+        # bpy.data.collections.remove(context.scene.lm_asset_list[asset.name].collection)
     context.scene.view_layers.remove(context.scene.view_layers[context.scene.lm_asset_list[asset.name].view_layer])
     if remove:
         context.scene.lm_asset_list.remove(index)
         context.scene.lm_asset_list_idx = index - 1 if index else 0
     idx, _, _ = get_assets(context)
-    
-    if idx > 0 :
-        context.scene.lm_asset_list_idx = idx - 1
 
     
     
@@ -96,7 +95,7 @@ class LM_UI_RemoveAsset(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.scene.lm_asset_list
+        return context.scene.lm_asset_list and context.scene.lm_asset_list_idx < len(context.scene.lm_asset_list) 
 
     def execute(self, context):
         idx, asset, _ = get_assets(context)

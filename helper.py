@@ -101,3 +101,17 @@ def get_different_items(list1, list2):
 	
 	return difference
 
+
+def remove_asset(context, asset_name, remove=True):
+	if asset_name in bpy.data.collections:
+		bpy.data.collections.remove(bpy.data.collections[asset_name])
+		set_active_collection(context, V.LM_ASSET_COLLECTION)
+	if asset_name in context.scene.lm_asset_list:
+		for i,mat in enumerate(context.scene.lm_asset_list[asset_name].material_list):
+			if mat.material is not None:
+				for i,tex in enumerate(mat.texture_list):
+					if tex.image is not None:
+						bpy.data.images.remove(tex.image)
+				bpy.data.materials.remove(mat.material)
+		if remove:
+			remove_bpy_struct_item(context.scene.lm_asset_list, asset_name)

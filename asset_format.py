@@ -554,17 +554,7 @@ class BpyAsset(object):
 			o.name = name
 
 	def remove_asset(self):
-		if self.asset_name in bpy.data.collections:
-			bpy.data.collections.remove(bpy.data.collections[self.asset_name])
-			H.set_active_collection(self.context, V.LM_ASSET_COLLECTION)
-		if self.asset_name in self.param['lm_asset_list']:
-			for i,mat in enumerate(self.param['lm_asset_list'][self.asset_name].material_list):
-				# Trying to remove material to avoid doubles
-				if mat.material is not None:
-					bpy.data.materials.remove(mat.material)
-			
-			H.remove_bpy_struct_item(self.context.scene.lm_asset_list, self.asset_name)
-			# self.param['lm_asset_list'][self.asset_name].material_list.clear()
+		H.remove_asset(self.context, self.asset_name)
 			
 
 	# Properties

@@ -101,6 +101,7 @@ def create_bsdf_material(context, asset, material, texture_set=None):
 				new_image = new_image[0].name
 
 			material_texture.name = new_image
+			material_texture.image = bpy.data.images[new_image]
 			
 			texture.image = bpy.data.images[new_image]
 			texture.label = os.path.splitext(new_image)[0]
