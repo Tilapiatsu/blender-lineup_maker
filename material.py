@@ -1,5 +1,6 @@
 import bpy
 import os
+from . import helper as H
 from . import logger as L
 
 def print_node_inputs(node):
@@ -63,6 +64,8 @@ def create_bsdf_material(context, asset, material, texture_set=None):
 				log.warning('No texture found for channel "{}" in the material "{}".'.format(channel, material.name))
 				continue
 			
+			log.info('Assigning "{}" to material "{}" in the "{}" channel.'.format(os.path.join(os.path.basename(os.path.dirname(t)), os.path.basename(t)), material.name, channel))
+			
 			if t is None:
 				continue
 			if channel == 'Alpha':
@@ -77,11 +80,30 @@ def create_bsdf_material(context, asset, material, texture_set=None):
 
 			texture = nodes.new('ShaderNodeTexImage')
 
+			initial_scene_textures = list(bpy.data.images)
+
 			bpy.ops.image.open(filepath=t, directory=dir_name, show_multiview=False)
-			material_texture.name = bpy.data.images[0].name
+
+			new_scene_textures = list(bpy.data.images)
+
+			new_image = H.get_different_items(initial_scene_textures, new_scene_textures)
+
+			if not len(new_image):
+				for i in bpy.data.images:
+					if i.filepath == t:
+						i.name = file_name
+						new_image = i.name
+						break
+				else:
+					new_image = file_name
+			else:
+				new_image[0].name = file_name
+				new_image = new_image[0].name
+
+			material_texture.name = new_image
 			
-			texture.image = bpy.data.images[file_name]
-			texture.label = os.path.splitext(file_name)[0]
+			texture.image = bpy.data.images[new_image]
+			texture.label = os.path.splitext(new_image)[0]
 
 			texture.location = location
 			

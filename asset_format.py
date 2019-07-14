@@ -142,9 +142,9 @@ class BpyAsset(object):
 				# Get the imported materials
 				self.imported_materials[name] = H.get_different_items(initial_scene_materials, new_scene_materials)
 
-				self.log.info('{} new materials imported'.format(len(self.imported_materials)))
-				for m in self.imported_materials:
-					self.log.info('		{}'.format(m.name))
+				self.log.info('{} new materials imported'.format(len(self.imported_materials[name])))
+				for m in self.imported_materials[name]:
+					self.log.info('		"{}"'.format(m.name))
 			else:
 				self.log.info('Skipping file "{}"\n     Incompatible format'.format(f))
 				continue
@@ -391,21 +391,40 @@ class BpyAsset(object):
 						texture_naming_convention[basename]['channels'] = {channel:chan}
 
 					t = t.replace(channel, '')
-					
+
+			# Use Json File
 			else:
 				json_data = self.json_data
 				json = json_data[mesh_name]
 
 				for mat in json['materials']:
-					scene_materials = [m for m in bpy.data.materials if mat['material'] in m.name]
-					if len(scene_materials):
-						for m in scene_materials:
-							if len(m.name) == len(mat['material']) + 4:
-								incr = re.compile(r'[.][0-90-90-9]', re.IGNORECASE)
-								incr.finditer(m.name)
-						material_name = scene_materials.pop().name
-					else:
+
+					found = False
+					for imported_mats in self.imported_materials.values():
+						if found:
+							break
+						for imported_mat in imported_mats:
+							if found:
+								break
+							if mat['material'] in imported_mat.name:
+								material_name = imported_mat.name
+								imported_mats.remove(imported_mat)
+								found = True
+								break
+
+					if not found:
 						material_name = mat['material']
+					
+					# scene_materials = [m for m in bpy.data.materials if mat['material'] in m.name]
+					# if len(scene_materials):
+					# 	for m in scene_materials:
+					# 		if len(m.name) == len(mat['material']) + 4:
+					# 			incr = re.compile(r'[.][0-90-90-9]', re.IGNORECASE)
+					# 			incr.finditer(m.name)
+					# 	material_name = scene_materials.pop().name
+					# else:
+					# 	material_name = mat['material']
+					
 					textures = mat['textures']
 					for texture in textures:
 						if texture['file'] == 'null':
