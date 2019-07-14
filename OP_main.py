@@ -861,7 +861,12 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 
 		self.copy_textures(context)
 
-		for o in context.selected_objects:
+		selection = context.selected_objects
+
+		for o in selection:
+			bpy.ops.object.select_all(action='DESELECT')
+			bpy.data.objects[o.name].select_set(True)
+			context.view_layer.objects.active = o
 			export_filename = path.join(self.export_path, o.name + '.fbx')
 			bpy.ops.export_scene.fbx(filepath=export_filename, use_selection=True)
 
