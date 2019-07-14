@@ -23,8 +23,8 @@ class BpyAsset(object):
 		self.textures = textures
 		self.texture_set = {}
 		self.jsons = jsons
-		self.imported_materials = []
-		self.imported_textures = []
+		self.imported_materials = {}
+		self.imported_textures = {}
 		
 		self._asset_naming_convention = None
 		self._mesh_naming_convention = None
@@ -140,7 +140,7 @@ class BpyAsset(object):
 				new_scene_materials = list(bpy.data.materials)
 				
 				# Get the imported materials
-				self.imported_materials = H.get_different_items(initial_scene_materials, new_scene_materials)
+				self.imported_materials[name] = H.get_different_items(initial_scene_materials, new_scene_materials)
 
 				self.log.info('{} new materials imported'.format(len(self.imported_materials)))
 				for m in self.imported_materials:
