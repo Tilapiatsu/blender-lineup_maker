@@ -117,7 +117,7 @@ class BpyAsset(object):
 
 		for i,f in enumerate(self.meshes):
 			file = path.basename(f)
-			name,ext = path.splitext(path.basename(f))
+			name,ext = path.splitext(file)
 
 			# Import asset
 			if ext.lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys():
