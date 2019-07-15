@@ -424,11 +424,11 @@ def register():
                                                                     description="Choose in which status is the HD Mesh of the Asset",
                                                                     items=V.STATUS,
                                                                     default='NOT_STARTED')
-    bpy.types.Scene.lm_exported_ld_status = bpy.props.EnumProperty(name="HD Status",
+    bpy.types.Scene.lm_exported_ld_status = bpy.props.EnumProperty(name="LD Status",
                                                                     description="Choose in which status is the LD Mesh of the Asset",
                                                                     items=V.STATUS,
                                                                     default='NOT_STARTED')
-    bpy.types.Scene.lm_exported_baking_status = bpy.props.EnumProperty(name="HD Status",
+    bpy.types.Scene.lm_exported_baking_status = bpy.props.EnumProperty(name="Baking Status",
                                                                     description="Choose in which status is the Baking Mesh of the Asset",
                                                                     items=V.STATUS,
                                                                     default='NOT_STARTED')
