@@ -277,7 +277,10 @@ class LM_Composite_Image(LM_Composite):
 
 		composite_image = Image.new('RGBA', (self.composite_res[0], self.composite_res[1]), color=(self.content_background_color))
 
-		files = os.listdir(asset.render_path)
+		if os.path.isdir(asset.render_path):
+			files = os.listdir(asset.render_path)
+		else:
+			files = []
 
 		for i,f in enumerate(files):
 			pos_x = int(((i%(self.framecount/2)) * self.render_res[0]))
