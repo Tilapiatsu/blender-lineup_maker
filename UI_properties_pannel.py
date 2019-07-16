@@ -379,6 +379,11 @@ class LM_PT_RenderQueue(bpy.types.Panel):
         b = col.box()
         b.label(text='Asset List')
         
+        b.separator()
+        rendered = [a for a in scn.lm_asset_list if a.rendered]
+        composited = [a for a in scn.lm_asset_list if a.composited]
+        b.label(text='{} assets  /  {} rendered  /  {} composited'.format(len(scn.lm_asset_list), len(rendered), len(composited)))
+        b.separator()
         row = b.row()
         rows = len(scn.lm_asset_list) if len(scn.lm_asset_list) > 2 else 2
         
