@@ -259,11 +259,11 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 	composite_filepath = ''
 
-	def pre(self, dummy):
+	def pre(self, d1, d2):
 		self.rendering = True
 		self.report({'INFO'}, "Lineup Maker : Rendering '{}'".format(os.path.join(self.need_render_asset[0].render_path, self.need_render_asset[0].name)))
 		
-	def post(self, dummy):
+	def post(self, d1, d2):
 		if self.remaining_frames <= 1:
 			asset = self.need_render_asset[0]
 			asset.need_render = False
@@ -277,7 +277,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		else:
 			self.remaining_frames -= 1
 
-	def cancelled(self, dummy):
+	def cancelled(self, d1, d2):
 		self.stop = True
 
 	def register_render_handler(self):
@@ -532,11 +532,11 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 
 	composite_filepath = ''
 
-	def pre(self, dummy):
+	def pre(self, d1, d2):
 		self.rendering = True
 		self.report({'INFO'}, "Lineup Maker : Rendering '{}'".format(os.path.join(self.need_render_asset[0].render_path, self.need_render_asset[0].name)))
 		
-	def post(self, dummy):
+	def post(self, d1, d2):
 		if self.remaining_frames <= 1:
 			asset = self.need_render_asset[0]
 			asset.need_render = False
@@ -550,7 +550,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 		else:
 			self.remaining_frames -= 1
 
-	def cancelled(self, dummy):
+	def cancelled(self, d1, d2):
 		self.stop = True
 
 	def register_render_handler(self):
