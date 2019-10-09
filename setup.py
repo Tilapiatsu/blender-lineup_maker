@@ -12,5 +12,10 @@ def install_dependencies():
 
     pip_file = path.join(blender_python_pip, 'pip.exe')
 
+    if not path.exists(blender_python_pip) and not path.exists(pip_file):
+        subprocess.call('curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py')
+        subprocess.call(path.join(blender_python_bin, 'python get-pip.py'))
+
+
     subprocess.call(pip_file + ' install pillow')
     subprocess.call(pip_file + ' install fpdf')
