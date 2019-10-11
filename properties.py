@@ -43,6 +43,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     composited : bpy.props.BoolProperty()
     asset_path : bpy.props.StringProperty(subtype='DIR_PATH')
     render_path : bpy.props.StringProperty(subtype='DIR_PATH')
+    render_camera : bpy.props.StringProperty(name="Render camera")
     
     raw_composite_filepath : bpy.props.StringProperty(subtype='FILE_PATH')
     final_composite_filepath : bpy.props.StringProperty(subtype='FILE_PATH')

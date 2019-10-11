@@ -1,5 +1,5 @@
 import bpy
-import os, time, math, subprocess, json
+import os, time, math, subprocess, json, tempfile, re
 from fpdf import FPDF
 from os import path
 from . import variables as V
@@ -508,6 +508,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				break
 
 		context.scene.camera = bpy.data.objects[cam.name]
+		asset.render_camera = cam.name
 
 
 class LM_OP_CompositeRenders(bpy.types.Operator):
@@ -822,6 +823,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 						asset.rendered = False
 						asset.render_path = ''
 					
+					asset.render_camera = self.get_cameraName_from_render(asset, rendered_files[0])
 					asset.render_list.clear()
 					for file in rendered_files:
 						render_filepath = asset.render_list.add()
@@ -838,6 +840,10 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 
 		return {'FINISHED'}
 
+	def get_cameraName_from_render(self, asset, render_filename):
+		word_pattern = re.compile(r'({0}{1})([a-zA-Z_]+)_([0-9]+)'.format(asset.name, self.context.scene.lm_separator), re.IGNORECASE)
+		groups = word_pattern.finditer(render_filename)
+		return groups.group(1)
 
 class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_export_selected_asset"
@@ -856,10 +862,20 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 		self.json_data = []
 		self.export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
 
+		texture_list = self.get_textures(context)
+		tmpdir = tempfile.mkdtemp()
+
+		self.copy_textures(context, texture_list, tmpdir)
+
 		H.delete_folder_if_exist(self.export_path)
 		H.create_folder_if_neeed(self.export_path)
+		new_tewture_list = {}
+		for mesh, _ in texture_list.items():
+			new_tewture_list[mesh] = [os.path.join(tmpdir, mesh, t) for t in os.listdir(os.path.join(tmpdir, mesh))]
 
-		self.copy_textures(context)
+		self.copy_textures(context, new_tewture_list, self.export_path)
+
+		H.delete_folder_if_exist(tmpdir)
 
 		selection = context.selected_objects
 
@@ -868,7 +884,7 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 			bpy.data.objects[o.name].select_set(True)
 			context.view_layer.objects.active = o
 			export_filename = path.join(self.export_path, o.name + '.fbx')
-			bpy.ops.export_scene.fbx(filepath=export_filename, use_selection=True)
+			bpy.ops.export_scene.fbx(filepath=export_filename, use_selection=True, bake_anim=False)
 
 		self.write_json(context)
 
@@ -877,11 +893,9 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 		
 		return {'FINISHED'}
 	
-	def copy_textures(self, context):
-		texture_list = self.get_textures(context)
-
-		for mesh, textures in texture_list.items():
-			destination_path = path.join(self.export_path, mesh)
+	def copy_textures(self, context, source, destination):
+		for mesh, textures in source.items():
+			destination_path = path.join(destination, mesh)
 			H.create_folder_if_neeed(destination_path)
 			for t in textures:
 				subprocess.call("xcopy {} {}".format(t, destination_path))

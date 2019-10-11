@@ -537,6 +537,11 @@ class LM_Composite_Image(LM_Composite):
 			position = self.add_position(position, (0, self.character_size_paragraph[1]))
 			pdf.text(x=position[0], y=position[1], txt=text)
 
+			# Render_Info : Camera
+			text = 'Render Camera : {}'.format(self.context.scene.lm_asset_list[name].render_camera)
+			position = self.add_position(position, (0, self.character_size_paragraph[1]))
+			pdf.text(x=position[0], y=position[1], txt=text)
+
 			self.set_texture_text_size(name)
 			pdf.set_font_size(self.font_size_texture)
 			initial_pos = (self.composite_res[0] - self.character_size_texture[0], self.character_size_texture[1])
