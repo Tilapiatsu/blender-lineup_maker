@@ -823,7 +823,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 						asset.rendered = False
 						asset.render_path = ''
 					
-					asset.render_camera = self.get_cameraName_from_render(asset, rendered_files[0])
+					asset.render_camera = self.get_cameraName_from_render(context, asset, rendered_files[0])
 					asset.render_list.clear()
 					for file in rendered_files:
 						render_filepath = asset.render_list.add()
@@ -840,10 +840,11 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 
 		return {'FINISHED'}
 
-	def get_cameraName_from_render(self, asset, render_filename):
-		word_pattern = re.compile(r'({0}{1})([a-zA-Z_]+)_([0-9]+)'.format(asset.name, self.context.scene.lm_separator), re.IGNORECASE)
+	def get_cameraName_from_render(self, context, asset, render_filename):
+		word_pattern = re.compile(r'({0}{1})([a-zA-Z_]+){1}([0-9]+)'.format(asset.name, context.scene.lm_separator), re.IGNORECASE)
 		groups = word_pattern.finditer(render_filename)
-		return groups.group(1)
+		for g in groups:
+			return g.group(2)
 
 class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_export_selected_asset"
