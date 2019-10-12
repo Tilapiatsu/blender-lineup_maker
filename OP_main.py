@@ -823,7 +823,9 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 						asset.rendered = False
 						asset.render_path = ''
 					
-					asset.render_camera = self.get_cameraName_from_render(context, asset, rendered_files[0])
+					if len(rendered_files):
+						asset.render_camera = self.get_cameraName_from_render(context, asset, rendered_files[0])
+						
 					asset.render_list.clear()
 					for file in rendered_files:
 						render_filepath = asset.render_list.add()
