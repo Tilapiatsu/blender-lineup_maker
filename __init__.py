@@ -41,7 +41,7 @@ import bpy
 
 try:
     from .OP_main import *
-except ModuleNotFoundError as e:
+except (ModuleNotFoundError, ImportError) as e:
     from . import setup
     setup.install_dependencies()
     from .OP_main import *
