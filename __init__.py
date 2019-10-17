@@ -32,6 +32,8 @@
 #       - Number of need Render asset
 #       - Number of need Update asset
 
+#   - The addon don't render the proper asset if updated if there is already renders existing in the folder ( check date )
+
 
 #  DEPENDENCIES :
 #      pyfpdf : pip install fpdf
