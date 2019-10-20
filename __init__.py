@@ -14,8 +14,11 @@
 # TODO: 
 #   - Normal Map isn't exported correctly in Export Selected Asset
 #   - Need to better sort Chapters by name
-#   - Some material are not reimport properly ( Pink )
 #   - Need to fix the delete asset command
+#       - Need to store objects, images and actions in the asset to be able to remove them properly after
+#       - bpy.data.objects
+#       - bpy.data.images
+#       - bpy.data.actions
 #   - Compositing method
 #       - None
 #       - Solid --> Use lm_content_background_color
