@@ -125,3 +125,15 @@ def remove_asset(context, asset_name, remove=True):
 				bpy.data.materials.remove(mat.material)
 		if remove:
 			remove_bpy_struct_item(context.scene.lm_asset_list, asset_name)
+
+	# Trying to get materials from all objects in a collection
+	# collections = bpy.data.collections
+
+	# for c in collections:
+	#     print(c.name)
+	#     for o in c.objects:
+	#         print(o.name)
+	#         print(dir(o))
+	#         for ms in o.material_slots:
+	#             print('ms = ', ms.name)
+	#             print(dir(ms.material))
