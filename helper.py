@@ -112,42 +112,56 @@ def get_different_items(list1, list2):
 	return difference
 
 def get_datas_from_collection(collection_name):
-	datas = {'materials' : [],
-			'objects': [],
-			'images' : [],
-			'actions' : []}
+	datas = {'materials' : set(),
+			'objects': set(),
+			'meshes': set(),
+			'images' : set(),
+			'actions' : set()}
 
 	if collection_name in bpy.data.collections.keys():
 		for o in bpy.data.collections[collection_name].objects:
-			datas['objects'].append(o)
+			datas['objects'].add(o)
+			if o.type == 'MESH':
+				datas['meshes'].add(o.data)
+			if o.animation_data:
+				datas['actions'].add(o.animation_data.action)
 			for ms in o.material_slots:
-				datas['materials'].append(ms.material)
+				datas['materials'].add(ms.material)
+				for n in ms.material.node_tree.nodes:
+					if n.type == 'TEX_IMAGE':
+						datas['images'].add(n.image)
 	
 	return datas
 
 
 def remove_asset(context, asset_name, remove=True):
 	if asset_name in bpy.data.collections:
+		# Get data from collection
+		datas = get_datas_from_collection(asset_name)
+
+		for o in datas['objects']:
+			if o.name in bpy.data.objects:
+				print('Removing object : ', o.name)
+				bpy.data.objects.remove(o)
+		for m in datas['meshes']:
+			if m.name in bpy.data.meshes:
+				print('Removing meshe : ', m.name)
+				bpy.data.meshes.remove(m)
+		for a in datas['actions']:
+			if a.name in bpy.data.actions:
+				print('Removing action : ', a.name)
+				bpy.data.actions.remove(a)
+		for i in datas['images']:
+			if i.name in bpy.data.images:
+				print('Removing image : ', i.name)
+				bpy.data.images.remove(i)
+		for m in datas['materials']:
+			if m.name in bpy.data.materials:
+				print('Removing material : ', m.name)
+				bpy.data.materials.remove(m)
+		
 		bpy.data.collections.remove(bpy.data.collections[asset_name])
 		set_active_collection(context, V.LM_ASSET_COLLECTION)
 	if asset_name in context.scene.lm_asset_list:
-		for i,mat in enumerate(context.scene.lm_asset_list[asset_name].material_list):
-			if mat.material is not None:
-				for i,tex in enumerate(mat.texture_list):
-					if tex.image is not None:
-						bpy.data.images.remove(tex.image)
-				bpy.data.materials.remove(mat.material)
 		if remove:
 			remove_bpy_struct_item(context.scene.lm_asset_list, asset_name)
-
-	# Trying to get materials from all objects in a collection
-	# collections = bpy.data.collections
-
-	# for c in collections:
-	#     print(c.name)
-	#     for o in c.objects:
-	#         print(o.name)
-	#         print(dir(o))
-	#         for ms in o.material_slots:
-	#             print('ms = ', ms.name)
-	#             print(dir(ms.material))
