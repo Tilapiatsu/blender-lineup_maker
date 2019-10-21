@@ -111,6 +111,20 @@ def get_different_items(list1, list2):
 	
 	return difference
 
+def get_datas_from_collection(collection_name):
+	datas = {'materials' : [],
+			'objects': [],
+			'images' : [],
+			'actions' : []}
+
+	if collection_name in bpy.data.collections.keys():
+		for o in bpy.data.collections[collection_name].objects:
+			datas['objects'].append(o)
+			for ms in o.material_slots:
+				datas['materials'].append(ms.material)
+	
+	return datas
+
 
 def remove_asset(context, asset_name, remove=True):
 	if asset_name in bpy.data.collections:
