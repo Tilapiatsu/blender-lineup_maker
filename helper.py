@@ -163,9 +163,9 @@ def remove_asset(context, asset_name, remove=True):
 		unused_images_list = unused_images()
 
 		for i in unused_images_list:
-			if i.name in bpy.data.images:
-				print('Removing image : ', i.name)
-				bpy.data.images.remove(i)
+			if i in bpy.data.images:
+				print('Removing image : ', i)
+				bpy.data.images.remove(bpy.data.images[i])
 		
 		bpy.data.collections.remove(bpy.data.collections[asset_name])
 		set_active_collection(context, V.LM_ASSET_COLLECTION)

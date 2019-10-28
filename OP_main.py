@@ -103,6 +103,10 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			for subfolder in subfolders:
 				bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 				mesh_files = [path.join(subfolder, f) for f in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys()]
+
+				if len(mesh_files) < 1:
+					continue
+
 				json_files = [path.join(subfolder, f) for f in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, f)) and path.splitext(f)[1].lower() == '.json']
 				texture_files = {}
 				mesh_names = [path.basename(path.splitext(t)[0]) for t in mesh_files]
