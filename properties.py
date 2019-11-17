@@ -237,6 +237,10 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
             row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
             
         row.label(text='{}'.format(text), icon_value=icon)
+        if item.need_render:
+            row.label(text='', icon='SEQ_PREVIEW')
+        else:
+            row.label(text='', icon='IMAGE_RGB')
 
         row = col.row(align=True)
         row.alignment = 'RIGHT'
