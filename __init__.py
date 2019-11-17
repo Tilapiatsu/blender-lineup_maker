@@ -87,7 +87,7 @@ classes = (
     LM_OP_CompositeRenders,
     LM_OP_ExportPDF,
     LM_OP_RefreshAssetStatus,
-    LM_OP_ExportSelectedAsset,
+    LM_OP_ExportAsset,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,
     LM_PT_Cameras,

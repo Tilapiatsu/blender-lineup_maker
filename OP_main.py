@@ -859,22 +859,35 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 		else:
 			return ''
 
-class LM_OP_ExportSelectedAsset(bpy.types.Operator):
-	bl_idname = "scene.lm_export_selected_asset"
+class LM_OP_ExportAsset(bpy.types.Operator):
+	bl_idname = "scene.lm_export_asset"
 	bl_label = "Lineup Maker: Export selected mesh to asset folder"
 	bl_options = {'REGISTER', 'UNDO'}
 
 	export_path = ''
+	mode : bpy.props.EnumProperty(items=[("SELECTED", "Selected", ""), ("ASSET", "Asset", "")])
+	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 
-	@classmethod
-	def poll(cls, context):
-		object_types = [o.type for o in context.selected_objects]
-		return len(object_types) and 'MESH' in object_types and len(context.scene.lm_exported_asset_name)
+	# @classmethod
+	# def poll(cls, context):
+	# 	if self.mode =='SELECTED':
+	# 		object_types = [o.type for o in context.selected_objects]
+	# 		return len(object_types) and 'MESH' in object_types and len(context.scene.lm_exported_asset_name)
+	# 	elif self.mode == 'ASSET':
+	# 		return len(self.asset_name)
 
 	def execute(self, context):
 		self.report({'INFO'}, 'Lineup Maker : Exporting selected objects to asset folder')
 		self.json_data = []
-		self.export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
+		log = L.Logger(context='IMPORT_ASSETS')
+		if self.mode =='SELECTED':
+			self.export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
+		elif self.mode == 'ASSET':
+			if not len(self.asset_name):
+
+				return {'FINISHED'}
+			if context.scene.lm_asset_list[self.asset_name]
+			self.export_path = 
 
 		texture_list = self.get_textures(context)
 		tmpdir = tempfile.mkdtemp()
@@ -1036,5 +1049,3 @@ class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 					curr_node = curr_node + [n]
 		
 		return channel
-
-		
