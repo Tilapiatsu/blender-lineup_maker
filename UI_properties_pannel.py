@@ -30,7 +30,7 @@ class LM_PT_main(bpy.types.Panel):
         row.prop(scn, 'lm_render_path', text='Render Path', icon=icon)
         
         if path.isdir(render_path):
-            row.scale_x = 0.3
+            # row.scale_x = 0.3
             row.operator("scene.lm_openfolder", icon='WINDOW', text='Open Folder').folder_path = render_path
             
         b.prop(scn, 'lm_render_collection', text='Render Collection', icon='LIGHT')
@@ -389,34 +389,27 @@ class LM_PT_RenderQueue(bpy.types.Panel):
         
         row.template_list('LM_UL_asset_list', '', scn, 'lm_asset_list', scn, 'lm_asset_list_idx', rows=rows)
         c = row.column(align=True)
-        c.operator("scene.lm_move_asset", text="", icon='TRIA_UP').direction = "UP"
-        c.operator("scene.lm_move_asset", text="", icon='TRIA_DOWN').direction = "DOWN"
+        # c.operator("scene.lm_move_asset", text="", icon='TRIA_UP').direction = "UP"
+        # c.operator("scene.lm_move_asset", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
         c.operator("scene.lm_clear_asset_list", text="", icon='TRASH')
-        c.operator("scene.lm_remove_asset", text="", icon='X')
+        # c.operator("scene.lm_remove_asset", text="", icon='X')
         c.separator()
-        if len(scn.lm_asset_list):
-            if path.isdir(scn.lm_asset_list[scn.lm_asset_list_idx].asset_path):
-                c.operator("scene.lm_open_asset_folder", text="", icon='SNAP_VOLUME')
-            if scn.lm_asset_list[scn.lm_asset_list_idx].rendered:
-                c.operator("scene.lm_open_render_folder", text="", icon='RENDER_RESULT')
-        
 
-        row.separator()
-        b.operator("scene.lm_add_asset_to_render_queue", text='Add selected asset to render queue', icon='SORT_ASC')
+
         row.separator()
         b.label(text='Render Queue')
         row = b.row()
         rows = len(scn.lm_render_queue) if len(scn.lm_render_queue) > 2 else 2
-        row.template_list('LM_UL_asset_list', '', scn, 'lm_render_queue', scn, 'lm_render_queue_idx', rows=rows)
+        row.template_list('LM_UL_asset_list_RenderQueue', '', scn, 'lm_render_queue', scn, 'lm_render_queue_idx', rows=rows)
         c = row.column(align=True)
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_UP').direction = "UP"
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_DOWN').direction = "DOWN"
 
         c.separator()
         c.operator("scene.lm_clear_asset_to_render_queue_list", text="", icon='TRASH')
-        c.operator("scene.lm_remove_asset_to_render", text="", icon='X')
+        # c.operator("scene.lm_remove_asset_to_render", text="", icon='X')
 
         if len(scn.lm_render_queue):
             b = layout.box()

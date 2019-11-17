@@ -1,5 +1,6 @@
 import bpy
 from . import logger as L
+from . import helper as H
 
 def get_assets(context):
     idx = context.scene.lm_render_queue_idx
@@ -15,17 +16,19 @@ class LM_UI_AddAssetToRenderQueue(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     bl_description = "Add asset to render_ queue"
 
+    asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to add to render queue')
+
     def execute(self, context):
         scn = context.scene
         name_list = [a.name for a in scn.lm_render_queue]
-        if scn.lm_asset_list and scn.lm_asset_list[scn.lm_asset_list_idx].name not in name_list:
+        if scn.lm_asset_list and self.asset_name not in name_list:
             c = scn.lm_render_queue.add()
-            c.name = scn.lm_asset_list[scn.lm_asset_list_idx].name
-            c.rendered = scn.lm_asset_list[scn.lm_asset_list_idx].rendered
-            c.render_path = scn.lm_asset_list[scn.lm_asset_list_idx].render_path
-            c.composited = scn.lm_asset_list[scn.lm_asset_list_idx].composited
-            c.final_composite_filepath = scn.lm_asset_list[scn.lm_asset_list_idx].final_composite_filepath
-            c.asset_path = scn.lm_asset_list[scn.lm_asset_list_idx].asset_path
+            c.name = scn.lm_asset_list[self.asset_name].name
+            c.rendered = scn.lm_asset_list[self.asset_name].rendered
+            c.render_path = scn.lm_asset_list[self.asset_name].render_path
+            c.composited = scn.lm_asset_list[self.asset_name].composited
+            c.final_composite_filepath = scn.lm_asset_list[self.asset_name].final_composite_filepath
+            c.asset_path = scn.lm_asset_list[self.asset_name].asset_path
             
             scn.lm_render_queue_idx = len(scn.lm_render_queue) - 1
 
@@ -75,13 +78,13 @@ class LM_UI_RemoveAssetToRender(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     bl_description = "Remove selected asset to render."
 
+    asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to remove')
+
     @classmethod
     def poll(cls, context):
-        return context.scene.lm_render_queue and context.scene.lm_render_queue_idx is not None
+        return context.scene.lm_render_queue
 
     def execute(self, context):
-        idx, _, _ = get_assets(context)
-
-        context.scene.lm_render_queue.remove(idx)
+        H.remove_bpy_struct_item(context.scene.lm_render_queue, self.asset_name)
 
         return {'FINISHED'}

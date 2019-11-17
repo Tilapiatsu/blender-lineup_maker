@@ -44,6 +44,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     asset_path : bpy.props.StringProperty(subtype='DIR_PATH')
     render_path : bpy.props.StringProperty(subtype='DIR_PATH')
     render_camera : bpy.props.StringProperty(name="Render camera")
+    asset_folder_exists : bpy.props.BoolProperty()
     
     raw_composite_filepath : bpy.props.StringProperty(subtype='FILE_PATH')
     final_composite_filepath : bpy.props.StringProperty(subtype='FILE_PATH')
@@ -153,15 +154,109 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
     bl_idname = "LM_UL_asset_list"
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        row = layout.split(factor=0.7)
+        self.use_filter_sort_alpha = True
+        
+        scn = context.scene
+
+        col = layout.column_flow(columns=2, align= True)
+
         text = item.name
-        if item.asset_path != "" :
-            if not path.exists(item.asset_path):
-                text += ' - Deleted On Drive'
+        # if item.asset_path != "" :
+        #     if not path.exists(item.asset_path):
+        #         text += ' - Deleted On Drive'
+        # else:
+        #     text += ' - Need Rerender'
+        # if item.rendered:
+        #     text += ' - Rendered'
+        # if item.composited:
+        #     text += ' - Composited'
+
+        # 
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        if context.window.view_layer.name == item.name:
+            eye_icon = 'HIDE_ON'
+            row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = context.scene.lm_initial_view_layer
         else:
-            text += ' - Need Rerender'
-        if item.rendered:
-            text += ' - Rendered'
-        if item.composited:
-            text += ' - Composited'
-        row.label(text='{}'.format(text))
+            eye_icon = 'HIDE_OFF'
+            row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
+            
+        row.label(text='{}'.format(text), icon_value=icon)
+
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        
+
+        if scn.lm_asset_list[item.name].rendered:
+            row.operator('scene.lm_open_render_folder', text='', icon='RENDER_RESULT').asset_name = item.name
+        else:
+            self.separator_iter(row, 3)
+        
+        if scn.lm_asset_list[item.name].asset_folder_exists:
+            row.operator('scene.lm_open_asset_folder', text='', icon='SNAP_VOLUME').asset_name = item.name
+        else:
+            self.separator_iter(row, 3)
+        
+        row.separator()
+        row.operator('scene.lm_add_asset_to_render_queue', text='', icon='SORT_ASC').asset_name = item.name
+        row.operator('scene.lm_remove_asset', text='', icon='X').asset_name = item.name
+        
+
+        
+    def separator_iter(self, ui, iter) :
+        for i in range(iter):
+            ui.separator()
+
+class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
+    bl_idname = "LM_UL_asset_list_RenderQueue"
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        scn = context.scene
+
+        col = layout.column_flow(columns=3, align= True)
+        text = item.name
+        # if item.asset_path != "" :
+        #     if not path.exists(item.asset_path):
+        #         text += ' - Deleted On Drive'
+        # else:
+        #     text += ' - Need Rerender'
+        # if item.rendered:
+        #     text += ' - Rendered'
+        # if item.composited:
+        #     text += ' - Composited'
+
+        # 
+        
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        if context.window.view_layer.name == item.name:
+            eye_icon = 'HIDE_ON'
+            row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = context.scene.lm_initial_view_layer
+        else:
+            eye_icon = 'HIDE_OFF'
+            row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
+            
+        row.label(text='{}'.format(text), icon_value=icon)
+
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        
+
+        if scn.lm_asset_list[item.name].rendered:
+            row.operator('scene.lm_open_render_folder', text='', icon='RENDER_RESULT').asset_name = item.name
+        else:
+            self.separator_iter(row, 3)
+        
+        if scn.lm_asset_list[item.name].asset_folder_exists:
+            row.operator('scene.lm_open_asset_folder', text='', icon='SNAP_VOLUME').asset_name = item.name
+        else:
+            self.separator_iter(row, 3)
+        
+        row.separator()
+        row.operator('scene.lm_remove_asset_to_render', text='', icon='X').asset_name = item.name
+        
+
+        
+    def separator_iter(self, ui, iter) :
+        for i in range(iter):
+            ui.separator()

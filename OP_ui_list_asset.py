@@ -77,14 +77,16 @@ class LM_UI_RemoveAsset(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     bl_description = "Remove selected Asset."
 
+    asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to remove')
+
     @classmethod
     def poll(cls, context):
-        return context.scene.lm_asset_list and context.scene.lm_asset_list_idx < len(context.scene.lm_asset_list) 
+        return context.scene.lm_asset_list
 
     def execute(self, context):
         idx, asset, _ = get_assets(context)
 
-        remove_asset(self, context, asset[idx], idx)
+        remove_asset(self, context, asset[self.asset_name], idx)
 
         return {'FINISHED'}
 
@@ -95,12 +97,14 @@ class LM_UI_OpenRenderFolder(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     bl_description = "Open Render Folder"
 
+    asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset folder to Open')
+
     @classmethod
     def poll(cls, context):
-        return context.scene.lm_asset_list and context.scene.lm_asset_list_idx is not None
+        return context.scene.lm_asset_list
 
     def execute(self, context):
-        bpy.ops.scene.lm_openfolder(folder_path=context.scene.lm_asset_list[context.scene.lm_asset_list_idx].render_path)
+        bpy.ops.scene.lm_openfolder(folder_path=context.scene.lm_asset_list[self.asset_name].render_path)
 
         return {'FINISHED'}
 
@@ -108,13 +112,33 @@ class LM_UI_OpenAssetFolder(bpy.types.Operator):
     bl_idname = "scene.lm_open_asset_folder"
     bl_label = "Open Asset Folder"
     bl_options = {'REGISTER', 'UNDO'}
-    bl_description = "Open Render Folder"
+    bl_description = "Open Asset Folder"
+
+    asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset folder to Open')
 
     @classmethod
     def poll(cls, context):
-        return context.scene.lm_asset_list and context.scene.lm_asset_list_idx is not None
+        return context.scene.lm_asset_list
 
     def execute(self, context):
-        bpy.ops.scene.lm_openfolder(folder_path=context.scene.lm_asset_list[context.scene.lm_asset_list_idx].asset_path)
+        bpy.ops.scene.lm_openfolder(folder_path=context.scene.lm_asset_list[self.asset_name].asset_path)
+
+        return {'FINISHED'}
+
+class LM_UI_ShowAsset(bpy.types.Operator):
+    bl_idname = "scene.lm_show_asset"
+    bl_label = "Show Asset"
+    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Show Asset"
+
+    asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to show')
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.lm_asset_list
+
+    def execute(self, context):
+        
+        context.window.view_layer = context.scene.view_layers[self.asset_name]
 
         return {'FINISHED'}

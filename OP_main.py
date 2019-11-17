@@ -226,6 +226,8 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		for f in log.failure:
 			log.info('{}'.format(f))
 
+		bpy.ops.scene.lm_refresh_asset_status()
+
 		self.report({'INFO'}, 'Lineup Maker : Import/Update Completed')
 
 		return {'FINISHED'}
@@ -800,6 +802,9 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 
 			if path.isdir(asset_path):
 				asset.asset_path = asset_path
+				asset.asset_folder_exists = True
+			else:
+				asset.asset_folder_exists = False
 
 			asset.composited = path.isfile(composite_path)
 			if asset.composited:
@@ -851,6 +856,8 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 		groups = word_pattern.finditer(render_filename)
 		for g in groups:
 			return g.group(2)
+		else:
+			return ''
 
 class LM_OP_ExportSelectedAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_export_selected_asset"
