@@ -193,14 +193,13 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         else:
             self.separator_iter(row, 3)
         
-        export = row.operator('scene.lm_export_asset', text='', icon='FILE')
+        export = row.operator('scene.lm_export_asset', text='', icon='EXPORT')
         export.asset_name = item.name
         export.mode = 'ASSET'
         
         row.separator()
         row.operator('scene.lm_add_asset_to_render_queue', text='', icon='SORT_ASC').asset_name = item.name
         row.operator('scene.lm_remove_asset', text='', icon='X').asset_name = item.name
-        
 
         
     def separator_iter(self, ui, iter) :
@@ -239,6 +238,11 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
             row.operator('scene.lm_open_asset_folder', text='', icon='SNAP_VOLUME').asset_name = item.name
         else:
             self.separator_iter(row, 3)
+
+
+        export = row.operator('scene.lm_export_asset', text='', icon='EXPORT')
+        export.asset_name = item.name
+        export.mode = 'ASSET'
         
         row.separator()
         row.operator('scene.lm_remove_asset_to_render', text='', icon='X').asset_name = item.name

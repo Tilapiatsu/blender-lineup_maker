@@ -144,25 +144,25 @@ def remove_asset(context, asset_name, remove=True):
 	if asset_name in bpy.data.collections:
 		# Get data from collection
 		datas = get_datas_from_collection(asset_name)
-
+        
 		for o in datas['objects']:
-			if o.name in bpy.data.objects:
+			if o is not None and o.name in bpy.data.objects:
 				print('Removing object : ', o.name)
 				bpy.data.objects.remove(o)
 		for m in datas['meshes']:
-			if m.name in bpy.data.meshes:
+			if m is not None and m.name in bpy.data.meshes:
 				print('Removing meshe : ', m.name)
 				bpy.data.meshes.remove(m)
 		for a in datas['actions']:
-			if a.name in bpy.data.actions:
+			if a is not None and a.name in bpy.data.actions:
 				print('Removing action : ', a.name)
 				bpy.data.actions.remove(a)
 		for i in datas['images']:
-			if i.name in bpy.data.images:
+			if i is not None and i.name in bpy.data.images:
 				print('Removing image : ', i.name)
 				bpy.data.images.remove(i)
 		for m in datas['materials']:
-			if m.name in bpy.data.materials:
+			if m is not None and m.name in bpy.data.materials:
 				print('Removing material : ', m.name)
 				bpy.data.materials.remove(m)
 		

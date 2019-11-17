@@ -375,20 +375,18 @@ class LM_PT_RenderQueue(bpy.types.Panel):
 
         col = layout.column(align=True)
         b = col.box()
-        b.operator('scene.lm_refresh_asset_status', text='Refresh Asset Status')
-        b = col.box()
         b.label(text='Asset List')
         
-        b.separator()
         rendered = [a for a in scn.lm_asset_list if a.rendered]
         composited = [a for a in scn.lm_asset_list if a.composited]
         b.label(text='{} assets  /  {} rendered  /  {} composited'.format(len(scn.lm_asset_list), len(rendered), len(composited)))
         b.separator()
         row = b.row()
-        rows = len(scn.lm_asset_list) if len(scn.lm_asset_list) > 2 else 2
+        rows = 20 if len(scn.lm_asset_list) > 20 else len(scn.lm_asset_list) + 1
         
         row.template_list('LM_UL_asset_list', '', scn, 'lm_asset_list', scn, 'lm_asset_list_idx', rows=rows)
         c = row.column(align=True)
+        c.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH')
         # c.operator("scene.lm_move_asset", text="", icon='TRIA_UP').direction = "UP"
         # c.operator("scene.lm_move_asset", text="", icon='TRIA_DOWN').direction = "DOWN"
 
@@ -401,7 +399,7 @@ class LM_PT_RenderQueue(bpy.types.Panel):
         row.separator()
         b.label(text='Render Queue')
         row = b.row()
-        rows = len(scn.lm_render_queue) if len(scn.lm_render_queue) > 2 else 2
+        rows = 20 if len(scn.lm_render_queue) > 20 else len(scn.lm_render_queue) + 1
         row.template_list('LM_UL_asset_list_RenderQueue', '', scn, 'lm_render_queue', scn, 'lm_render_queue_idx', rows=rows)
         c = row.column(align=True)
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_UP').direction = "UP"
