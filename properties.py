@@ -161,17 +161,7 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         col = layout.column_flow(columns=2, align= True)
 
         text = item.name
-        # if item.asset_path != "" :
-        #     if not path.exists(item.asset_path):
-        #         text += ' - Deleted On Drive'
-        # else:
-        #     text += ' - Need Rerender'
-        # if item.rendered:
-        #     text += ' - Rendered'
-        # if item.composited:
-        #     text += ' - Composited'
 
-        # 
         row = col.row(align=True)
         row.alignment = 'LEFT'
         if context.window.view_layer.name == item.name:
@@ -182,10 +172,10 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
             row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
             
         
-        if item.rendered:
-            row.label(text='', icon='RENDERLAYERS')
-        else:
-            row.label(text='', icon='SEQ_PREVIEW')
+        # if item.rendered:
+        #     row.label(text='', icon='RENDERLAYERS')
+        # else:
+        #     row.label(text='', icon='SEQ_PREVIEW')
             
         row.label(text='{}'.format(text), icon_value=icon)
 
@@ -203,6 +193,10 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         else:
             self.separator_iter(row, 3)
         
+        export = row.operator('scene.lm_export_asset', text='', icon='FILE')
+        export.asset_name = item.name
+        export.mode = 'ASSET'
+        
         row.separator()
         row.operator('scene.lm_add_asset_to_render_queue', text='', icon='SORT_ASC').asset_name = item.name
         row.operator('scene.lm_remove_asset', text='', icon='X').asset_name = item.name
@@ -219,20 +213,9 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         scn = context.scene
 
-        col = layout.column_flow(columns=3, align= True)
+        col = layout.column_flow(columns=2, align= True)
         text = item.name
-        # if item.asset_path != "" :
-        #     if not path.exists(item.asset_path):
-        #         text += ' - Deleted On Drive'
-        # else:
-        #     text += ' - Need Rerender'
-        # if item.rendered:
-        #     text += ' - Rendered'
-        # if item.composited:
-        #     text += ' - Composited'
 
-        # 
-        
         row = col.row(align=True)
         row.alignment = 'LEFT'
         if context.window.view_layer.name == item.name:
@@ -242,12 +225,6 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
             eye_icon = 'HIDE_OFF'
             row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
             
-        row.label(text='{}'.format(text), icon_value=icon)
-        if item.rendered:
-            row.label(text='', icon='RENDERLAYERS')
-        else:
-            row.label(text='', icon='SEQ_PREVIEW')
-
         row.label(text='{}'.format(text), icon_value=icon)
 
         row = col.row(align=True)

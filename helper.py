@@ -133,6 +133,12 @@ def get_datas_from_collection(collection_name):
 	
 	return datas
 
+def select_asset(context, asset_name):
+    if asset_name in bpy.data.collections:
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in bpy.data.collections[asset_name].objects:
+            o.select_set(True)
+
 
 def remove_asset(context, asset_name, remove=True):
 	if asset_name in bpy.data.collections:

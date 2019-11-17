@@ -877,17 +877,25 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 	# 		return len(self.asset_name)
 
 	def execute(self, context):
+		log = L.Logger(context='EXPORT_ASSETS')
+
 		self.report({'INFO'}, 'Lineup Maker : Exporting selected objects to asset folder')
 		self.json_data = []
-		log = L.Logger(context='IMPORT_ASSETS')
+
 		if self.mode =='SELECTED':
 			self.export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
 		elif self.mode == 'ASSET':
 			if not len(self.asset_name):
-
+				log.warning('Asset Name is not defined. Export aboard')
 				return {'FINISHED'}
-			if context.scene.lm_asset_list[self.asset_name]
-			self.export_path = 
+			if self.asset_name not in context.scene.lm_asset_list:
+				log.warning('Asset Name not in the asset list. Export aboard')
+				return {'FINISHED'}
+
+			context.window.view_layer = context.scene.view_layers[self.asset_name]
+			self.export_path = path.join(context.scene.lm_asset_path, self.asset_name)
+
+			H.select_asset(context, self.asset_name)
 
 		texture_list = self.get_textures(context)
 		tmpdir = tempfile.mkdtemp()
@@ -936,9 +944,9 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			name = o.name
 			stats = S.Stats(o)
 			json = {'name':name,
-					'HDStatus':getattr(V.Status, scn.lm_exported_hd_status).value, 
-					'LDStatus':getattr(V.Status, scn.lm_exported_ld_status).value,
-					'BakingStatus':getattr(V.Status, scn.lm_exported_baking_status).value,
+					'HDStatus':getattr(V.Status, scn.lm_exported_hd_status).value if self.mode == 'SELECTED' else scn.lm_asset_list[self.asset_name].hd_status, 
+					'LDStatus':getattr(V.Status, scn.lm_exported_ld_status).value if self.mode == 'SELECTED' else scn.lm_asset_list[self.asset_name].ld_status,
+					'BakingStatus':getattr(V.Status, scn.lm_exported_baking_status).value if self.mode == 'SELECTED' else scn.lm_asset_list[self.asset_name].baking_status,
 					'triangles':stats.triangle_count,
 					'vertices':stats.vertex_count,
 					'hasUV2':stats.uv_count > 1,
