@@ -790,12 +790,14 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 
 	def execute(self, context):
+		log = L.Logger(context='EXPORT_ASSETS')
 		context.scene.lm_render_path
 
 		need_update_list = [a for a in context.scene.lm_asset_list] + [ a for a in context.scene.lm_render_queue]
 
 		for asset in need_update_list:
-			self.report({'INFO'}, 'Lineup Maker : Refresh rendreing status for : "{}"'.format(asset.name))
+			self.report({'INFO'}, 'Lineup Maker : Refresh asset status for : "{}"'.format(asset.name))
+			log.info('Lineup Maker : Refresh asset status for : "{}"'.format(asset.name))
 			rendered_asset = path.join(context.scene.lm_render_path, asset.name)
 			asset_path = path.join(context.scene.lm_asset_path, asset.name)
 			composite_path = path.join(context.scene.lm_render_path, V.LM_FINAL_COMPOSITE_FOLDER_NAME, '{}{}.jpg'.format(asset.name, V.LM_FINAL_COMPOSITE_SUFFIX))
@@ -861,7 +863,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 
 class LM_OP_ExportAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_export_asset"
-	bl_label = "Lineup Maker: Export selected mesh to asset folder"
+	bl_label = "Lineup Maker: Export Asset"
 	bl_options = {'REGISTER', 'UNDO'}
 
 	export_path = ''
