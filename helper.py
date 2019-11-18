@@ -10,14 +10,14 @@ def delete_folder_if_exist(path):
 		shutil.rmtree(path, onerror=file_acces_handler)
 
 def file_acces_handler(func, path, exc_info):
-    print('Handling Error for file ' , path)
-    print(exc_info)
-    # Check if file access issue
-    if not os.access(path, os.W_OK):
-       # Try to change the permision of file
-       os.chmod(path, stat.S_IWUSR)
-       # call the calling function again
-       func(path)
+	print('Handling Error for file ' , path)
+	print(exc_info)
+	# Check if file access issue
+	if not os.access(path, os.W_OK):
+	   # Try to change the permision of file
+	   os.chmod(path, stat.S_IWUSR)
+	   # call the calling function again
+	   func(path)
 
 def get_layer_collection(layer_collection, collection_name):
 	found = None
@@ -134,17 +134,17 @@ def get_datas_from_collection(collection_name):
 	return datas
 
 def select_asset(context, asset_name):
-    if asset_name in bpy.data.collections:
-        bpy.ops.object.select_all(action='DESELECT')
-        for o in bpy.data.collections[asset_name].objects:
-            o.select_set(True)
+	if asset_name in bpy.data.collections:
+		bpy.ops.object.select_all(action='DESELECT')
+		for o in bpy.data.collections[asset_name].objects:
+			o.select_set(True)
 
 
 def remove_asset(context, asset_name, remove=True):
 	if asset_name in bpy.data.collections:
 		# Get data from collection
 		datas = get_datas_from_collection(asset_name)
-        
+		
 		for o in datas['objects']:
 			if o is not None and o.name in bpy.data.objects:
 				print('Removing object : ', o.name)
@@ -178,225 +178,226 @@ def remove_asset(context, asset_name, remove=True):
 	if asset_name in context.scene.lm_asset_list:
 		if remove:
 			remove_bpy_struct_item(context.scene.lm_asset_list, asset_name)
+			remove_bpy_struct_item(context.scene.lm_render_queue, asset_name)
 
 
 def image_all(image_key):
-    # returns a list of keys of every data-block that uses this image
+	# returns a list of keys of every data-block that uses this image
 
-    return image_compositors(image_key) + \
-           image_materials(image_key) + \
-           image_node_groups(image_key) + \
-           image_textures(image_key) + \
-           image_worlds(image_key)
+	return image_compositors(image_key) + \
+		   image_materials(image_key) + \
+		   image_node_groups(image_key) + \
+		   image_textures(image_key) + \
+		   image_worlds(image_key)
 
 
 def image_compositors(image_key):
-    # returns a list containing "Compositor" if the image is used in
-    # the scene's compositor
+	# returns a list containing "Compositor" if the image is used in
+	# the scene's compositor
 
-    users = []
-    image = bpy.data.images[image_key]
+	users = []
+	image = bpy.data.images[image_key]
 
-    # a list of node groups that use our image
-    node_group_users = image_node_groups(image_key)
+	# a list of node groups that use our image
+	node_group_users = image_node_groups(image_key)
 
-    # if our compositor uses nodes and has a valid node tree
-    if bpy.context.scene.use_nodes and bpy.context.scene.node_tree:
+	# if our compositor uses nodes and has a valid node tree
+	if bpy.context.scene.use_nodes and bpy.context.scene.node_tree:
 
-        # check each node in the compositor
-        for node in bpy.context.scene.node_tree.nodes:
+		# check each node in the compositor
+		for node in bpy.context.scene.node_tree.nodes:
 
-            # if the node is an image node with a valid image
-            if hasattr(node, 'image') and node.image:
+			# if the node is an image node with a valid image
+			if hasattr(node, 'image') and node.image:
 
-                # if the node's image is our image
-                if node.image.name == image.name:
-                    users.append("Compositor")
+				# if the node's image is our image
+				if node.image.name == image.name:
+					users.append("Compositor")
 
-            # if the node is a group node with a valid node tree
-            elif hasattr(node, 'node_tree') and node.node_tree:
+			# if the node is a group node with a valid node tree
+			elif hasattr(node, 'node_tree') and node.node_tree:
 
-                # if the node tree's name is in our list of node group
-                # users
-                if node.node_tree.name in node_group_users:
-                    users.append("Compositor")
+				# if the node tree's name is in our list of node group
+				# users
+				if node.node_tree.name in node_group_users:
+					users.append("Compositor")
 
-    return distinct(users)
+	return distinct(users)
 
 
 def image_materials(image_key):
-    # returns a list of material keys that use the image
+	# returns a list of material keys that use the image
 
-    users = []
-    image = bpy.data.images[image_key]
+	users = []
+	image = bpy.data.images[image_key]
 
-    # list of node groups that use this image
-    node_group_users = image_node_groups(image_key)
+	# list of node groups that use this image
+	node_group_users = image_node_groups(image_key)
 
-    for mat in bpy.data.materials:
+	for mat in bpy.data.materials:
 
-        # if material uses a valid node tree, check each node
-        if mat.use_nodes and mat.node_tree:
-            for node in mat.node_tree.nodes:
+		# if material uses a valid node tree, check each node
+		if mat.use_nodes and mat.node_tree:
+			for node in mat.node_tree.nodes:
 
-                # if node is has a not none image attribute
-                if hasattr(node, 'image') and node.image:
+				# if node is has a not none image attribute
+				if hasattr(node, 'image') and node.image:
 
-                    # if the nodes image is our image
-                    if node.image.name == image.name:
-                        users.append(mat.name)
+					# if the nodes image is our image
+					if node.image.name == image.name:
+						users.append(mat.name)
 
-                # if image in node in node group in node tree
-                elif node.type == 'GROUP':
+				# if image in node in node group in node tree
+				elif node.type == 'GROUP':
 
-                    # if node group has a valid node tree and is in our
-                    # list of node groups that use this image
-                    if node.node_tree and \
-                            node.node_tree.name in node_group_users:
-                        users.append(mat.name)
+					# if node group has a valid node tree and is in our
+					# list of node groups that use this image
+					if node.node_tree and \
+							node.node_tree.name in node_group_users:
+						users.append(mat.name)
 
-    return distinct(users)
+	return distinct(users)
 
 
 def image_node_groups(image_key):
-    # returns a list of keys of node groups that use this image
+	# returns a list of keys of node groups that use this image
 
-    users = []
-    image = bpy.data.images[image_key]
+	users = []
+	image = bpy.data.images[image_key]
 
-    # for each node group
-    for node_group in bpy.data.node_groups:
+	# for each node group
+	for node_group in bpy.data.node_groups:
 
-        # if node group contains our image
-        if node_group_has_image(node_group.name, image.name):
-            users.append(node_group.name)
+		# if node group contains our image
+		if node_group_has_image(node_group.name, image.name):
+			users.append(node_group.name)
 
-    return distinct(users)
+	return distinct(users)
 
 
 def image_textures(image_key):
-    # returns a list of texture keys that use the image
+	# returns a list of texture keys that use the image
 
-    users = []
-    image = bpy.data.images[image_key]
+	users = []
+	image = bpy.data.images[image_key]
 
-    # list of node groups that use this image
-    node_group_users = image_node_groups(image_key)
+	# list of node groups that use this image
+	node_group_users = image_node_groups(image_key)
 
-    for texture in bpy.data.textures:
+	for texture in bpy.data.textures:
 
-        # if texture uses a valid node tree, check each node
-        if texture.use_nodes and texture.node_tree:
-            for node in texture.node_tree.nodes:
+		# if texture uses a valid node tree, check each node
+		if texture.use_nodes and texture.node_tree:
+			for node in texture.node_tree.nodes:
 
-                # check image nodes that use this image
-                if hasattr(node, 'image') and node.image:
-                    if node.image.name == image.name:
-                        users.append(texture.name)
+				# check image nodes that use this image
+				if hasattr(node, 'image') and node.image:
+					if node.image.name == image.name:
+						users.append(texture.name)
 
-                # check for node groups that use this image
-                elif hasattr(node, 'node_tree') and node.node_tree:
+				# check for node groups that use this image
+				elif hasattr(node, 'node_tree') and node.node_tree:
 
-                    # if node group is in our list of node groups that
-                    # use this image
-                    if node.node_tree.name in node_group_users:
-                        users.append(texture.name)
+					# if node group is in our list of node groups that
+					# use this image
+					if node.node_tree.name in node_group_users:
+						users.append(texture.name)
 
-        # otherwise check the texture's image attribute
-        else:
+		# otherwise check the texture's image attribute
+		else:
 
-            # if texture uses an image
-            if hasattr(texture, 'image') and texture.image:
+			# if texture uses an image
+			if hasattr(texture, 'image') and texture.image:
 
-                # if texture image is our image
-                if texture.image.name == image.name:
-                    users.append(texture.name)
+				# if texture image is our image
+				if texture.image.name == image.name:
+					users.append(texture.name)
 
-    return distinct(users)
+	return distinct(users)
 
 
 def image_worlds(image_key):
-    # returns a list of world keys that use the image
+	# returns a list of world keys that use the image
 
-    users = []
-    image = bpy.data.images[image_key]
+	users = []
+	image = bpy.data.images[image_key]
 
-    # list of node groups that use this image
-    node_group_users = image_node_groups(image_key)
+	# list of node groups that use this image
+	node_group_users = image_node_groups(image_key)
 
-    for world in bpy.data.worlds:
+	for world in bpy.data.worlds:
 
-        # if world uses a valid node tree, check each node
-        if world.use_nodes and world.node_tree:
-            for node in world.node_tree.nodes:
+		# if world uses a valid node tree, check each node
+		if world.use_nodes and world.node_tree:
+			for node in world.node_tree.nodes:
 
-                # check image nodes
-                if hasattr(node, 'image') and node.image:
-                    if node.image.name == image.name:
-                        users.append(world.name)
+				# check image nodes
+				if hasattr(node, 'image') and node.image:
+					if node.image.name == image.name:
+						users.append(world.name)
 
-                # check for node groups that use this image
-                elif hasattr(node, 'node_tree') and node.node_tree:
-                    if node.node_tree.name in node_group_users:
-                        users.append(world.name)
+				# check for node groups that use this image
+				elif hasattr(node, 'node_tree') and node.node_tree:
+					if node.node_tree.name in node_group_users:
+						users.append(world.name)
 
-    return distinct(users)
+	return distinct(users)
 
 def unused_images():
-    # returns a full list of keys of unused images
+	# returns a full list of keys of unused images
 
-    unused = []
+	unused = []
 
-    # a list of image keys that should not be flagged as unused
-    # this list also exists in images_shallow()
-    do_not_flag = ["Render Result", "Viewer Node", "D-NOISE Export"]
+	# a list of image keys that should not be flagged as unused
+	# this list also exists in images_shallow()
+	do_not_flag = ["Render Result", "Viewer Node", "D-NOISE Export"]
 
-    for image in bpy.data.images:
-        if not image_all(image.name):
+	for image in bpy.data.images:
+		if not image_all(image.name):
 
-            # check if image has a fake user or if ignore fake users
-            # is enabled
-            if not image.use_fake_user:
+			# check if image has a fake user or if ignore fake users
+			# is enabled
+			if not image.use_fake_user:
 
-                # if image is not in our do not flag list
-                if image.name not in do_not_flag:
-                    unused.append(image.name)
+				# if image is not in our do not flag list
+				if image.name not in do_not_flag:
+					unused.append(image.name)
 
-    return unused
+	return unused
 
 def distinct(seq):
-    # returns a list of distinct elements
+	# returns a list of distinct elements
 
-    return list(set(seq))
+	return list(set(seq))
 
 def node_group_has_image(node_group_key, image_key):
-    # recursively returns true if the node group contains this image
-    # directly or if it contains a node group a node group that contains
-    # the image indirectly
+	# recursively returns true if the node group contains this image
+	# directly or if it contains a node group a node group that contains
+	# the image indirectly
 
-    has_image = False
-    node_group = bpy.data.node_groups[node_group_key]
-    image = bpy.data.images[image_key]
+	has_image = False
+	node_group = bpy.data.node_groups[node_group_key]
+	image = bpy.data.images[image_key]
 
-    # for each node in our search group
-    for node in node_group.nodes:
+	# for each node in our search group
+	for node in node_group.nodes:
 
-        # base case
-        # if node has a not none image attribute
-        if hasattr(node, 'image') and node.image:
+		# base case
+		# if node has a not none image attribute
+		if hasattr(node, 'image') and node.image:
 
-            # if the node group is our node group
-            if node.image.name == image.name:
-                has_image = True
+			# if the node group is our node group
+			if node.image.name == image.name:
+				has_image = True
 
-        # recurse case
-        # if node is a node group and has a valid node tree
-        elif hasattr(node, 'node_tree') and node.node_tree:
-            has_image = node_group_has_image(
-                node.node_tree.name, image.name)
+		# recurse case
+		# if node is a node group and has a valid node tree
+		elif hasattr(node, 'node_tree') and node.node_tree:
+			has_image = node_group_has_image(
+				node.node_tree.name, image.name)
 
-        # break the loop if the image is found
-        if has_image:
-            break
+		# break the loop if the image is found
+		if has_image:
+			break
 
-    return has_image
+	return has_image

@@ -71,6 +71,8 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_label = "Lineup Maker: Import all assets from source folder"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
+
 	@classmethod
 	def poll(cls, context):
 		return context.scene.lm_render_collection and path.isdir(context.scene.lm_asset_path)
@@ -97,8 +99,23 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		context.scene.view_layers[context.scene.lm_initial_view_layer].use = False
 
 		asset_view_layers = {}
+
+		# feed asset view layer with existing one
+		for a in context.scene.lm_asset_list:
+			asset_view_layers[a.view_layer] = H.get_layer_collection(context.view_layer.layer_collection, a.name)
+		
 		if path.isdir(folder_src):
-			subfolders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f))]
+			if len(self.asset_name):
+				subfolders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f)) and f == self.asset_name]
+				if len(subfolders):
+					H.remove_asset(context, self.asset_name)
+				else:
+					log.warning('Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, folder_src))
+					self.report({'INFO'}, 'Lineup Maker : Import cancelled, Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, folder_src))
+
+					return {'FINISHED'}
+			else:
+				subfolders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f))]
 			
 			for subfolder in subfolders:
 				bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
@@ -210,7 +227,10 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 			
 		# Set the global View_layer active
-		context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
+		if len(self.asset_name):
+			context.window.view_layer = context.scene.view_layers[self.asset_name]
+		else:	
+			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
 
 		self.renumber_assets(context)
 
@@ -935,7 +955,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			destination_path = path.join(destination, mesh)
 			H.create_folder_if_neeed(destination_path)
 			for t in textures:
-				subprocess.call("xcopy {} {}".format(t, destination_path))
+				subprocess.call("xcopy /r /y {} {}".format(t, destination_path))
 
 	
 	def get_textures(self, context):

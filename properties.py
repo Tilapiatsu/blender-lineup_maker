@@ -196,6 +196,8 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         export = row.operator('scene.lm_export_asset', text='', icon='EXPORT')
         export.asset_name = item.name
         export.mode = 'ASSET'
+
+        row.operator('scene.lm_importassets', text='', icon='IMPORT').asset_name = item.name
         
         row.separator()
         row.operator('scene.lm_add_asset_to_render_queue', text='', icon='SORT_ASC').asset_name = item.name
@@ -243,6 +245,8 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
         export = row.operator('scene.lm_export_asset', text='', icon='EXPORT')
         export.asset_name = item.name
         export.mode = 'ASSET'
+        
+        row.operator('scene.lm_importassets', text='', icon='IMPORT').asset_name = item.name
         
         row.separator()
         row.operator('scene.lm_remove_asset_to_render', text='', icon='X').asset_name = item.name
