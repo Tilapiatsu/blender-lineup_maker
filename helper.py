@@ -139,6 +139,16 @@ def select_asset(context, asset_name):
 		for o in bpy.data.collections[asset_name].objects:
 			o.select_set(True)
 
+def renumber_assets(context):
+		asset_name_list = [a.name for a in context.scene.lm_asset_list]
+
+		for number,name in enumerate(asset_name_list):
+			context.scene.lm_asset_list[name].asset_index = number
+		
+		asset_name_list.sort()
+
+		for number,name in enumerate(asset_name_list):
+			context.scene.lm_asset_list[name].asset_number = number + 1
 
 def remove_asset(context, asset_name, remove=True):
 	if asset_name in bpy.data.collections:

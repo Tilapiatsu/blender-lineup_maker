@@ -54,6 +54,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     info_written : bpy.props.BoolProperty(default=False)
 
     asset_number : bpy.props.IntProperty()
+    asset_index : bpy.props.IntProperty()
     hd_status : bpy.props.IntProperty(default=-1)
     ld_status : bpy.props.IntProperty(default=-1)
     baking_status : bpy.props.IntProperty(default=-1)

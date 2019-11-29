@@ -232,7 +232,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		else:	
 			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
 
-		self.renumber_assets(context)
+		H.renumber_assets(context)
 
 		log.info('')
 		log.info('----------------------------------------------------------')
@@ -251,13 +251,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		self.report({'INFO'}, 'Lineup Maker : Import/Update Completed')
 
 		return {'FINISHED'}
-
-	def renumber_assets(self, context):
-		asset_name_list = [a.name for a in context.scene.lm_asset_list]
-		asset_name_list.sort()
-
-		for number,name in enumerate(asset_name_list):
-			context.scene.lm_asset_list[name].asset_number = number + 1
 
 
 class LM_OP_RenderAssets(bpy.types.Operator):

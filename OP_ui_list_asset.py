@@ -3,9 +3,10 @@ from os import path
 from . import helper as H
 from . import logger as L
 
-def get_assets(context):
-    idx = context.scene.lm_asset_list_idx
+def get_assets(context, name):
+    H.renumber_assets(context)
     assets = context.scene.lm_asset_list
+    idx = context.scene.lm_asset_list[name].asset_index
 
     active = assets[idx] if assets else None
 
@@ -20,11 +21,19 @@ def remove_asset(self, context, asset, index, remove=True):
 
     if context.scene.lm_asset_list[asset.name].collection:
         H.remove_asset(context, asset.name, False)
-    context.scene.view_layers.remove(context.scene.view_layers[context.scene.lm_asset_list[asset.name].view_layer])
+
+    try:
+        context.scene.view_layers.remove(context.scene.view_layers[context.scene.lm_asset_list[asset.name].view_layer])
+    except KeyError as e:
+        print(e)
+
     if remove:
+        print("Removing asset : {}".format(context.scene.lm_asset_list[index].name))
         context.scene.lm_asset_list.remove(index)
         context.scene.lm_asset_list_idx = index - 1 if index else 0
-    idx, _, _ = get_assets(context)
+    
+    H.renumber_assets(context)
+    idx, _, _ = get_assets(context, asset.name)
 
     
     
@@ -37,9 +46,10 @@ class LM_UI_MoveAsset(bpy.types.Operator):
     bl_description = "Move Camera keyword Name up or down.\nThis controls the position in the Menu."
 
     direction: bpy.props.EnumProperty(items=[("UP", "Up", ""), ("DOWN", "Down", "")])
+    asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to move')
 
     def execute(self, context):
-        idx, asset, _ = get_assets(context)
+        idx, asset, _ = get_assets(context, self.asset_name)
 
         if self.direction == "UP":
             nextidx = max(idx - 1, 0)
@@ -84,7 +94,7 @@ class LM_UI_RemoveAsset(bpy.types.Operator):
         return context.scene.lm_asset_list
 
     def execute(self, context):
-        idx, asset, _ = get_assets(context)
+        idx, asset, _ = get_assets(context, self.asset_name)
 
         remove_asset(self, context, asset[self.asset_name], idx)
 
