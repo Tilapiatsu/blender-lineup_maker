@@ -450,7 +450,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		# switch to the proper view_layer
 		context.window.view_layer = scn.view_layers[asset.name]
 		
-		self.set_rendering_camera(context, asset)
+		H.set_rendering_camera(context, asset)
 
 		self.output_node = self.build_output_nodegraph(context, self.asset_number, asset)
 		# bpy.context.scene.render.filepath = self.render_filename + context.scene.camera.name + '_'
@@ -510,24 +510,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			asset.need_render = False
 			asset.render_date = time.time()
 			asset.rendered = False
-
-	def set_rendering_camera(self, context, asset):
-		cam = context.scene.lm_default_camera
-		naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
-
-		for camera_keyword in context.scene.lm_cameras:
-			match = True
-			for keyword in camera_keyword.keywords:
-				if naming_convention.naming_convention[keyword.keyword] != keyword.keyword_value.lower():
-					match = False
-					break
-			
-			if match:		
-				cam = camera_keyword.camera
-				break
-
-		context.scene.camera = bpy.data.objects[cam.name]
-		asset.render_camera = cam.name
 
 
 class LM_OP_CompositeRenders(bpy.types.Operator):
@@ -714,23 +696,6 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 			asset.render_date = time.time()
 			asset.rendered = False
 
-	def set_rendering_camera(self, context, asset):
-		cam = context.scene.lm_default_camera
-		naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
-
-		for camera_keyword in context.scene.lm_cameras:
-			match = True
-			for keyword in camera_keyword.keywords:
-				if naming_convention.naming_convention[keyword.keyword] != keyword.keyword_value.lower():
-					match = False
-					break
-			
-			if match:		
-				cam = camera_keyword.camera
-				break
-
-		context.scene.camera = bpy.data.objects[cam.name]
-
 class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_idname = "scene.lm_export_pdf"
 	bl_label = "Lineup Maker: Export PDF in the Render Path"
@@ -802,11 +767,16 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 	bl_label = "Lineup Maker: Refresh asset status"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
+
 	def execute(self, context):
 		log = L.Logger(context='EXPORT_ASSETS')
 		context.scene.lm_render_path
 
-		need_update_list = [a for a in context.scene.lm_asset_list] + [ a for a in context.scene.lm_render_queue]
+		if self.asset_name == '':
+			need_update_list = [a for a in context.scene.lm_asset_list] + [ a for a in context.scene.lm_render_queue]
+		else:
+			need_update_list = [a for a in context.scene.lm_asset_list if a.name == self.asset_name] + [ a for a in context.scene.lm_render_queue if a.name == self.asset_name]
 
 		for asset in need_update_list:
 			self.report({'INFO'}, 'Lineup Maker : Refresh asset status for : "{}"'.format(asset.name))
@@ -847,8 +817,8 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 						asset.rendered = False
 						asset.render_path = ''
 					
-					if len(rendered_files):
-						asset.render_camera = self.get_cameraName_from_render(context, asset, rendered_files[0])
+					# if len(rendered_files):
+					# 	asset.render_camera = self.get_cameraName_from_render(context, asset, rendered_files[0])
 						
 					asset.render_list.clear()
 					for file in rendered_files:
@@ -863,6 +833,9 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 				asset.composited = False
 				asset.render_path = ''
 				asset.render_list.clear()
+			
+			# set rendering camera
+			cam = H.set_rendering_camera(context, asset)
 
 		return {'FINISHED'}
 

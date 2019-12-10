@@ -159,9 +159,7 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         
         scn = context.scene
 
-        col = layout.column_flow(columns=2, align= True)
-
-        text = item.name
+        col = layout.column_flow(columns=2, align=True)
 
         row = col.row(align=True)
         row.alignment = 'LEFT'
@@ -171,18 +169,16 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         else:
             eye_icon = 'HIDE_OFF'
             row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
-            
         
-        # if item.rendered:
-        #     row.label(text='', icon='RENDERLAYERS')
-        # else:
-        #     row.label(text='', icon='SEQ_PREVIEW')
-            
-        row.label(text='{}'.format(text), icon_value=icon)
+
+        c = col.row(align=True)
+        c.alignment='LEFT'
+        row.label(text='{}'.format(item.name))
+        c.label(text='              ')
+        c.label(text='{}'.format(item.render_camera), icon='CAMERA_DATA')
 
         row = col.row(align=True)
         row.alignment = 'RIGHT'
-        
 
         if scn.lm_asset_list[item.name].rendered:
             row.operator('scene.lm_open_render_folder', text='', icon='RENDER_RESULT').asset_name = item.name
@@ -199,6 +195,7 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         export.mode = 'ASSET'
 
         row.operator('scene.lm_importassets', text='', icon='IMPORT').asset_name = item.name
+        row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
         
         row.separator()
         row.operator('scene.lm_add_asset_to_render_queue', text='', icon='SORT_ASC').asset_name = item.name
@@ -215,7 +212,7 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         scn = context.scene
 
-        col = layout.column_flow(columns=2, align= True)
+        col = layout.column_flow(columns=2, align=True)
         text = item.name
 
         row = col.row(align=True)
@@ -227,7 +224,12 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
             eye_icon = 'HIDE_OFF'
             row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
             
-        row.label(text='{}'.format(text), icon_value=icon)
+        c = col.row(align=True)
+        c.alignment='LEFT'
+        row.label(text='{}'.format(item.name))
+        c.label(text='              ')
+        c.label(text='{}'.format(item.render_camera), icon='CAMERA_DATA')
+
 
         row = col.row(align=True)
         row.alignment = 'RIGHT'
@@ -248,6 +250,7 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
         export.mode = 'ASSET'
         
         row.operator('scene.lm_importassets', text='', icon='IMPORT').asset_name = item.name
+        row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
         
         row.separator()
         row.operator('scene.lm_remove_asset_to_render', text='', icon='X').asset_name = item.name

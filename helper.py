@@ -1,5 +1,6 @@
 import bpy, os, shutil, stat
 from . import variables as V
+from . import naming_convention as N
 
 def create_folder_if_neeed(path):
 	if not os.path.exists(path):
@@ -191,6 +192,27 @@ def remove_asset(context, asset_name, remove=True):
 			remove_bpy_struct_item(context.scene.lm_render_queue, asset_name)
 
 
+def get_valid_camera(context, asset):
+	cam = context.scene.lm_default_camera
+	naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
+		
+	for camera_keyword in context.scene.lm_cameras:
+		match = True
+		for keyword in camera_keyword.keywords:
+			if naming_convention.naming_convention[keyword.keyword] != keyword.keyword_value.lower():
+				match = False
+				break
+		
+		if match:		
+			cam = camera_keyword.camera
+			break
+	
+	return cam
+
+def set_rendering_camera(context, asset):
+		cam = get_valid_camera(context, asset)
+		context.scene.camera = bpy.data.objects[cam.name]
+		asset.render_camera = cam.name
 def image_all(image_key):
 	# returns a list of keys of every data-block that uses this image
 
