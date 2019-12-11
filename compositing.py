@@ -549,7 +549,11 @@ class LM_Composite_Image(LM_Composite):
 			initial_pos = (self.composite_res[0] - self.character_size_texture[0], self.character_size_texture[1])
 			i = 0
 			for material in self.context.scene.lm_asset_list[name].material_list:
-				material_name = '{} - '.format(material.material.name)
+				if material.material:
+					material_name = '{} - '.format(material.material.name)
+				else:
+					material_name = ' '
+				
 				textures = material.texture_list
 				for texture in textures:
 					filename = path.basename(texture.file_path)
