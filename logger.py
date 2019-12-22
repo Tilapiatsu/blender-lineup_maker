@@ -6,7 +6,8 @@ def get_log_file():
     if path.exists(filepath):
         log_file = path.join(path.dirname(filepath), '{}.log'.format(path.splitext(path.basename(filepath))[0]))
     else:
-        log_file = tempfile.TemporaryFile()
+        tempf = tempfile.TemporaryFile().name
+        log_file = '{}.log'.format(tempf) 
 
     return log_file
 

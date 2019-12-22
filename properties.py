@@ -159,7 +159,7 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         
         scn = context.scene
 
-        col = layout.column_flow(columns=2, align=True)
+        col = layout.column_flow(columns=3, align=True)
 
         row = col.row(align=True)
         row.alignment = 'LEFT'
@@ -171,12 +171,13 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
             row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
         
 
-        c = col.row(align=True)
-        c.alignment='LEFT'
         row.label(text='{}'.format(item.name))
-        c.label(text='              ')
-        c.label(text='{}'.format(item.render_camera), icon='CAMERA_DATA')
+        # row.label(text='              ')
 
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        row.label(text='{}'.format(item.render_camera), icon='CAMERA_DATA')
+        
         row = col.row(align=True)
         row.alignment = 'RIGHT'
 
