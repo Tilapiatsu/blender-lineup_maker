@@ -27,6 +27,8 @@ class BpyAsset(object):
 		self._mesh_names = None
 		self._textures = None
 		self._jsons = None
+		self._texture_channels = None
+		self._channels = None
 		self._asset_naming_convention = None
 		self._mesh_naming_convention = None
 		self._texture_naming_convention = None
@@ -590,21 +592,23 @@ class BpyAsset(object):
 	# Properties
 	@property
 	def texture_channel_names(self):
-		texture_channels = []
-		for c in self.param['lm_texture_channels']:
-			if c.name not in texture_channels:
-				texture_channels.append(c.name.lower())
+		if self._texture_channels is None:
+			self._texture_channels = []
+			for c in self.param['lm_texture_channels']:
+				if c.name not in self._texture_channels:
+					self._texture_channels.append(c.name.lower())
 
-		return texture_channels
+		return self._texture_channels
 
 	@property
 	def channels(self):
-		channels = {}
-		for c in self.param['lm_channels']:
-			if c.name not in channels:
-				channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map, 'inverted':c.inverted}
+		if self._channels is None:
+			self._channels = {}
+			for c in self.param['lm_channels']:
+				if c.name not in self._channels:
+					self._channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map, 'inverted':c.inverted}
 
-		return channels
+		return self._channels
 	
 	@property
 	def asset_naming_convention(self):
