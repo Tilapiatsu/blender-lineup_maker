@@ -20,7 +20,8 @@ def feed_input_indices(context, input_indices):
 	
 	return input_indices
 
-def create_bsdf_material(context, asset, material, texture_set=None):
+def create_bsdf_material(asset, material, texture_set=None):
+	context = asset.context
 	log = L.Logger(context='CREATE_BSDF_MATERIAL')
 	input_indices = {'Base Color':{'index':0},
 					'Metallic':{'index':4},

@@ -73,157 +73,83 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 
+	folder_src = ''
+	asset_collection = ''
+	asset_view_layers = {}
+	log = None
+
+
 	@classmethod
 	def poll(cls, context):
 		return context.scene.lm_render_collection and path.isdir(context.scene.lm_asset_path)
 
 	def execute(self, context):
-		log = L.Logger(context='IMPORT_ASSETS')
-		folder_src = bpy.path.abspath(context.scene.lm_asset_path)
+		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
+
+		# Init the scene and store the right variables
+		self.folder_src = bpy.path.abspath(context.scene.lm_asset_path)
+
+		if not path.isdir(self.folder_src):
+			self.log.error('The asset path is not valid : \n{} '.format(self.folder_src))
+			self.report({'ERROR	'}, 'Lineup Maker : The asset path is not valid')
+			return {'FINISHED'}
 
 		H.set_active_collection(context, V.LM_MASTER_COLLECTION)
 		if context.scene.lm_asset_collection is None:
-			asset_collection, _ = H.create_asset_collection(context, V.LM_ASSET_COLLECTION)
+			self.asset_collection, _ = H.create_asset_collection(context, V.LM_ASSET_COLLECTION)
 		else:
-			asset_collection = context.scene.lm_asset_collection
-		H.set_active_collection(context, asset_collection.name)
+			self.asset_collection = context.scene.lm_asset_collection
+		H.set_active_collection(context, self.asset_collection.name)
 		
-		object_list = asset_collection.objects
-
+		
 		# Store the Global View_Layer
 		if context.scene.lm_initial_view_layer  == '':
 			context.scene.lm_initial_view_layer = context.window.view_layer.name
 		else:
 			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
 
+		# Disable the Global View Layer
 		context.scene.view_layers[context.scene.lm_initial_view_layer].use = False
-
-		asset_view_layers = {}
 
 		# feed asset view layer with existing one
 		for a in context.scene.lm_asset_list:
-			asset_view_layers[a.view_layer] = H.get_layer_collection(context.view_layer.layer_collection, a.name)
-		
-		if path.isdir(folder_src):
-			if len(self.asset_name):
-				subfolders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f)) and f == self.asset_name]
-				if len(subfolders):
-					H.remove_asset(context, self.asset_name)
-				else:
-					log.warning('Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, folder_src))
-					self.report({'INFO'}, 'Lineup Maker : Import cancelled, Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, folder_src))
+			self.asset_view_layers[a.view_layer] = H.get_layer_collection(context.view_layer.layer_collection, a.name)
 
-					return {'FINISHED'}
+		# if asset_name has been defined - Import one specific asset
+		if len(self.asset_name):
+			subfolders = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f == self.asset_name]
+			if len(subfolders):
+				H.remove_asset(context, self.asset_name)
 			else:
-				subfolders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f))]
-			
-			for subfolder in subfolders:
-				bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
-				mesh_files = [path.join(subfolder, f) for f in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys()]
+				self.log.warning('Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
+				self.report({'INFO'}, 'Lineup Maker : Import cancelled, Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
 
-				if len(mesh_files) < 1:
-					continue
+				return {'FINISHED'}
 
-				json_files = [path.join(subfolder, f) for f in os.listdir(subfolder) if path.isfile(os.path.join(subfolder, f)) and path.splitext(f)[1].lower() == '.json']
-				texture_files = {}
-				mesh_names = [path.basename(path.splitext(t)[0]) for t in mesh_files]
+		# If asset_name has NOT been defined - scan all subfolders and import only the new necessary one
+		else:
+			subfolders = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
+		
+		# Import asset that have been selected before
+		for subfolder in subfolders:
+			self.import_asset(context, subfolder)
+		
+		# create View Layers for each Assets and set visibility to show only the right object in the proper viewlayer
+		for name in self.asset_view_layers.keys():
+			if name not in context.scene.view_layers:
+				bpy.ops.scene.view_layer_add()
+				context.window.view_layer.name = name
+			else:
+				context.window.view_layer = context.scene.view_layers[name]
 
-				asset_name = path.basename(subfolder)
-				pretty = '---------------------'
+			for n, _ in self.asset_view_layers.items():
+				if name != n and name != context.scene.lm_render_collection.name:
+					curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+					curr_asset_view_layer.exclude = True
 
-				for c in asset_name:
-					pretty += '-'
-
-				log.info('----------------------------------------------------------' + pretty)
-				log.info('----------------------------- Processing Asset "{}" -----------------------------'.format(path.basename(subfolder)))
-				log.info('----------------------------------------------------------' + pretty)
-
-				for m in mesh_names:
-					try:
-						texture_files[m] = [path.join(subfolder, m, t) for t in os.listdir(path.join(subfolder, m)) if path.isfile(os.path.join(subfolder, m, t)) and path.splitext(t)[1].lower() in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
-						for mesh, textures in texture_files.items():
-							log.info('{} texture files found for mesh {}'.format(len(textures), mesh))
-							for t in textures:
-								log.info(' 		{} '.format(t))
-					except FileNotFoundError as e:
-						texture_files[m] = []
-						log.warning('folder dosn\'t exist in "{}"'.format(subfolder))
-				asset_name = path.basename(subfolder)
-
-				curr_asset = A.BpyAsset(context, mesh_files, texture_files, json_files)
-
-				# To avoid import asset that doesn't match naming convention
-				skip = False
-				a_nc = curr_asset.asset_naming_convention
-				kw_nc = N.NamingConvention(context, curr_asset.asset_name, context.scene.lm_asset_naming_convention)
-				keywords = '\n'
-				for keyword in a_nc['keywords']:
-					keywords += keyword + '\n'
-					if keyword not in a_nc.keys() and keyword not in kw_nc.optionnal_words:
-						skip = True
-						break
-				
-				if skip:
-					log.warning('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
-					log.warning(keywords)
-					log.store_failure('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
-					continue
-
-				# Import new asset
-				if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
-					curr_asset.import_asset()
-					H.set_active_collection(context, asset_collection.name)
-					updated = True
-					log.store_success('Asset "{}" imported successfully'.format(asset_name))
-				# Update Existing asset
-				else:
-					updated = curr_asset.update_asset()
-					H.set_active_collection(context, asset_collection.name)
-				# Assign material to meshes if any change on the asset
-				if updated:
-					first = True
-					for mesh_name in curr_asset.asset.keys():
-						
-						for mat in curr_asset.asset[mesh_name][1]:
-							try:
-								if len(curr_asset.asset[mesh_name][1].keys()) == 0:
-									log.warning('Mesh "{}" have no material applied to it \n	Applying generic material'.format(mesh_name))
-									curr_asset.feed_material(curr_asset, context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material)
-								else:
-									log.info('Applying material "{}" to mesh "{}"'.format(mat, mesh_name))
-									curr_asset.feed_material(curr_asset, context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material, curr_asset.asset[mesh_name][1][mat])
-							except KeyError as k:
-								log.warning('{}'.format(k))
-								if first:
-									log.success.pop()
-								log.store_failure('Asset "{}" failed assign material "{}" with mesh "{}" :\n{}'.format(asset_name, mat, mesh_name, k))
-								first = False
-
-				del updated
-
-				curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
-				# Store asset colection view layer
-				asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
-				context.scene.lm_asset_list[curr_asset_view_layer.name].view_layer = curr_asset_view_layer.name
-				# Hide asset in Global View Layer
-				curr_asset_view_layer.hide_viewport = True
-			
-			# create View Layers for each Assets
-			for name in asset_view_layers.keys():
-				if name not in context.scene.view_layers:
-					bpy.ops.scene.view_layer_add()
-					context.window.view_layer.name = name
-				else:
 					context.window.view_layer = context.scene.view_layers[name]
-
-				for n, _ in asset_view_layers.items():
-					if name != n and name != context.scene.lm_render_collection.name:
-						curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
-						curr_asset_view_layer.exclude = True
-
-						context.window.view_layer = context.scene.view_layers[name]
-						context.view_layer.use_pass_combined = False
-						context.view_layer.use_pass_z = False
+					context.view_layer.use_pass_combined = False
+					context.view_layer.use_pass_z = False
 
 			
 		# Set the global View_layer active
@@ -234,17 +160,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		H.renumber_assets(context)
 
-		log.info('')
-		log.info('----------------------------------------------------------')
-		log.info('----------------------------------------------------------')
-		log.info('----------------------------------------------------------')
-		log.info('')
-
-		log.info('Import/Update Completed with {} success and {} failure'.format(len(log.success),len(log.failure)))
-		for s in log.success:
-			log.info('{}'.format(s))
-		for f in log.failure:
-			log.info('{}'.format(f))
+		self.log.complete_progress_asset()
 
 		bpy.ops.scene.lm_refresh_asset_status()
 
@@ -252,6 +168,63 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		return {'FINISHED'}
 
+	def import_asset(self, context, asset_path):
+		
+		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
+
+		curr_asset = A.BpyAsset(context, asset_path)
+		asset_name = curr_asset.asset_name
+
+		self.log.init_progress_asset(asset_name)
+
+		if not curr_asset.is_valid:
+			self.log.warning('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
+			self.log.store_failure('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
+			return
+
+		# Import new asset
+		if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
+			curr_asset.import_asset()
+			H.set_active_collection(context, self.asset_collection.name)
+			updated = True
+			self.log.store_success('Asset "{}" imported successfully'.format(asset_name))
+
+		# Update Existing asset
+		else:
+			updated = curr_asset.update_asset()
+			H.set_active_collection(context, self.asset_collection.name)
+
+		# TODO : move material assignation in the import process of the asset
+		# Assign material to meshes if any change on the asset
+		if updated:
+			first = True
+			for mesh_name in curr_asset.asset.keys():
+				
+				for mat in curr_asset.asset[mesh_name][1]:
+					try:
+						if len(curr_asset.asset[mesh_name][1].keys()) == 0:
+							self.log.warning('Mesh "{}" have no material applied to it \n	Applying generic material'.format(mesh_name))
+							curr_asset.feed_material(context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material)
+						else:
+							self.log.info('Applying material "{}" to mesh "{}"'.format(mat, mesh_name))
+							curr_asset.feed_material(context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material, curr_asset.asset[mesh_name][1][mat])
+					except KeyError as k:
+						self.log.warning('{}'.format(k))
+						if first:
+							self.log.success.pop()
+						self.log.store_failure('Asset "{}" failed assign material "{}" with mesh "{}" :\n{}'.format(asset_name, mat, mesh_name, k))
+						first = False
+
+		del updated
+
+		curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
+
+		# Store asset collection view layer
+		self.asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
+		context.scene.lm_asset_list[curr_asset_view_layer.name].view_layer = curr_asset_view_layer.name
+
+		# Hide asset in Global View Layer
+		curr_asset_view_layer.hide_viewport = True
 
 class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_render_assets"
@@ -907,7 +880,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			bpy.data.objects[o.name].select_set(True)
 			context.view_layer.objects.active = o
 			export_filename = path.join(self.export_path, o.name + '.fbx')
-			bpy.ops.export_scene.fbx(filepath=export_filename, use_selection=True, bake_anim=False)
+			bpy.ops.export_scene.fbx(filepath=export_filename, use_selection=True, bake_anim=False, check_existing=False, embed_textures=False)
 
 		self.write_json(context)
 
@@ -972,7 +945,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 						textures = [n for n in nodes if n.type == 'TEX_IMAGE']
 						for t in textures:
 							channel = self.find_channel(context, node_tree, t, shader)
-							json['materials'][-1]['textures'].append({'file':path.basename(t.image.filepath), 'channel':channel})
+							json['materials'][-1]['textures'].append({'file':path.basename(bpy.path.abspath(t.image.filepath)), 'channel':channel})
 							if not len(texture_list.keys()) or o.name not in texture_list.keys():
 								texture_list[o.name] = [bpy.path.abspath(t.image.filepath)]
 							else:

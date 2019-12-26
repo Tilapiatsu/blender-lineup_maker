@@ -5,31 +5,33 @@ from . import preferences as P
 from . import naming_convention as N
 from . import material as M
 from . import logger as L
-from os import path
+from os import path, listdir
 import time
 import sys
 import re
 import json, codecs
 
 class BpyAsset(object):
-	def __init__(self, context, meshes, textures, jsons):
+	def __init__(self, context, root_folder):
 		self.log = L.Logger(context='ASSET_FORMAT')
 		self.context = context
 		self.scn = context.scene
 		self.param = V.GetParam(self.scn).param
-		self.asset_name = self.get_asset_name(meshes)
-		self.asset_root = self.get_asset_root(meshes)
-		self.meshes = meshes
-		self.textures = textures
+		self.root_folder = root_folder
+		self.asset_name = path.basename(root_folder)
 		self.texture_set = {}
-		self.jsons = jsons
 		self.imported_materials = {}
 		self.imported_textures = {}
 		
+		self._meshes = None
+		self._mesh_names = None
+		self._textures = None
+		self._jsons = None
 		self._asset_naming_convention = None
 		self._mesh_naming_convention = None
 		self._texture_naming_convention = None
 		self._json_data = None
+		self._valid = None
 
 		self.asset = None
 		self.scn_asset = None
@@ -76,7 +78,7 @@ class BpyAsset(object):
 		self.scn_asset = self.context.scene.lm_asset_list.add()
 		self.scn_asset.name = self.asset_name
 		self.scn_asset.collection = curr_asset_collection
-		self.scn_asset.asset_path = path.dirname(self.meshes[0])
+		self.scn_asset.asset_root = path.dirname(self.meshes[0])
 
 		if self.json_data is not None:
 			if name in self.json_data.keys():
@@ -241,8 +243,8 @@ class BpyAsset(object):
 	def update_texture(self):
 		pass
 		
-	def feed_material(self, asset, material, texture_set=None):
-		M.create_bsdf_material(self.context, asset, material, texture_set)
+	def feed_material(self, material, texture_set=None):
+		M.create_bsdf_material( self, material, texture_set)
 
 	def create_exposure_node(self, world):
 		# create a group
@@ -359,7 +361,9 @@ class BpyAsset(object):
 			texture_names = [path.basename(path.splitext(t)[0]) for t in textures]
 
 			texture_naming_convention = {}
-			if len(self.jsons) == 0: # There is no Json file
+
+			# There is no Json file
+			if len(self.jsons) == 0: 
 
 				for i,t in enumerate(texture_names):
 					t_naming_convention = N.NamingConvention(self.context, t, texture_convention)
@@ -474,14 +478,8 @@ class BpyAsset(object):
 		
 		return naming_convention
 
-	def get_asset_name(self, meshes):
-		return path.basename(path.dirname(meshes[0]))
-	
-	def get_asset_root(self, meshes):
-		return path.dirname(meshes[0])
-
 	def get_asset_texture_folder(self, mesh_name):
-		return path.join(self.asset_root, mesh_name)
+		return path.join(self.root_folder, mesh_name)
 
 	def get_json_data(self):
 		json_data = {}
@@ -555,7 +553,39 @@ class BpyAsset(object):
 
 	def remove_asset(self):
 		H.remove_asset(self.context, self.asset_name)
+	
+	def get_asset(self):
+		if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
+			asset = {}
+			for m in self.mesh_naming_convention:
+				texture_set = {}
+				mesh = m['file']
+
+				texture_naming_convention = self.texture_naming_convention
+
+				for t in texture_naming_convention[m['fullname']].keys():
+					if t not in texture_set.keys():
+						texture_set[t] = {}
+
+				for basename,t in texture_naming_convention[m['fullname']].items():
+
+					for channel_name in t['channels'].keys():
+						if channel_name in self.channels.keys():
+							texture_set[basename][channel_name] = {'file':t['channels'][channel_name]['file'],
+																	'linear':self.channels[channel_name]['linear'],
+																	'normal_map':self.channels[channel_name]['normal_map'],
+																	'inverted':self.channels[channel_name]['inverted']}
+
+				asset[m['fullname']] = (mesh, texture_set)
 			
+			return asset
+
+		else:
+			self.log.info('Asset "{}" is not valid'.format(self.asset_name))
+			self.log.info('		"{}"'.format(self.asset_naming_convention))
+			self.log.info('		"{}"'.format(self.mesh_naming_convention))
+			return None
+	
 
 	# Properties
 	@property
@@ -604,35 +634,63 @@ class BpyAsset(object):
 		
 		return self._json_data
 
-	def get_asset(self):
-		if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
-			asset = {}
-			for m in self.mesh_naming_convention:
-				texture_set = {}
-				mesh = m['file']
+	@property
+	def is_valid(self):
+		if self._valid is None:
+			self._valid = True
 
-				texture_naming_convention = self.texture_naming_convention
+			if len(self.meshes) < 1:
+				self._valid = False
+				self.log.error('No valid mesh file in the asset root : {}'.format(self.root_folder))
+				return self._valid
 
-				for t in texture_naming_convention[m['fullname']].keys():
-					if t not in texture_set.keys():
-						texture_set[t] = {}
+			a_nc = self.asset_naming_convention
+			kw_nc = N.NamingConvention(self.context, self.asset_name, self.context.scene.lm_asset_naming_convention)
+			keywords = '\n'
+			for keyword in a_nc['keywords']:
+				keywords += keyword + '\n'
+				if keyword not in a_nc.keys() and keyword not in kw_nc.optionnal_words:
+					self._valid = False
+					self.log.error('Invalid Keyword : {}'.format(keyword))
+					return self._valid
+		
+		return self._valid
 
-				for basename,t in texture_naming_convention[m['fullname']].items():
+	@property
+	def meshes(self):
+		if self._meshes is None:
+			self._meshes = [path.join(self.root_folder, f) for f in listdir(self.root_folder) if path.isfile(path.join(self.root_folder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys()]
+		
+		return self._meshes
+	
+	@property
+	def mesh_names(self):
+		if self._mesh_names is None:
+			self._mesh_names = [path.basename(path.splitext(t)[0]) for t in self.meshes]
+		
+		return self._mesh_names
+	
+	@property
+	def textures(self):
+		if self._textures is None:
+			self._textures = {}
+			for m in self.mesh_names:
+				try:
+					self._textures[m] = [path.join(self.root_folder, m, t) for t in listdir(path.join(self.root_folder, m)) if path.isfile(path.join(self.root_folder, m, t)) and path.splitext(t)[1].lower() in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
+					for m, textures in self._textures.items():
+						self.log.info('{} texture files found for mesh {}'.format(len(textures), m))
+						for t in textures:
+							self.log.info(' 		{} '.format(t))
+				except FileNotFoundError as e:
+					self._textures[m] = []
+					self.log.warning('folder dosn\'t exist "{}"'.format(path.join(self.root_folder, m)))
+		
+		return self._textures
 
-					for channel_name in t['channels'].keys():
-						if channel_name in self.channels.keys():
-							texture_set[basename][channel_name] = {'file':t['channels'][channel_name]['file'],
-																	'linear':self.channels[channel_name]['linear'],
-																	'normal_map':self.channels[channel_name]['normal_map'],
-																	'inverted':self.channels[channel_name]['inverted']}
-
-				asset[m['fullname']] = (mesh, texture_set)
-			
-			return asset
-
-		else:
-			self.log.info('Asset "{}" is not valid'.format(self.asset_name))
-			self.log.info('		"{}"'.format(self.asset_naming_convention))
-			self.log.info('		"{}"'.format(self.mesh_naming_convention))
-			return None
-
+	@property
+	def jsons(self):
+		if self._jsons is None:
+			self._jsons = [path.join(self.root_folder, f) for f in listdir(self.root_folder) if path.isfile(path.join(self.root_folder, f)) and path.splitext(f)[1].lower() == '.json']
+		
+		return self._jsons
+		
