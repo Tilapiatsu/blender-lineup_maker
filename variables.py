@@ -56,3 +56,9 @@ STATUS = [
         STATUS_DICT[str(Status.WIP.value)],
         STATUS_DICT[str(Status.DONE.value)]
     	]
+
+LM_DEFAULT_CHANNELS = {	'Base Color': {'linear':False, 'normal_map':False, 'inverted':False},
+						'Nomal': {'linear':True, 'normal_map':True, 'inverted':True},
+						'Roughness': {'linear':True, 'normal_map':False, 'inverted':False},
+						'Metallic': {'linear':True, 'normal_map':False, 'inverted':False},
+						'Opacity': {'linear':False, 'normal_map':False, 'inverted':False}}

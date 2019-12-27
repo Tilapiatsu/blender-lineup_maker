@@ -172,7 +172,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		
 		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 
-		curr_asset = A.BpyAsset(context, asset_path)
+		curr_asset = A.LMAsset(context, asset_path)
 		asset_name = curr_asset.asset_name
 
 		self.log.init_progress_asset(asset_name)

@@ -10,8 +10,9 @@ import time
 import sys
 import re
 import json, codecs
+from functools import wraps
 
-class BpyAsset(object):
+class LMAsset(object):
 	def __init__(self, context, root_folder):
 		self.log = L.Logger(context='ASSET_FORMAT')
 		self.context = context
@@ -32,7 +33,6 @@ class BpyAsset(object):
 		self._asset_naming_convention = None
 		self._mesh_naming_convention = None
 		self._texture_naming_convention = None
-		self._json_data = None
 		self._valid = None
 
 		self.asset = None
@@ -70,8 +70,6 @@ class BpyAsset(object):
 
 	@check_length
 	def import_mesh(self, update=False):
-		name,ext = path.splitext(path.basename(self.meshes[0]))
-
 		curr_asset_collection, _ = H.create_asset_collection(self.context, self.asset_name)
 
 		H.set_active_collection(self.context, self.asset_name)
@@ -80,86 +78,58 @@ class BpyAsset(object):
 		self.scn_asset = self.context.scene.lm_asset_list.add()
 		self.scn_asset.name = self.asset_name
 		self.scn_asset.collection = curr_asset_collection
-		self.scn_asset.asset_root = path.dirname(self.meshes[0])
-
-		if self.json_data is not None:
-			if name in self.json_data.keys():
-				if 'isWip' in self.json_data[name].keys():
-					self.scn_asset.wip = self.json_data[name]['isWip']
-				if 'triangles' in self.json_data[name].keys():
-					self.scn_asset.triangles = self.json_data[name]['triangles']
-				if 'vertices' in self.json_data[name].keys():
-					self.scn_asset.vertices = self.json_data[name]['vertices']
-				if 'hasUV2' in self.json_data[name].keys():
-					self.scn_asset.has_uv2 = self.json_data[name]['hasUV2']
-
-				if 'HDStatus' in self.json_data[name].keys():
-					try:
-						self.scn_asset.hd_status = int(self.json_data[name]['HDStatus'])
-					except ValueError as v:
-						self.scn_asset.hd_status = V.Status.NOT_SET.value
-				else:
-					self.scn_asset.hd_status = V.Status.NOT_SET.value
-
-				if 'LDStatus' in self.json_data[name].keys():
-					try:
-						self.scn_asset.ld_status = int(self.json_data[name]['LDStatus'])
-					except ValueError as v:
-						self.scn_asset.ld_status = V.Status.NOT_SET.value
-				else:
-					self.scn_asset.ld = V.Status.NOT_SET.value
-
-				if 'BakingStatus' in self.json_data[name].keys():
-					try:
-						self.scn_asset.baking_status = int(self.json_data[name]['BakingStatus'])
-					except ValueError as v:
-						self.scn_asset.baking_status = V.Status.NOT_SET.value
-				else:
-					self.scn_asset.baking_status = V.Status.NOT_SET.value
+		self.scn_asset.asset_root = path.dirname(self.meshes[0].path)
 
 		global_import_date = 0.0
 
-		for i,f in enumerate(self.meshes):
-			file = path.basename(f)
-			name,ext = path.splitext(file)
-
-			# Import asset
-			if ext.lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys():
-				# Store the list of material in the blender file before importing the mesh
-				initial_scene_materials = list(bpy.data.materials)
-
-				if update:
-					self.log.info('Updating file "{}" : {}'.format(file, time.ctime(path.getmtime(f))))
-				else:
-					self.log.info('Importing mesh "{}"'.format(name))
-				compatible_format = V.LM_COMPATIBLE_MESH_FORMAT[ext.lower()]
-				kwargs = {}
-				kwargs.update({'filepath':f})
-				kwargs.update(compatible_format[1])
-				
-				# run Import Command
-				compatible_format[0](**kwargs)
-
-				# Store the list of material in the blender file after importing the mesh
-				new_scene_materials = list(bpy.data.materials)
-				
-				# Get the imported materials
-				self.imported_materials[name] = H.get_different_items(initial_scene_materials, new_scene_materials)
-
-				self.log.info('{} new materials imported'.format(len(self.imported_materials[name])))
-				for m in self.imported_materials[name]:
-					self.log.info('		"{}"'.format(m.name))
-			else:
-				self.log.info('Skipping file "{}"\n     Incompatible format'.format(f))
+		for m in self.meshes:
+			if not m.is_valid:
+				self.log.info('Mesh "{}" dosn\'t exist or file format "{}" not compatible'.format(m.name, m.ext))
 				continue
+			
+			if m.use_json:
+				self.scn_asset.wip = m.json.is_wip
+				self.scn_asset.triangles = m.json.triangles
+				self.scn_asset.vertices = m.json.vertices
+				self.scn_asset.has_uv2 = m.json.has_uv2
 
+				self.scn_asset.hd_status = m.json.hd_status
+				self.scn_asset.ld_status = m.json.ld_status
+				self.scn_asset.baking_status = m.json.baking_status
+			
+			mesh_path = m.path
+			file = m.file
+			ext = m.ext
+			name = m.name
+
+			# Store the list of material in the blender file before importing the mesh
+			initial_scene_materials = list(bpy.data.materials)
+
+			if update:
+				self.log.info('Updating file "{}" : {}'.format(file, time.ctime(path.getmtime(mesh_path))))
+			else:
+				self.log.info('Importing mesh "{}"'.format(name))
+			
+			m.import_mesh()
+
+			# Store the list of material in the blender file after importing the mesh
+			new_scene_materials = list(bpy.data.materials)
+
+			# Get the imported materials
+			self.imported_materials[name] = H.get_different_items(initial_scene_materials, new_scene_materials)
+
+			self.log.info('{} new materials imported'.format(len(self.imported_materials[name])))
+			for m in self.imported_materials[name]:
+				self.log.info('		"{}"'.format(m.name))
+
+			# Feed scene mesh list
 			curr_mesh_list = self.scn_asset.mesh_list.add()
 			curr_mesh_list.name = name
-			curr_mesh_list.file_path = f
-			curr_mesh_list.import_date = path.getmtime(f)
-			curr_mesh_list.file_size = path.getsize(f)
+			curr_mesh_list.file_path = mesh_path
+			curr_mesh_list.import_date = path.getmtime(mesh_path)
+			curr_mesh_list.file_size = path.getsize(mesh_path)
 
-			global_import_date += path.getctime(f)
+			global_import_date += path.getctime(mesh_path)
 			
 
 			# Updating Materials
@@ -169,8 +139,6 @@ class BpyAsset(object):
 				curr_mesh_object_list.mesh = o
 
 				for m in o.material_slots:
-					# mat_name = self.scn_asset.name + '_' + m.material.name
-					# m.material.name = mat_name
 					
 					if m.material.name not in self.scn_asset.material_list:
 						material_list = self.scn_asset.material_list.add()
@@ -181,19 +149,18 @@ class BpyAsset(object):
 						material_list.name = m.material.name
 						material_list.material = m.material
 						
-
 					curr_mesh_material_list = curr_mesh_object_list.material_list.add()
 					curr_mesh_material_list.name = m.material.name
 					curr_mesh_material_list.material = m.material
-					
-					# print(m.material.name)
 
+		# Set scene import date
 		if len(self.meshes):
 			self.scn_asset.import_date = global_import_date / len(self.meshes)
 		else:
 			self.scn_asset.import_date = 0.0
+		
+		# Feed assets
 		self.asset = self.get_asset()
-		# self.param['lm_asset_list'][self.asset_name] = self.scn_asset
 	
 	@check_length
 	def update_mesh(self):
@@ -347,8 +314,7 @@ class BpyAsset(object):
 		mesh_convention = self.param['lm_mesh_naming_convention']
 		naming_convention = []
 
-		mesh_names = [path.basename(path.splitext(t)[0]) for t in self.meshes]
-		for i,m in enumerate(mesh_names):
+		for i,m in enumerate(self.mesh_names):
 			mesh_naming_convention = N.NamingConvention(self.context, m, mesh_convention, self.meshes[i])
 			naming_convention.append(mesh_naming_convention.naming_convention)
 
@@ -359,34 +325,35 @@ class BpyAsset(object):
 
 		naming_convention = {}
 
-		for mesh_name,textures in self.textures.items():
-			texture_names = [path.basename(path.splitext(t)[0]) for t in textures]
+		for m in self.meshes:
+			mesh_name = m.name
+			texture_set = m.texture_set
+			texture_names = texture_set.texture_names
 
 			texture_naming_convention = {}
 
-			# There is no Json file
-			if len(self.jsons) == 0: 
-
-				for i,t in enumerate(texture_names):
-					t_naming_convention = N.NamingConvention(self.context, t, texture_convention)
-					
+			if not m.use_json:
+				for t in texture_set:
+					t_naming_convention = N.NamingConvention(self.context, t.name, texture_convention)
+						
 					try:
 						channel = self.param['lm_texture_channels'][t_naming_convention.naming_convention['channel']].channel
 					except KeyError as k:
-						self.log.info('The channel name "{}" doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(t_naming_convention.naming_convention['channel'], t))
+						self.log.info('The channel name "{}" doesn\'t exist in the textureset naming convention \nfile skipped : {}'.format(t_naming_convention.naming_convention['channel'], t.name))
 						continue
-
+					
+					t.channel = channel
 					basename = t_naming_convention.pop_name(t_naming_convention.naming_convention['channel'])['fullname'].lower()
 
 					if basename not in texture_naming_convention.keys():
 						texture_naming_convention[basename] = t_naming_convention.naming_convention
 
-					chan = {'name':t, 'file':self.textures[mesh_name][i]}
+					chan = {'name':t.name, 'file':t.path}
 
 					# Feed scn_asset
 					texture = self.scn_asset.texture_list.add()
 					texture.channel = channel
-					texture.file_path = t
+					texture.file_path = t.path
 
 					if 'channels' in texture_naming_convention[basename].keys():
 						if len(texture_naming_convention[basename]['channels'].keys()):
@@ -396,12 +363,10 @@ class BpyAsset(object):
 					else:
 						texture_naming_convention[basename]['channels'] = {channel:chan}
 
-					t = t.replace(channel, '')
-
-			# Use Json File
+					t.name = t.name.replace(channel, '')
+			
 			else:
-				json_data = self.json_data
-				json = json_data[mesh_name]
+				json = m.json_data
 
 				for mat in json['materials']:
 
@@ -420,16 +385,6 @@ class BpyAsset(object):
 
 					if not found:
 						material_name = mat['material']
-					
-					# scene_materials = [m for m in bpy.data.materials if mat['material'] in m.name]
-					# if len(scene_materials):
-					# 	for m in scene_materials:
-					# 		if len(m.name) == len(mat['material']) + 4:
-					# 			incr = re.compile(r'[.][0-90-90-9]', re.IGNORECASE)
-					# 			incr.finditer(m.name)
-					# 	material_name = scene_materials.pop().name
-					# else:
-					# 	material_name = mat['material']
 					
 					textures = mat['textures']
 					for texture in textures:
@@ -473,9 +428,8 @@ class BpyAsset(object):
 								texture_naming_convention[material_name]['channels'] = {channel:chan}
 						else:
 							texture_naming_convention[material_name]['channels'] = {channel:chan}
-						
-						# t = t.replace(channel, '')
-		
+
+
 			naming_convention[mesh_name] = texture_naming_convention
 		
 		return naming_convention
@@ -483,35 +437,9 @@ class BpyAsset(object):
 	def get_asset_texture_folder(self, mesh_name):
 		return path.join(self.root_folder, mesh_name)
 
-	def get_json_data(self):
-		json_data = {}
-		if not len(self.jsons):
-			return None
-		
-		for j in self.jsons:
-			json_name = path.splitext(path.basename(j))[0]
-			with open(j, 'r', encoding='utf-8-sig') as json_file:  
-				data = json.load(json_file)
-				json_data[json_name] = data
-
-		return json_data
-
 	@check_asset_exist
 	def select_asset(self):
 		bpy.data.collections[self.asset_name].select_set(True)
-
-	def create_texture_basename_dict(self, mesh_name, texture_names=None):
-		if texture_names is None:
-			texture_names = [path.basename(path.splitext(t)[0]) for t in self.textures[mesh_name]]
-		
-		basename_dict = {}
-
-		for i,t in enumerate(texture_names):
-			basename = self.get_texture_basename(t)
-			if basename not in basename_dict.keys():
-				basename_dict[basename] = {}
-		
-		return basename_dict
 
 	@check_asset_exist    
 	def select_objects(self):
@@ -570,7 +498,6 @@ class BpyAsset(object):
 						texture_set[t] = {}
 
 				for basename,t in texture_naming_convention[m['fullname']].items():
-
 					for channel_name in t['channels'].keys():
 						if channel_name in self.channels.keys():
 							texture_set[basename][channel_name] = {'file':t['channels'][channel_name]['file'],
@@ -587,7 +514,19 @@ class BpyAsset(object):
 			self.log.info('		"{}"'.format(self.asset_naming_convention))
 			self.log.info('		"{}"'.format(self.mesh_naming_convention))
 			return None
-	
+
+	def get_json_data(self):
+		json_data = {}
+		if not len(self.jsons):
+			return None
+		
+		for j in self.jsons:
+			json_name = path.splitext(path.basename(j))[0]
+			with open(j, 'r', encoding='utf-8-sig') as json_file:  
+				data = json.load(json_file)
+				json_data[json_name] = data
+
+		return json_data
 
 	# Properties
 	@property
@@ -604,9 +543,12 @@ class BpyAsset(object):
 	def channels(self):
 		if self._channels is None:
 			self._channels = {}
-			for c in self.param['lm_channels']:
-				if c.name not in self._channels:
-					self._channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map, 'inverted':c.inverted}
+			if not len(self.param['lm_channels']):
+				self._channels = V.LM_DEFAULT_CHANNELS
+			else:
+				for c in self.param['lm_channels']:
+					if c.name not in self._channels:
+						self._channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map, 'inverted':c.inverted}
 
 		return self._channels
 	
@@ -630,13 +572,6 @@ class BpyAsset(object):
 			self._texture_naming_convention = self.get_texture_naming_convention()
 		
 		return self._texture_naming_convention
-
-	@property
-	def json_data(self):
-		if self._json_data is None:
-			self._json_data = self.get_json_data()
-		
-		return self._json_data
 
 	@property
 	def is_valid(self):
@@ -663,14 +598,14 @@ class BpyAsset(object):
 	@property
 	def meshes(self):
 		if self._meshes is None:
-			self._meshes = [path.join(self.root_folder, f) for f in listdir(self.root_folder) if path.isfile(path.join(self.root_folder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys()]
+			self._meshes = [LMMeshFile(path.join(self.root_folder, f)) for f in listdir(self.root_folder) if path.isfile(path.join(self.root_folder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys()]
 		
 		return self._meshes
 	
 	@property
 	def mesh_names(self):
 		if self._mesh_names is None:
-			self._mesh_names = [path.basename(path.splitext(t)[0]) for t in self.meshes]
+			self._mesh_names = [n.name for n in self.meshes]
 		
 		return self._mesh_names
 	
@@ -680,7 +615,7 @@ class BpyAsset(object):
 			self._textures = {}
 			for m in self.mesh_names:
 				try:
-					self._textures[m] = [path.join(self.root_folder, m, t) for t in listdir(path.join(self.root_folder, m)) if path.isfile(path.join(self.root_folder, m, t)) and path.splitext(t)[1].lower() in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
+					self._textures[m.name] = [path.join(self.root_folder, m.name, t) for t in listdir(path.join(self.root_folder, m.name)) if path.isfile(path.join(self.root_folder, m.name, t)) and path.splitext(t)[1].lower() in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
 					for m, textures in self._textures.items():
 						self.log.info('{} texture files found for mesh {}'.format(len(textures), m))
 						for t in textures:
@@ -691,10 +626,269 @@ class BpyAsset(object):
 		
 		return self._textures
 
+
+class LMFile(object):
+	def __init__(self, path):
+		self.log = L.Logger('LMFile')
+		self.path = path
+		self._name = None
+		self._file = None
+		self._ext = None
+		self._is_compatible_ext = None
+		self._compatible_format = None
+
 	@property
-	def jsons(self):
-		if self._jsons is None:
-			self._jsons = [path.join(self.root_folder, f) for f in listdir(self.root_folder) if path.isfile(path.join(self.root_folder, f)) and path.splitext(f)[1].lower() == '.json']
+	def name(self):
+		if self._name is None:
+			self._name = path.basename(path.splitext(self.path)[0])
+
+		return self._name
+
+	@property
+	def file(self):
+		if self._file is None:
+			self._file = path.basename(self.path)
+
+		return self._file
+
+	@property
+	def ext(self):
+		if self._ext is None:
+			self._ext = path.splitext(self.file)[1].lower()
+
+		return self._ext
+	
+	@property
+	def is_compatible_ext(self):
+		if self._is_compatible_ext is None:
+			self._is_compatible_ext = self.ext in self.compatible_formats.keys()
+
+		return self._is_compatible_ext
+	
+	@property
+	def compatible_format(self):
+		if self._compatible_format is None:
+			if self._is_compatible_ext:
+				self._compatible_format = self.compatible_formats[self.ext]
+			else:
+				self._compatible_format = False
+
+		return self._compatible_format
+
+	@property
+	def compatible_formats(self):
+		return {}
+
+
+class LMMeshFile(LMFile):
+	def __init__(self, mesh_path):
+		super(LMMeshFile, self).__init__(mesh_path)
+		self.log = L.Logger('LMMeshFile')
+		self._json = None
+		self._json_data = None
+		self._texture_set = None
+		self._texture_file_path = None
+
+	@property
+	def is_valid(self):
+		return path.isfile(self.path) and self.is_compatible_ext
+
+	@property
+	def json(self):
+		if self._json is None:
+			json = LMJson(path.join(path.dirname(self.path), path.splitext(path.basename(self.path))[0]) + '.json')
+
+			if json.is_valid:
+				self._json = json
+			else:
+				self._json = False
+
+		return self._json
+
+	@property
+	def use_json(self):
+		if not self.json:
+			return False
+		else:
+			return True
+
+	@property
+	def json_data(self):
+		if self._json_data is None:
+			if not self.use_json:
+				self._json_data = False
+			else:
+				self._json_data = self.json.json_data
 		
-		return self._jsons
+		return self._json_data
+
+	@property
+	def ext(self):
+		if self._ext is None:
+			self._ext = path.splitext(self.file)[1].lower()
 		
+		return self._ext
+
+	@property
+	def file(self):
+		if self._file is None:
+			self._file = path.basename(self.path)
+		
+		return self._file
+
+	@property
+	def compatible_formats(self):
+		return V.LM_COMPATIBLE_MESH_FORMAT
+	
+	@property
+	def texture_file_path(self):
+		if self._texture_file_path is None:
+			texture_folder = path.join(path.dirname(self.path), self.name)
+			if path.exists(texture_folder):
+				self._texture_file_path = [f for f in listdir(texture_folder) if path.splitext(f)[1] in self.compatible_formats.keys()]
+			else:
+				self._texture_file_path = [] 
+		
+		return self._texture_file_path
+		
+	@property
+	def texture_set(self):
+		if self._texture_set is None:
+			self._texture_set = LMTextureSet(self.texture_file_path)
+		
+		return self._texture_set
+
+	def import_mesh(self):
+		if not self.is_valid:
+			self.log.warning('Mesh is not valid')
+			return
+
+		kwargs = {}
+		kwargs.update({'filepath':self.path})
+		kwargs.update(self.compatible_format[1])
+		
+		# run Import Command
+		self.compatible_format[0](**kwargs)
+
+
+class LMJson(LMFile):
+	def __init__(self, json_path):
+		super(LMJson, self).__init__(json_path)
+		self.log = L.Logger('LMJson')
+		self._json_data = None
+
+	# Decorator
+	def check_status(func):
+		@wraps(func)
+		def func_wrapper(self):
+			try:
+				status = int(func(self))
+			except ValueError as v:
+				status = V.Status.NOT_SET.value
+			return status
+		return func_wrapper
+
+	# Properties
+	@property
+	def is_valid(self):
+		return path.isfile(self.path)
+	
+	@property
+	def json_data(self):
+		if self._json_data is None:
+			self._json_data = self.get_json_data()
+		
+		return self._json_data
+
+	@property
+	def is_wip(self):
+		return self.get_json_attr('isWip')
+
+	@property
+	def triangles(self):
+		return self.get_json_attr('triangles')
+
+	@property
+	def vertices(self):
+		return self.get_json_attr('vertices')
+
+	@property
+	def has_uv2(self):
+		return self.get_json_attr('hasUV2')
+
+	@property
+	@check_status
+	def hd_status(self):
+		return self.get_json_attr('HDStatus')
+
+	@property
+	@check_status
+	def ld_status(self):
+		return self.get_json_attr('LDStatus')
+	
+	@property
+	@check_status
+	def baking_status(self):
+		return self.get_json_attr('BakingStatus')
+	
+	def get_json_attr(self, attr):
+		if not self.json_data:
+			return None
+		else:
+			if attr in self.json_data:
+				return self.json_data[attr]
+			else:
+				self.log.warning('Attribute "{}" doesn\'t exist in json data'.format(attr))
+				return None
+
+	def get_json_data(self):
+		json_data = {}
+		if not self.is_valid:
+			return False
+
+		with open(self.path, 'r', encoding='utf-8-sig') as json_file:  
+			data = json.load(json_file)
+			json_data = data
+
+		return json_data
+
+
+class LMTextureFile(LMFile):
+	def __init__(self, texture_path):
+		super(LMTextureFile, self).__init__(texture_path)
+		self.log = L.Logger('LMTextureFile')
+		self._channel = None
+
+	@property
+	def channel(self):
+		return self._channel
+
+	@channel.setter
+	def channel(self, channel):
+		self._channel = channel
+
+	@property
+	def compatible_formats(self):
+		return V.LM_COMPATIBLE_TEXTURE_FORMAT
+
+	
+class LMTextureSet(object):
+	def __init__(self, texture_path_list):
+		self.log = L.Logger('LMTextureSet')
+		self.texture_path_list = texture_path_list
+		self._texture_set = None
+		self._texture_names = None
+	
+	@property
+	def texture_set(self):
+		if self._texture_set is None:
+			self._texture_set = [LMTextureFile(t) for t in self.texture_path_list]
+
+		return self._texture_set
+
+	@property
+	def texture_names(self):
+		if self._texture_names is None:
+			self._texture_names = [t.name for t in self.texture_set]
+
+		return self._texture_names
