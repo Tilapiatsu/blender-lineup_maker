@@ -184,38 +184,19 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		# Import new asset
 		if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
-			curr_asset.import_asset()
+			success, failure = curr_asset.import_asset()
 			H.set_active_collection(context, self.asset_collection.name)
-			updated = True
-			self.log.store_success('Asset "{}" imported successfully'.format(asset_name))
+
+			self.log.success += success
+			self.log.failure += failure
 
 		# Update Existing asset
 		else:
-			updated = curr_asset.update_asset()
+			success, failure = curr_asset.update_asset()
 			H.set_active_collection(context, self.asset_collection.name)
 
-		# TODO : move material assignation in the import process of the asset
-		# Assign material to meshes if any change on the asset
-		if updated:
-			first = True
-			for mesh_name in curr_asset.asset.keys():
-				
-				for mat in curr_asset.asset[mesh_name][1]:
-					try:
-						if len(curr_asset.asset[mesh_name][1].keys()) == 0:
-							self.log.warning('Mesh "{}" have no material applied to it \n	Applying generic material'.format(mesh_name))
-							curr_asset.feed_material(context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material)
-						else:
-							self.log.info('Applying material "{}" to mesh "{}"'.format(mat, mesh_name))
-							curr_asset.feed_material(context.scene.lm_asset_list[curr_asset.asset_name].material_list[mat].material, curr_asset.asset[mesh_name][1][mat])
-					except KeyError as k:
-						self.log.warning('{}'.format(k))
-						if first:
-							self.log.success.pop()
-						self.log.store_failure('Asset "{}" failed assign material "{}" with mesh "{}" :\n{}'.format(asset_name, mat, mesh_name, k))
-						first = False
-
-		del updated
+			self.log.success += success
+			self.log.failure += failure
 
 		curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
 

@@ -60,13 +60,21 @@ class LMAsset(object):
 	# Methods
 	def import_asset(self):
 		self.import_mesh()
-		self.import_texture()
+		self.feed_texture_to_material()
+
+		if not len(self.log.failure):
+			self.log.store_success('Asset "{}" imported successfully'.format(self.asset_name))
+
+		return self.log.success, self.log.failure
 	
 	def update_asset(self):
-		updated = self.update_mesh()
-		self.update_texture()
+		self.update_mesh()
+		self.feed_texture_to_material()
 
-		return updated
+		if not len(self.log.failure):
+			self.log.store_success('Asset "{}" updated successfully'.format(self.asset_name))
+
+		return self.log.success, self.log.failure
 
 	@check_length
 	def import_mesh(self, update=False):
@@ -130,7 +138,6 @@ class LMAsset(object):
 			curr_mesh_list.file_size = path.getsize(mesh_path)
 
 			global_import_date += path.getctime(mesh_path)
-			
 
 			# Updating Materials
 			for o in curr_asset_collection.objects:
@@ -200,17 +207,22 @@ class LMAsset(object):
 			self.asset = self.get_asset()
 			self.log.store_success('Asset "{}" is already up to date'.format(self.asset_name))
 			updated = False
-		
 
-	def import_texture(self):
-		# print(P.get_prefs().textureSet_albedo_keyword)
-		# print(P.get_prefs().textureSet_normal_keyword)
-		# print(P.get_prefs().textureSet_roughness_keyword)
-		# print(P.get_prefs().textureSet_metalic_keyword)
-		pass
-	
-	def update_texture(self):
-		pass
+	def feed_texture_to_material(self):
+		for mesh_name in self.asset.keys():
+			
+			for mat in self.asset[mesh_name][1]:
+				try:
+					if len(self.asset[mesh_name][1].keys()) == 0:
+						self.log.warning('Mesh "{}" have no material applied to it \n	Applying generic material'.format(mesh_name))
+						self.feed_material(self.context.scene.lm_asset_list[self.asset_name].material_list[mat].material)
+					else:
+						self.log.info('Applying material "{}" to mesh "{}"'.format(mat, mesh_name))
+						self.feed_material(self.context.scene.lm_asset_list[self.asset_name].material_list[mat].material, self.asset[mesh_name][1][mat])
+				except KeyError as k:
+					self.log.warning('{}'.format(k))
+					self.log.store_failure('Asset "{}" failed assign material "{}" with mesh "{}" :\n{}'.format(self.asset_name, mat, mesh_name, k))
+		
 		
 	def feed_material(self, material, texture_set=None):
 		M.create_bsdf_material( self, material, texture_set)
@@ -328,7 +340,6 @@ class LMAsset(object):
 		for m in self.meshes:
 			mesh_name = m.name
 			texture_set = m.texture_set
-			texture_names = texture_set.texture_names
 
 			texture_naming_convention = {}
 
