@@ -178,9 +178,9 @@ class LMAsset(object):
 
 		need_update = False
 		for f in self.meshes:
-			file_name = path.splitext(path.basename(f))[0]
-			file_time = path.getmtime(f)
-			file_size = path.getsize(f)
+			file_name = path.splitext(path.basename(f.path))[0]
+			file_time = path.getmtime(f.path)
+			file_size = path.getsize(f.path)
 			try:
 				mesh_time = curr_asset.mesh_list[file_name].import_date
 				mesh_size = curr_asset.mesh_list[file_name].file_size
@@ -893,7 +893,7 @@ class LMTextureSet(object):
 	@property
 	def texture_set(self):
 		if self._texture_set is None:
-			self._texture_set = [LMTextureFile(t) for t in self.texture_path_list]
+			self._texture_set = [LMTextureFile(t) for t in self.texture_path_list if path.isfile(t)]
 
 		return self._texture_set
 
