@@ -6,6 +6,7 @@ LM_MASTER_COLLECTION = "Master Collection"
 LM_ASSET_COLLECTION = "Assets_Collection"
 LM_COMPATIBLE_MESH_FORMAT = {".fbx":(bpy.ops.import_scene.fbx, {'filter_glob':'*.fbx;', 'axis_forward':'-Z', 'axis_up':'Y'}),
 								".obj":(bpy.ops.import_scene.obj, {'filter_glob':'*.obj;*.mtl', 'axis_forward':'-Z', 'axis_up':'Y'})}
+LM_COMPATIBLE_EXPORT_FORMAT = ['MESH']
 LM_COMPATIBLE_TEXTURE_FORMAT = {".png":(),
 									".tga":()}
 

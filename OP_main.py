@@ -825,6 +825,17 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 		self.json_data = []
 
 		if self.mode =='SELECTED':
+			if not len(context.selected_objects):
+				self.report({'ERROR'}, 'Lineup Maker : Select at least one Mesh object')
+				return {'CANCELLED'}
+			else:
+				found = False
+				for o in context.selected_objects:
+					if o.type in V.LM_COMPATIBLE_EXPORT_FORMAT:
+						found = True
+				if not found:
+					self.report({'ERROR'}, 'Lineup Maker : Select at least one Mesh object')
+					return {'CANCELLED'}
 			self.export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
 		elif self.mode == 'ASSET':
 			if not len(self.asset_name):
