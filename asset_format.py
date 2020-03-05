@@ -501,6 +501,7 @@ class LMAsset(object):
 			for m in self.mesh_naming_convention:
 				texture_set = {}
 				mesh = m['file']
+				texture_naming_convention = self.texture_naming_convention
 
 				if mesh.use_json:
 					for t in mesh.texture_set.textures:
@@ -513,8 +514,6 @@ class LMAsset(object):
 																'inverted':self.channels[t.channel]['inverted']}
 
 				else:
-					texture_naming_convention = self.texture_naming_convention
-
 					for t in texture_naming_convention[m['fullname']].keys():
 						if t not in texture_set.keys():
 							texture_set[t] = {}
@@ -931,7 +930,7 @@ class LMTextureSet(object):
 				self._textures = []
 				for m in self.json_data['materials']:
 					for t in m['textures']:
-						if t['file'] != 'null' and self.texture_root:
+						if t['file'] is not None and self.texture_root:
 							texture_path = path.join(self.texture_root, t['file'])
 							tf = LMTextureFile(texture_path)
 
