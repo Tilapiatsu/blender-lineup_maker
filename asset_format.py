@@ -768,7 +768,7 @@ class LMMeshFile(LMFile):
 		if self._texture_file_path is None:
 			texture_folder = path.join(path.dirname(self.path), self.name)
 			if path.exists(texture_folder):
-				self._texture_file_path = [f for f in listdir(texture_folder) if path.splitext(f)[1] in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
+				self._texture_file_path = [path.join(texture_folder, f) for f in listdir(texture_folder) if path.splitext(f)[1] in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
 			else:
 				self._texture_file_path = [] 
 		
@@ -917,7 +917,7 @@ class LMTextureSet(object):
 	@property
 	def texture_root(self):
 		if self._texture_root is None:
-			if len(self.texture_path_list) and path.exists(self.texture_path_list[0]):
+			if len(self.texture_path_list) and path.exists(path.join(self.texture_path_list[0])):
 				self._texture_root = path.dirname(self.texture_path_list[0])
 			else:
 				self._texture_root = False
