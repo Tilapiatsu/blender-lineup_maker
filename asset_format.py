@@ -68,11 +68,11 @@ class LMAsset(object):
 		return self.log.success, self.log.failure
 	
 	def update_asset(self):
-		self.update_mesh()
-		self.feed_texture_to_material()
+		if self.update_mesh():
+			self.feed_texture_to_material()
 
-		if not len(self.log.failure):
-			self.log.store_success('Asset "{}" updated successfully'.format(self.asset_name))
+			if not len(self.log.failure):
+				self.log.store_success('Asset "{}" updated successfully'.format(self.asset_name))
 
 		return self.log.success, self.log.failure
 
@@ -204,9 +204,12 @@ class LMAsset(object):
 			
 		else:
 			self.scn_asset = self.context.scene.lm_asset_list[self.asset_name]
-			self.asset = self.get_asset()
+			# self.asset = self.get_asset()
 			self.log.store_success('Asset "{}" is already up to date'.format(self.asset_name))
+			self.log.info('Asset "{}" is already up to date'.format(self.asset_name))
 			updated = False
+		
+		return updated
 
 	def feed_texture_to_material(self):
 		for mesh_name in self.asset.keys():
@@ -390,7 +393,7 @@ class LMAsset(object):
 								break
 							if mat['material'] in imported_mat.name:
 								material_name = imported_mat.name
-								imported_mats.remove(imported_mat)
+								# imported_mats.remove(imported_mat)
 								found = True
 								break
 
@@ -447,6 +450,14 @@ class LMAsset(object):
 
 	def get_asset_texture_folder(self, mesh_name):
 		return path.join(self.root_folder, mesh_name)
+
+	def get_imported_material_name(self, json_material):
+		for imported_mats in self.imported_materials.values():
+			for imported_mat in imported_mats:
+				if json_material in imported_mat.name:
+					return imported_mat.name
+
+		return json_material
 
 	@check_asset_exist
 	def select_asset(self):
@@ -505,10 +516,11 @@ class LMAsset(object):
 
 				if mesh.use_json:
 					for t in mesh.texture_set.textures:
+						t.imported_material = self.get_imported_material_name(t.material)
 						if t not in texture_set.keys():
-							texture_set[t.material] = {}
+							texture_set[t.imported_material] = {}
 						
-						texture_set[t.material][t.channel] = {'file':t.path,
+						texture_set[t.imported_material][t.channel] = {'file':t.path,
 																'linear':self.channels[t.channel]['linear'],
 																'normal_map':self.channels[t.channel]['normal_map'],
 																'inverted':self.channels[t.channel]['inverted']}
@@ -880,6 +892,7 @@ class LMTextureFile(LMFile):
 		super(LMTextureFile, self).__init__(texture_path)
 		self.log = L.Logger('LMTextureFile')
 		self._material = None
+		self._imported_material = None
 		self._channel = None
 
 	@property
@@ -889,6 +902,14 @@ class LMTextureFile(LMFile):
 	@material.setter
 	def material(self, material):
 		self._material = material
+
+	@property
+	def imported_material(self):
+		return self._imported_material
+
+	@imported_material.setter
+	def imported_material(self, material):
+		self._imported_material = material
 
 	@property
 	def channel(self):
