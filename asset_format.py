@@ -516,10 +516,8 @@ class LMAsset(object):
 				if mesh.use_json:
 					for mat_name, texture_set in mesh.materials.items():
 						texture_set.imported_material = self.get_imported_material_name(texture_set.material)
-						for t in texture_set.textures:
-							if t not in texture_sets.keys():
-								texture_sets[texture_set.imported_material] = {}
-							
+						texture_sets[texture_set.imported_material] = {}
+						for t in texture_set.textures:							
 							texture_sets[texture_set.imported_material][t.channel] = {'file':t.path,
 																	'linear':self.channels[t.channel]['linear'],
 																	'normal_map':self.channels[t.channel]['normal_map'],
@@ -989,10 +987,8 @@ class LMTextureSet(object):
 		if self._material is None:
 			if self.json_data:
 				for mat in self.json_data['materials']:
-					for t in mat['textures']:
-						if t['file'] not in [None, 'null'] and t['file'] in self.texture_names:
-							self._material = mat['material']
-							return self._material
+					self._material = mat['material']
+					return self._material
 			else:
 				pass
 
