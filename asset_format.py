@@ -204,7 +204,7 @@ class LMAsset(object):
 			
 		else:
 			self.scn_asset = self.context.scene.lm_asset_list[self.asset_name]
-			self.asset = self.get_asset()
+			# self.asset = self.get_asset()
 			self.log.store_success('Asset "{}" is already up to date'.format(self.asset_name))
 			self.log.info('Asset "{}" is already up to date'.format(self.asset_name))
 			updated = False
@@ -953,13 +953,13 @@ class LMJson(LMFile):
 	
 	def get_json_attr(self, attr):
 		if not self.json_data:
-			return None
+			return ''
 		else:
 			if attr in self.json_data:
 				return self.json_data[attr]
 			else:
 				self.log.warning('Attribute "{}" doesn\'t exist in json data'.format(attr))
-				return None
+				return ''
 
 	def get_json_data(self):
 		json_data = {}

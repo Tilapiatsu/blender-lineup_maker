@@ -128,9 +128,10 @@ def get_datas_from_collection(collection_name):
 				datas['actions'].add(o.animation_data.action)
 			for ms in o.material_slots:
 				datas['materials'].add(ms.material)
-				for n in ms.material.node_tree.nodes:
-					if n.type == 'TEX_IMAGE':
-						datas['images'].add(n.image)
+				if ms.material is not None:
+					for n in ms.material.node_tree.nodes:
+						if n.type == 'TEX_IMAGE':
+							datas['images'].add(n.image)
 	
 	return datas
 

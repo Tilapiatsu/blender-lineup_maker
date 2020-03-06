@@ -6,7 +6,10 @@ from . import logger as L
 def get_assets(context, name):
     H.renumber_assets(context)
     assets = context.scene.lm_asset_list
-    idx = context.scene.lm_asset_list[name].asset_index
+    if name in context.scene.lm_asset_list:
+        idx = context.scene.lm_asset_list[name].asset_index
+    else:
+        idx = 0
 
     active = assets[idx] if assets else None
 

@@ -133,7 +133,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		# Import asset that have been selected before
 		for subfolder in subfolders:
 			self.import_asset(context, subfolder)
-		
+
 		# create View Layers for each Assets and set visibility to show only the right object in the proper viewlayer
 		for name in self.asset_view_layers.keys():
 			if name not in context.scene.view_layers:
