@@ -31,7 +31,6 @@ def create_bsdf_material(asset, material, texture_set=None):
 	
 	input_indices = feed_input_indices(context, input_indices)
 
-
 	tree = material.node_tree
 	nodes = tree.nodes
 

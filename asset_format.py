@@ -216,7 +216,7 @@ class LMAsset(object):
 			
 			for mat in self.asset[mesh_name][1]:
 				try:
-					if len(self.asset[mesh_name][1].keys()) == 0:
+					if len(self.asset[mesh_name][1]) == 0:
 						self.log.warning('Mesh "{}" have no material applied to it \n	Applying generic material'.format(mesh_name))
 						self.feed_material(self.context.scene.lm_asset_list[self.asset_name].material_list[mat].material)
 					else:
@@ -342,12 +342,12 @@ class LMAsset(object):
 
 		for m in self.meshes:
 			mesh_name = m.name
-			texture_set = m.texture_set
+			texture_sets = m.texture_sets
 
 			texture_naming_convention = {}
 
 			if not m.use_json:
-				for t in texture_set:
+				for t in texture_sets:
 					t_naming_convention = N.NamingConvention(self.context, t.name, texture_convention)
 						
 					try:
@@ -510,35 +510,36 @@ class LMAsset(object):
 		if len(self.asset_naming_convention) and len(self.mesh_naming_convention):
 			asset = {}
 			for m in self.mesh_naming_convention:
-				texture_set = {}
+				texture_sets = {}
 				mesh = m['file']
-				texture_naming_convention = self.texture_naming_convention
 
 				if mesh.use_json:
-					mesh.texture_set.imported_material = self.get_imported_material_name(mesh.texture_set.material)
-					for t in mesh.texture_set.textures:
-						if t not in texture_set.keys():
-							texture_set[mesh.texture_set.imported_material] = {}
-						
-						texture_set[mesh.texture_set.imported_material][t.channel] = {'file':t.path,
-																'linear':self.channels[t.channel]['linear'],
-																'normal_map':self.channels[t.channel]['normal_map'],
-																'inverted':self.channels[t.channel]['inverted']}
+					for mat_name, texture_set in mesh.materials.items():
+						texture_set.imported_material = self.get_imported_material_name(texture_set.material)
+						for t in texture_set.textures:
+							if t not in texture_sets.keys():
+								texture_sets[texture_set.imported_material] = {}
+							
+							texture_sets[texture_set.imported_material][t.channel] = {'file':t.path,
+																	'linear':self.channels[t.channel]['linear'],
+																	'normal_map':self.channels[t.channel]['normal_map'],
+																	'inverted':self.channels[t.channel]['inverted']}
 
 				else:
+					texture_naming_convention = self.texture_naming_convention
 					for t in texture_naming_convention[m['fullname']].keys():
-						if t not in texture_set.keys():
-							texture_set[t] = {}
+						if t not in texture_sets.keys():
+							texture_sets[t] = {}
 
 					for basename,t in texture_naming_convention[m['fullname']].items():
 						for channel_name in t['channels'].keys():
 							if channel_name in self.channels.keys():
-								texture_set[basename][channel_name] = {'file':t['channels'][channel_name]['file'],
+								texture_sets[basename][channel_name] = {'file':t['channels'][channel_name]['file'],
 																		'linear':self.channels[channel_name]['linear'],
 																		'normal_map':self.channels[channel_name]['normal_map'],
 																		'inverted':self.channels[channel_name]['inverted']}
 
-				asset[m['fullname']] = (mesh, texture_set)
+				asset[m['fullname']] = (mesh, texture_sets)
 			
 			return asset
 
@@ -692,6 +693,10 @@ class LMFile(object):
 		return self._ext
 	
 	@property
+	def dirname(self):
+		return path.dirname(self.path)
+
+	@property
 	def is_compatible_ext(self):
 		if self._is_compatible_ext is None:
 			self._is_compatible_ext = self.ext in self.compatible_formats.keys()
@@ -720,7 +725,7 @@ class LMMeshFile(LMFile):
 		self._json = None
 		self._json_data = None
 		self._materials = None
-		self._texture_set = None
+		self._texture_sets = None
 		self._texture_file_path = None
 
 	@property
@@ -784,13 +789,36 @@ class LMMeshFile(LMFile):
 				self._texture_file_path = [] 
 		
 		return self._texture_file_path
-		
+	
 	@property
-	def texture_set(self):
-		if self._texture_set is None:
-			self._texture_set = LMTextureSet(self.texture_file_path, self.name, self.json_data)
-		
-		return self._texture_set
+	def texture_sets(self):
+		if self._texture_sets is None:
+			self._texture_sets = LMTextureSet(self.texture_file_path, self.name, self.json_data)
+
+		return self._texture_sets
+
+	@property
+	def materials(self):
+		if self._materials is None:
+			self._materials = {}
+			if self.use_json:
+				for mat in self.json_data['materials']:
+					texture_set_root = path.join(self.dirname, self.name)
+					if mat['material'] not in self._materials.keys():
+						self._materials[mat['material']] = []
+					
+					all_textures = [path.basename(t) for t in self.texture_file_path]
+					textures = []
+
+					for t in mat['textures']:
+						if t['file'] in all_textures:
+							textures.append(path.join(texture_set_root, t['file']))
+							
+					self._materials[mat['material']] = LMTextureSet(textures, self.name, self.json_data)
+			else:
+				pass
+
+		return self._materials
 
 	def import_mesh(self):
 		if not self.is_valid:
@@ -919,13 +947,14 @@ class LMTextureSet(object):
 		self._textures = None
 		self._texture_names = None
 	
+	def __len__(self):
+		return len(self.textures)
+
 	@property
 	def texture_root(self):
 		if self._texture_root is None:
-			if len(self.texture_path_list) and path.exists(path.join(self.texture_path_list[0])):
+			if len(self.texture_path_list) and path.exists(self.texture_path_list[0]):
 				self._texture_root = path.dirname(self.texture_path_list[0])
-			else:
-				self._texture_root = False
 	
 		return self._texture_root
 
@@ -936,7 +965,7 @@ class LMTextureSet(object):
 				self._textures = []
 				for m in self.json_data['materials']:
 					for t in m['textures']:
-						if t['file'] is not None and self.texture_root:
+						if t['file'] not in [None, 'null'] and self.texture_root is not None:
 							texture_path = path.join(self.texture_root, t['file'])
 							tf = LMTextureFile(texture_path)
 
@@ -951,7 +980,7 @@ class LMTextureSet(object):
 	@property
 	def texture_names(self):
 		if self._texture_names is None:
-			self._texture_names = [t.name for t in self.textures]
+			self._texture_names = [t.file for t in self.textures]
 
 		return self._texture_names
 
@@ -961,7 +990,7 @@ class LMTextureSet(object):
 			if self.json_data:
 				for mat in self.json_data['materials']:
 					for t in mat['textures']:
-						if t['file'] is not None and path.splitext(t['file'])[0] in self.texture_names:
+						if t['file'] not in [None, 'null'] and t['file'] in self.texture_names:
 							self._material = mat['material']
 							return self._material
 			else:
