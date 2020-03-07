@@ -456,6 +456,8 @@ class LMAsset(object):
 			for imported_mat in imported_mats:
 				if json_material and json_material in imported_mat.name:
 					return imported_mat.name
+				elif json_material and json_material[0:-4] in imported_mat.name:
+					return imported_mat.name
 
 		return json_material
 
