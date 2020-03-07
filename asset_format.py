@@ -65,16 +65,17 @@ class LMAsset(object):
 		if not len(self.log.failure):
 			self.log.store_success('Asset "{}" imported successfully'.format(self.asset_name))
 
-		return self.log.success, self.log.failure
+		return True, self.log.success, self.log.failure
 	
 	def update_asset(self):
-		if self.update_mesh():
+		updated = self.update_mesh()
+		if updated:
 			self.feed_texture_to_material()
 
 			if not len(self.log.failure):
 				self.log.store_success('Asset "{}" updated successfully'.format(self.asset_name))
 
-		return self.log.success, self.log.failure
+		return updated, self.log.success, self.log.failure
 
 	@check_length
 	def import_mesh(self, update=False):
