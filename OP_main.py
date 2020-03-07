@@ -130,28 +130,38 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		else:
 			subfolders = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
 		
+		updated_assets = []
 		# Import asset that have been selected before
 		for subfolder in subfolders:
-			self.import_asset(context, subfolder)
+			updated = self.import_asset(context, subfolder)
+
+			if updated:
+				updated_assets.append(updated)
 
 		# create View Layers for each Assets and set visibility to show only the right object in the proper viewlayer
-		for name in self.asset_view_layers.keys():
-			if name not in context.scene.view_layers:
-				bpy.ops.scene.view_layer_add()
-				context.window.view_layer.name = name
-			else:
-				context.window.view_layer = context.scene.view_layers[name]
-
-			for n, _ in self.asset_view_layers.items():
-				if name != n and name != context.scene.lm_render_collection.name:
-					curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
-					curr_asset_view_layer.exclude = True
-
-					context.window.view_layer = context.scene.view_layers[name]
+		if len(updated_assets):
+			for name in self.asset_view_layers.keys():
+				if name not in context.scene.view_layers:
+					bpy.ops.scene.view_layer_add()
+					context.window.view_layer.name = name
 					context.view_layer.use_pass_combined = False
 					context.view_layer.use_pass_z = False
+				else:
+					context.window.view_layer = context.scene.view_layers[name]
 
-			
+				if name in updated_assets:
+					for n in self.asset_view_layers.keys():
+						if name != n and name != context.scene.lm_render_collection.name:
+							curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+							curr_asset_view_layer.exclude = True
+				else:
+					for n in updated_assets:
+						if name != n and name != context.scene.lm_render_collection.name:
+							curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+							curr_asset_view_layer.exclude = True
+					
+				
+
 		# Set the global View_layer active
 		if len(self.asset_name):
 			context.window.view_layer = context.scene.view_layers[self.asset_name]
@@ -169,9 +179,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		return {'FINISHED'}
 
 	def import_asset(self, context, asset_path):
-		
-		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
-
 		curr_asset = A.LMAsset(context, asset_path)
 		asset_name = curr_asset.asset_name
 
@@ -184,7 +191,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		# Import new asset
 		if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
-			success, failure = curr_asset.import_asset()
+			updated, success, failure = curr_asset.import_asset()
 			H.set_active_collection(context, self.asset_collection.name)
 
 			self.log.success += success
@@ -192,7 +199,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		# Update Existing asset
 		else:
-			success, failure = curr_asset.update_asset()
+			updated, success, failure = curr_asset.update_asset()
 			H.set_active_collection(context, self.asset_collection.name)
 
 			self.log.success += success
@@ -200,12 +207,21 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
 
-		# Store asset collection view layer
-		self.asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
-		context.scene.lm_asset_list[curr_asset_view_layer.name].view_layer = curr_asset_view_layer.name
+		if updated:
+			# Store asset collection view layer
+			self.asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
+			context.scene.lm_asset_list[curr_asset_view_layer.name].view_layer = curr_asset_view_layer.name
 
-		# Hide asset in Global View Layer
-		curr_asset_view_layer.hide_viewport = True
+			# Hide asset in Global View Layer
+			# bpy.data.collections[asset_name].hide_viewport = True
+			curr_asset_view_layer.hide_viewport = True
+
+			# Refresh UI
+			bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
+
+			return asset_name
+		
+		return None
 
 class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_render_assets"
