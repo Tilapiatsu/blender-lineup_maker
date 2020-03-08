@@ -76,12 +76,96 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	folder_src = ''
 	asset_collection = ''
 	asset_view_layers = {}
+	import_list = []
+	updated_assets = []
 	log = None
+	_timer = None
+	stop = None
+	importing_asset = None
 
+	def post(self, context, cancelled=False):
+		# create View Layers for each Assets and set visibility to show only the right object in the proper viewlayer
+		if len(self.updated_assets):
+			for name in self.asset_view_layers.keys():
+				if name not in context.scene.view_layers:
+					bpy.ops.scene.view_layer_add()
+					context.window.view_layer.name = name
+					context.view_layer.use_pass_combined = False
+					context.view_layer.use_pass_z = False
+				else:
+					context.window.view_layer = context.scene.view_layers[name]
+
+				if name in self.updated_assets:
+					for n in self.asset_view_layers.keys():
+						if name != n and name != context.scene.lm_render_collection.name:
+							curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+							curr_asset_view_layer.exclude = True
+				else:
+					for n in self.updated_assets:
+						if name != n and name != context.scene.lm_render_collection.name:
+							curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+							curr_asset_view_layer.exclude = True
+
+		# Set the global View_layer active
+		if len(self.asset_name):
+			context.window.view_layer = context.scene.view_layers[self.asset_name]
+		else:	
+			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
+
+		H.renumber_assets(context)
+
+		self.log.complete_progress_asset()
+
+		bpy.ops.scene.lm_refresh_asset_status()
+
+		if cancelled:
+			self.end()
+			context.scene.lm_import_message = 'Import/Update Cancelled'
+			self.report({'ERROR'}, 'Lineup Maker : Import/Update Cancelled')
+			return {'CANCELLED'}
+		else:
+			self.end()
+			context.scene.lm_import_message = 'Import/Update Completed'
+			self.report({'INFO'}, 'Lineup Maker : Import/Update Completed')
+			return {'FINISHED'}
+
+	def end(self):
+		bpy.context.window_manager.event_timer_remove(self._timer)
+		self.import_list = []
+		self.updated_assets = []
+		self.importing_asset = None
+		self.stop = True
+
+	def importing(self, context, asset):
+		updated = self.import_asset(context, asset)
+
+		if updated:
+			self.updated_assets.append(updated)
+		
+		self.importing_asset = None
 
 	@classmethod
 	def poll(cls, context):
 		return context.scene.lm_render_collection and path.isdir(context.scene.lm_asset_path)
+
+	def modal(self, context, event):
+		if event.type == 'ESC':
+			self.post(context, True)
+
+		if event.type == 'TIMER':
+			if self.stop:
+				bpy.context.window_manager.event_timer_remove(self._timer)
+				return {'FINISHED'}
+			elif self.importing_asset is not None:
+				return{'PASS_THROUGH'}
+			elif self.importing_asset is None and len(self.import_list):
+				self.importing_asset = self.import_list.pop()
+				self.importing(context, self.importing_asset)
+			elif self.importing_asset is None and len(self.import_list) == 0:
+				bpy.context.window_manager.event_timer_remove(self._timer)
+				self.post(context)
+
+		return{'PASS_THROUGH'}
 
 	def execute(self, context):
 		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
@@ -117,8 +201,8 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		# if asset_name has been defined - Import one specific asset
 		if len(self.asset_name):
-			subfolders = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f == self.asset_name]
-			if len(subfolders):
+			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f == self.asset_name]
+			if len(self.import_list):
 				H.remove_asset(context, self.asset_name)
 			else:
 				self.log.warning('Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
@@ -128,55 +212,12 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		# If asset_name has NOT been defined - scan all subfolders and import only the new necessary one
 		else:
-			subfolders = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
+			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
 		
-		updated_assets = []
-		# Import asset that have been selected before
-		for subfolder in subfolders:
-			updated = self.import_asset(context, subfolder)
+		self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
+		bpy.context.window_manager.modal_handler_add(self)
 
-			if updated:
-				updated_assets.append(updated)
-
-		# create View Layers for each Assets and set visibility to show only the right object in the proper viewlayer
-		if len(updated_assets):
-			for name in self.asset_view_layers.keys():
-				if name not in context.scene.view_layers:
-					bpy.ops.scene.view_layer_add()
-					context.window.view_layer.name = name
-					context.view_layer.use_pass_combined = False
-					context.view_layer.use_pass_z = False
-				else:
-					context.window.view_layer = context.scene.view_layers[name]
-
-				if name in updated_assets:
-					for n in self.asset_view_layers.keys():
-						if name != n and name != context.scene.lm_render_collection.name:
-							curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
-							curr_asset_view_layer.exclude = True
-				else:
-					for n in updated_assets:
-						if name != n and name != context.scene.lm_render_collection.name:
-							curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
-							curr_asset_view_layer.exclude = True
-					
-				
-
-		# Set the global View_layer active
-		if len(self.asset_name):
-			context.window.view_layer = context.scene.view_layers[self.asset_name]
-		else:	
-			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
-
-		H.renumber_assets(context)
-
-		self.log.complete_progress_asset()
-
-		bpy.ops.scene.lm_refresh_asset_status()
-
-		self.report({'INFO'}, 'Lineup Maker : Import/Update Completed')
-
-		return {'FINISHED'}
+		return {"RUNNING_MODAL"}
 
 	def import_asset(self, context, asset_path):
 		curr_asset = A.LMAsset(context, asset_path)
@@ -185,6 +226,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		self.log.init_progress_asset(asset_name)
 
 		if not curr_asset.is_valid:
+			context.scene.lm_import_message = 'Skipping Asset  :  Asset {} is not valid'.format(asset_name)
 			self.log.warning('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
 			self.log.store_failure('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
 			return
@@ -196,6 +238,8 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 			self.log.success += success
 			self.log.failure += failure
+			context.scene.lm_import_message = 'Importing Asset  :  {}'.format(asset_name)
+			self.report({'INFO'}, 'Asset {} have been imported'.format(asset_name))
 
 		# Update Existing asset
 		else:
@@ -204,6 +248,13 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 			self.log.success += success
 			self.log.failure += failure
+			if updated:
+				context.scene.lm_import_message = 'Update Asset  :  {}'.format(asset_name)
+				self.report({'INFO'}, 'Asset {} have been updated'.format(asset_name))
+			else:
+				context.scene.lm_import_message = 'Skipping Asset  :  Asset {} is already Up to date'.format(asset_name)
+				self.report({'INFO'}, 'Asset {} have been skipped / is already up to date'.format(asset_name))
+			
 
 		curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
 
@@ -213,7 +264,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			context.scene.lm_asset_list[curr_asset_view_layer.name].view_layer = curr_asset_view_layer.name
 
 			# Hide asset in Global View Layer
-			# bpy.data.collections[asset_name].hide_viewport = True
 			curr_asset_view_layer.hide_viewport = True
 
 			# Refresh UI

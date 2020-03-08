@@ -45,6 +45,7 @@ class LM_PT_main(bpy.types.Panel):
             text = 'Update modified assets'
             imported = True
         b.operator("scene.lm_importassets", icon='IMPORT', text=text)
+        b.label(text=context.scene.lm_import_message)
 
         if imported:
             b = layout.box()
