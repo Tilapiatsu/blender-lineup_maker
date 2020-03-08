@@ -408,6 +408,8 @@ def register():
 
     bpy.types.Scene.lm_exported_asset_name = bpy.props.StringProperty(name="Export Name")
 
+    bpy.types.Scene.lm_import_message = bpy.props.StringProperty(name="Import Message")
+
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -461,6 +463,7 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
+    del bpy.types.Scene.lm_import_message
     del bpy.types.Scene.lm_exported_asset_name
     del bpy.types.Scene.lm_open_pdf_when_exported
     del bpy.types.Scene.lm_precomposite_frames
