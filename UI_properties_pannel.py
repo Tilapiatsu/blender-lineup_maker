@@ -46,6 +46,7 @@ class LM_PT_main(bpy.types.Panel):
             imported = True
         b.operator("scene.lm_importassets", icon='IMPORT', text=text)
         b.label(text=context.scene.lm_import_message)
+        b.label(text=context.scene.lm_import_progress)
 
         if imported:
             b = layout.box()
