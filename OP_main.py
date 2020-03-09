@@ -99,12 +99,14 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 					for n in self.asset_view_layers.keys():
 						if name != n and name != context.scene.lm_render_collection.name:
 							curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
-							curr_asset_view_layer.exclude = True
+							if curr_asset_view_layer:
+								curr_asset_view_layer.exclude = True
 				else:
 					for n in self.updated_assets:
 						if name != n and name != context.scene.lm_render_collection.name:
 							curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
-							curr_asset_view_layer.exclude = True
+							if curr_asset_view_layer:
+								curr_asset_view_layer.exclude = True
 
 		# Set the global View_layer active
 		if len(self.asset_name):
