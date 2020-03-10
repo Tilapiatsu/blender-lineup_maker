@@ -884,6 +884,12 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		self.generating_page = None
 		self.stopped = True
 		self.cancelling = False
+		self.generating_page = None
+		self.empty_toc_page_composited = False
+		self.pages_composited = False
+		self.toc_page_composited = False
+		self.pdf = None
+		self.composite = None
 		
 
 
