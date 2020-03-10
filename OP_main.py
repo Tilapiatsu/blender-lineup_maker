@@ -180,7 +180,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		updated = self.import_asset(context, asset)
 
 		self.percent = round(100 - (len(self.import_list) * 100 / self.total_assets), 2)
-		context.scene.lm_import_progress = '{} %  -  {}/{}  -  {} asset(s) updated  -  {} assets(s) skipped'.format(self.percent, self.total_assets - len(self.import_list), self.total_assets, self.updated_assets_number, self.skipped_asset_number)
+		context.scene.lm_import_progress = '{} %  -  {} / {}  -  {} asset(s) updated  -  {} assets(s) skipped'.format(self.percent, self.total_assets - len(self.import_list), self.total_assets, self.updated_assets_number, self.skipped_asset_number)
 
 		if updated:
 			self.updated_assets.append(updated)
@@ -794,7 +794,6 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		bpy.context.window_manager.modal_handler_add(self)
 
 		return {"RUNNING_MODAL"}
-
 	
 	def modal(self, context, event):
 		if event.type == 'ESC':
@@ -826,7 +825,10 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		# create empty TOC page
 		self.composite.create_empty_toc_pages(self.pdf)
 		context.scene.lm_pdf_message = 'Empty Table Of Content Created !'
+		self.report({'INFO'}, 'Empty Table Of Content Created !')
 		self.empty_toc_page_composited = True
+		# Refresh UI
+		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 
 	def generate_page(self, context, page):
 		asset = context.scene.lm_asset_list[page]
@@ -848,18 +850,27 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		self.percent = round(self.updated_page_number * 100 / self.total_page_number, 2)
 		context.scene.lm_pdf_message = 'Generating page  :  {}'.format(asset.name)
 		context.scene.lm_pdf_progress = '{} %  -  {} / {}'.format(self.percent, self.updated_page_number, self.total_page_number)
+		self.report({'INFO'}, 'Generating page  :  {}  {} / {}'.format(asset.name, self.updated_page_number, self.total_page_number))
 
 		if len(self.asset_name_list) == 0:
 			self.pages_composited = True
 		
 		self.generating_page = None
 
+		# Refresh UI
+		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
+
 	def generate_toc(self, context):
 		context.scene.lm_pdf_message = 'Generating Table Of Content !'
+		self.report({'INFO'}, 'Generating Table Of Content !')
 		self.pdf.page = 1
 		self.composite.composite_pdf_toc(self.pdf)
 		context.scene.lm_pdf_message = 'Table Of Content Generated !'
+		self.report({'INFO'}, 'Table Of Content Generated !')
 		self.toc_page_composited = True
+		
+		# Refresh UI
+		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 
 	def post(self, context, cancelled=False):
 		self.pdf.page = self.composite.curr_page
