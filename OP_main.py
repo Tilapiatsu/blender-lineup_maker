@@ -82,7 +82,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	updated_view_layers = []
 	log = None
 	_timer = None
-	stoped = None
+	stopped = None
 	importing_asset = None
 	updating_viewlayers = None
 	cancelling = False
@@ -154,12 +154,10 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			self.cancelling = True
 
 		if event.type == 'TIMER':
-			if self.stoped:
+			if self.stopped:
 				bpy.context.window_manager.event_timer_remove(self._timer)
 				return {'FINISHED'}
 			elif self.importing_asset is not None or self.updating_viewlayers is not None:
-				return{'PASS_THROUGH'}
-			elif self.updating_viewlayers:
 				return{'PASS_THROUGH'}
 			elif not self.cancelling and self.importing_asset is None and len(self.import_list):
 				self.importing_asset = self.import_list.pop()
@@ -232,6 +230,9 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
 
+		# Refresh UI
+		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
+		
 		if updated:
 			# Store asset collection view layer
 			self.asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
@@ -239,9 +240,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 			# Hide asset in Global View Layer
 			curr_asset_view_layer.hide_viewport = True
-
-			# Refresh UI
-			bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 
 			return asset_name
 		
@@ -278,7 +276,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		if len(self.view_layer_list) == 0:
 			self.post(context, self.cancelling)
 
-
 	def post(self, context, cancelled=False):
 		# Set the global View_layer active
 		if len(self.asset_name):
@@ -310,7 +307,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		self.updated_assets = []
 		self.updated_view_layers = []
 		self.importing_asset = None
-		self.stoped = True
+		self.stopped = True
 		self.updating_viewlayers = False
 		self.cancelling = False
 		
@@ -765,64 +762,129 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 
 	chapter = ''
+	cancelling = False
+	stopped = False
+	generating_page = None
+	empty_toc_page_composited = False
+	pages_composited = False
+	toc_page_composited = False
+	pdf = None
+	composite = None
+	
+	asset_name_list = []
+	percent = 0
+	total_page_number = 0
+	updated_page_number = 0
 
 	def execute(self, context):
 		bpy.ops.scene.lm_refresh_asset_status()
 
-		composite = C.LM_Composite_Image(context)
-		res = composite.composite_res
+		self.composite = C.LM_Composite_Image(context)
+		res = self.composite.composite_res
 		orientation = 'P' if res[1] < res[0] else 'L'
-		pdf = FPDF(orientation, 'pt', (res[0], res[1]))
+		self.pdf = FPDF(orientation, 'pt', (res[0], res[1]))
 		
-		asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
-		# chapter_name_dict = {}
-		# for i, asset in enumerate(asset_name_list):
-		# 	chapter_nc = N.NamingConvention(context, asset, context.scene.lm_chapter_naming_convention)
-		# 	new_name = ''
-		# 	for word in chapter_nc.naming_convention['name']:
-		# 		new_name += '_' + word
-		# 	chapter_name_dict[asset] = [new_name, i]
+		self.asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
 
-		# chapter_name_list = chapter_name_dict.values()
+		self.asset_name_list.sort()
 
-		# for i,name in enumerate(chapter_name_list):
-		# 	asset_name_list[name[1]] = name[0]
+		self.total_page_number = len(self.asset_name_list)
 
-		asset_name_list.sort()
+		self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
+		bpy.context.window_manager.modal_handler_add(self)
 
-		# create TOC
-		composite.create_empty_toc_pages(pdf)
+		return {"RUNNING_MODAL"}
 
-		for name in asset_name_list:
-			asset = context.scene.lm_asset_list[name]
-			chapter_naming_convention = N.NamingConvention(context, self.chapter, context.scene.lm_chapter_naming_convention)
-			asset_naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
+	
+	def modal(self, context, event):
+		if event.type == 'ESC':
+			self.cancelling = True
 
-			new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
+		if event.type == 'TIMER':
+			if self.stopped:
+				bpy.context.window_manager.event_timer_remove(self._timer)
+				return {'FINISHED'}
+			elif self.generating_page is not None:
+				return{'PASS_THROUGH'}
+			elif not self.cancelling and not self.empty_toc_page_composited:
+				self.generate_empty_toc(context)
+			elif not self.cancelling and self.generating_page is None and len(self.asset_name_list):
+				self.generating_page = self.asset_name_list[0]
+				self.asset_name_list = self.asset_name_list[1:]
+				self.generate_page(context, self.generating_page)
+			elif self.cancelling or (self.pages_composited and len(self.asset_name_list) == 0 and not self.toc_page_composited):
+				self.generate_toc(context)
+			elif self.toc_page_composited:
+				self.post(context, cancelled=self.cancelling)
 
-			if new_chapter:
-				pdf.add_page()
-				composite.curr_page += 1
-				composite.composite_pdf_chapter(pdf, self.chapter)
+		return{'PASS_THROUGH'}
 
-			pdf.add_page()
-			composite.curr_page += 1
-			composite.composite_pdf_asset_info(pdf, asset.name)
+	def generate_empty_toc(self, context):
+		# create empty TOC page
+		self.composite.create_empty_toc_pages(self.pdf)
+		context.scene.lm_pdf_message = 'Empty Table Of Content Created !'
+		self.empty_toc_page_composited = True
+
+	def generate_page(self, context, page):
+		asset = context.scene.lm_asset_list[page]
+		chapter_naming_convention = N.NamingConvention(context, self.chapter, context.scene.lm_chapter_naming_convention)
+		asset_naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
+
+		new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
+
+		if new_chapter:
+			self.pdf.add_page()
+			self.composite.curr_page += 1
+			self.composite.composite_pdf_chapter(self.pdf, self.chapter)
+
+		self.pdf.add_page()
+		self.composite.curr_page += 1
+		self.composite.composite_pdf_asset_info(self.pdf, asset.name)
+
+		self.updated_page_number += 1
+		self.percent = round(self.updated_page_number * 100 / self.total_page_number, 2)
+		context.scene.lm_pdf_message = 'Generating page  :  {}'.format(asset.name)
+		context.scene.lm_pdf_progress = '{} %  -  {} / {}'.format(self.percent, self.updated_page_number, self.total_page_number)
+
+		if len(self.asset_name_list) == 0:
+			self.pages_composited = True
 		
-		pdf.page = 1
-		composite.composite_pdf_toc(pdf)
+		self.generating_page = None
 
-		pdf.page = composite.curr_page
+	def generate_toc(self, context):
+		context.scene.lm_pdf_message = 'Generating Table Of Content !'
+		self.pdf.page = 1
+		self.composite.composite_pdf_toc(self.pdf)
+		context.scene.lm_pdf_message = 'Table Of Content Generated !'
+		self.toc_page_composited = True
+
+	def post(self, context, cancelled=False):
+		self.pdf.page = self.composite.curr_page
 		
 		pdf_file = path.join(context.scene.lm_render_path, 'lineup.pdf')
-		pdf.output(pdf_file)
-
-		self.report({'INFO'}, 'Lineup Maker : PDF File exported correctly : "{}"'.format(pdf_file))
+		self.pdf.output(pdf_file)
 
 		if context.scene.lm_open_pdf_when_exported:
 			os.system("start " + pdf_file)
 
-		return {'FINISHED'}
+		if cancelled:
+			self.end()
+			context.scene.lm_pdf_message = 'PDF Export Cancelled'
+			self.report({'ERROR'}, 'Lineup Maker : PDF Export Cancelled')
+			return {'CANCELLED'}
+		else:
+			self.end()
+			context.scene.lm_pdf_message = 'PDF Export Completed'
+			self.report({'INFO'}, 'Lineup Maker : PDF Export Completed')
+			return {'FINISHED'}
+
+	def end(self):
+		bpy.context.window_manager.event_timer_remove(self._timer)
+		self.asset_name_list = []
+		self.generating_page = None
+		self.stopped = True
+		self.cancelling = False
+		
 
 
 class LM_OP_RefreshAssetStatus(bpy.types.Operator):

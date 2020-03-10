@@ -61,6 +61,8 @@ class LM_PT_main(bpy.types.Panel):
             b = layout.box()
             b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
             b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
+            b.label(text=context.scene.lm_pdf_message)
+            b.label(text=context.scene.lm_pdf_progress)
 
 
 class LM_PT_CompositLayout(bpy.types.Panel):          
