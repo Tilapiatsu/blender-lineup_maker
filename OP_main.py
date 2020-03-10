@@ -806,13 +806,16 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 				return {'FINISHED'}
 			elif self.generating_page is not None:
 				return{'PASS_THROUGH'}
-			elif not self.cancelling and not self.empty_toc_page_composited:
+			elif self.cancelling:
+				context.scene.lm_pdf_message = 'PDF Export Cancelled !'
+				self.end()
+			elif not self.empty_toc_page_composited:
 				self.generate_empty_toc(context)
-			elif not self.cancelling and self.generating_page is None and len(self.asset_name_list):
+			elif self.generating_page is None and len(self.asset_name_list):
 				self.generating_page = self.asset_name_list[0]
 				self.asset_name_list = self.asset_name_list[1:]
 				self.generate_page(context, self.generating_page)
-			elif self.cancelling or (self.pages_composited and len(self.asset_name_list) == 0 and not self.toc_page_composited):
+			elif self.pages_composited and len(self.asset_name_list) == 0 and not self.toc_page_composited:
 				self.generate_toc(context)
 			elif self.toc_page_composited:
 				self.post(context, cancelled=self.cancelling)
@@ -879,7 +882,6 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 			return {'FINISHED'}
 
 	def end(self):
-		bpy.context.window_manager.event_timer_remove(self._timer)
 		self.asset_name_list = []
 		self.generating_page = None
 		self.stopped = True
