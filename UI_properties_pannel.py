@@ -65,7 +65,7 @@ class LM_PT_main(bpy.types.Panel):
             b.label(text=context.scene.lm_pdf_progress)
 
 
-class LM_PT_CompositLayout(bpy.types.Panel):          
+class LM_PT_CompositLayout(bpy.types.Panel):
     bl_label = "Composite Layout"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"

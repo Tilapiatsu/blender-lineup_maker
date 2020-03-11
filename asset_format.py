@@ -227,7 +227,6 @@ class LMAsset(object):
 					self.log.warning('{}'.format(k))
 					self.log.store_failure('Asset "{}" failed assign material "{}" with mesh "{}" :\n{}'.format(self.asset_name, mat, mesh_name, k))
 		
-		
 	def feed_material(self, material, texture_set=None):
 		M.create_bsdf_material( self, material, texture_set)
 
@@ -453,12 +452,17 @@ class LMAsset(object):
 		return path.join(self.root_folder, mesh_name)
 
 	def get_imported_material_name(self, json_material):
-		for imported_mats in self.imported_materials.values():
+		for mesh_name, imported_mats in self.imported_materials.items():
+			i = 0
 			for imported_mat in imported_mats:
 				if json_material and json_material in imported_mat.name:
+					del self.imported_materials[mesh_name][i]
 					return imported_mat.name
 				elif json_material and json_material[0:-4] in imported_mat.name:
+					del self.imported_materials[mesh_name][i]
 					return imported_mat.name
+				
+				i += 1
 
 		return json_material
 
@@ -521,7 +525,7 @@ class LMAsset(object):
 					texture_set.material = mat_name
 					texture_set.imported_material = self.get_imported_material_name(mat_name)
 					texture_sets[texture_set.imported_material] = {}
-					for t in texture_set.textures:							
+					for t in texture_set.textures:
 						texture_sets[texture_set.imported_material][t.channel] = {'file':t.path,
 																'linear':self.channels[t.channel]['linear'],
 																'normal_map':self.channels[t.channel]['normal_map'],
@@ -548,7 +552,7 @@ class LMAsset(object):
 					self.log.info('		"{}"'.format(self.mesh_naming_convention))
 					return None
 
-			asset[mesh.asset_name] = (mesh, texture_sets)
+			asset[mesh.name] = (mesh, texture_sets)
 
 		return asset
 	
@@ -769,6 +773,7 @@ class LMMeshFile(LMFile):
 		self._materials = None
 		self._asset_root = None
 		self._asset_name = None
+		self._mesh_name = None
 		self._texture_root = None
 		self._texture_names = None
 		self._texture_file_path = None
