@@ -12,13 +12,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
-#   - Normal Map isn't exported correctly in Export Selected Asset
+#   - Export/ Import Queue
+#   - Rename Asset that rename the disk
+#   - Backup assets to avoid loss ?
 #   - Need to better sort Chapters by name
-#   - Need to fix the delete asset command
-#       - Need to store objects, images and actions in the asset to be able to remove them properly after
-#       - bpy.data.objects
-#       - bpy.data.images
-#       - bpy.data.actions
 #   - Compositing method
 #       - None
 #       - Solid --> Use lm_content_background_color
