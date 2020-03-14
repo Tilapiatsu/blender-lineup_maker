@@ -71,6 +71,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_label = "Lineup Maker: Import all assets from source folder"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 
 	folder_src = ''
@@ -128,19 +129,24 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			self.asset_view_layers[a.view_layer] = H.get_layer_collection(context.view_layer.layer_collection, a.name)
 
 		# if asset_name has been defined - Import one specific asset
-		if len(self.asset_name):
-			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f == self.asset_name]
-			if len(self.import_list):
-				H.remove_asset(context, self.asset_name)
-			else:
-				self.log.warning('Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
-				self.report({'INFO'}, 'Lineup Maker : Import cancelled, Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
+		if self.mode == "ASSET":
+			if len(self.asset_name):
+				self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f == self.asset_name]
+				if len(self.import_list):
+					H.remove_asset(context, self.asset_name)
+				else:
+					self.log.warning('Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
+					self.report({'INFO'}, 'Lineup Maker : Import cancelled, Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
 
-				return {'FINISHED'}
+					return {'FINISHED'}
 
 		# If asset_name has NOT been defined - scan all subfolders and import only the new necessary one
-		else:
+		elif self.mode == "ALL":
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
+		
+		elif self.mode == "QUEUE":
+			queue_asset_name = [a.name for a in context.scene.lm_render_queue]
+			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in queue_asset_name]
 		
 		self.total_assets = len(self.import_list)
 
@@ -997,16 +1003,14 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 
 	export_path = ''
-	mode : bpy.props.EnumProperty(items=[("SELECTED", "Selected", ""), ("ASSET", "Asset", "")])
+	mode : bpy.props.EnumProperty(items=[("SELECTED", "Selected", ""), ("ASSET", "Asset", ""), ("QUEUE", "Queue", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
-
-	# @classmethod
-	# def poll(cls, context):
-	# 	if self.mode =='SELECTED':
-	# 		object_types = [o.type for o in context.selected_objects]
-	# 		return len(object_types) and 'MESH' in object_types and len(context.scene.lm_exported_asset_name)
-	# 	elif self.mode == 'ASSET':
-	# 		return len(self.asset_name)
+	cancelling = False
+	stopped = False
+	exporting_asset = None
+	export_list = []
+	percent = 0
+	total_assets = 0
 
 	def execute(self, context):
 		log = L.Logger(context='EXPORT_ASSETS')
@@ -1027,6 +1031,9 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 					self.report({'ERROR'}, 'Lineup Maker : Select at least one Mesh object')
 					return {'CANCELLED'}
 			self.export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
+			self.asset_name = context.scene.lm_exported_asset_name
+			self.export_asset(context)
+
 		elif self.mode == 'ASSET':
 			if not len(self.asset_name):
 				log.warning('Asset Name is not defined. Export aboard')
@@ -1039,6 +1046,71 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			self.export_path = path.join(context.scene.lm_asset_path, self.asset_name)
 
 			H.select_asset(context, self.asset_name)
+
+			self.export_asset(context)
+
+		elif self.mode == "QUEUE":
+			if not len(context.scene.lm_render_queue):
+				log.warning('Render Queue is empty, add asset to the queue first.')
+				return {'FINISHED'}
+			
+			self.export_list = [a.name for a in context.scene.lm_render_queue]
+			self.total_assets = len(self.export_list)
+			self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
+			bpy.context.window_manager.modal_handler_add(self)
+
+			return {"RUNNING_MODAL"}
+		
+		if self.mode not in ["QUEUE"]:
+			bpy.ops.scene.lm_openfolder(folder_path=self.export_path)
+
+		
+		return {'FINISHED'}
+	
+	def modal(self, context, event):
+		if event.type == 'ESC':
+			self.cancelling = True
+
+		if event.type == 'TIMER':
+			if self.stopped:
+				bpy.context.window_manager.event_timer_remove(self._timer)
+				self.report({'INFO'}, 'Lineup Maker : Export complete')
+				return {'FINISHED'}
+			elif self.exporting_asset is not None:
+				return{'PASS_THROUGH'}
+			elif not self.cancelling and self.exporting_asset is None and len(self.export_list):
+				self.exporting_asset = self.export_list.pop()
+				self.asset_name = self.exporting_asset
+
+				self.percent = round(100 - len(self.export_list) * 100 / self.total_assets, 2)
+				context.scene.lm_queue_progress = '{} %  -  {} / {}'.format(self.percent, self.total_assets - len(self.export_list), self.total_assets)
+				context.scene.lm_queue_message = 'Exporting {}'.format(self.asset_name)
+
+				context.window.view_layer = context.scene.view_layers[self.asset_name]
+				self.export_path = path.join(context.scene.lm_asset_path, self.exporting_asset)
+				H.select_asset(context, self.exporting_asset)
+
+				self.export_asset(context)
+
+		return{'PASS_THROUGH'}
+	
+	def post(self, context):
+		self.json_data = []
+		self.exporting_asset = None
+		if not len(self.export_list):
+			self.end()
+
+	def end(self):
+		self.cancelling = False
+		self.stopped = True
+		self.exporting_asset = None
+		self.export_list = []
+		self.json_data = []
+		self.total_assets = 0
+		self.percet = 0
+
+	def export_asset(self, context):
+		self.report({'INFO'}, 'Lineup Maker : Exporting {}'.format(self.asset_name))
 
 		texture_list = self.get_textures(context)
 		tmpdir = tempfile.mkdtemp()
@@ -1066,11 +1138,8 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 
 		self.write_json(context)
 
-		bpy.ops.scene.lm_openfolder(folder_path=self.export_path)
+		self.post(context)
 
-		
-		return {'FINISHED'}
-	
 	def copy_textures(self, context, source, destination):
 		for mesh, textures in source.items():
 			destination_path = path.join(destination, mesh)

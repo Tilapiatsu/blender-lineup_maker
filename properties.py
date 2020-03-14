@@ -195,7 +195,9 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         export.asset_name = item.name
         export.mode = 'ASSET'
 
-        row.operator('scene.lm_importassets', text='', icon='IMPORT').asset_name = item.name
+        op = row.operator('scene.lm_importassets', text='', icon='IMPORT')
+        op.asset_name = item.name
+        op.mode = "ASSET"
         row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
         
         row.separator()
@@ -213,7 +215,7 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         scn = context.scene
 
-        col = layout.column_flow(columns=2, align=True)
+        col = layout.column_flow(columns=3, align=True)
         text = item.name
 
         row = col.row(align=True)
@@ -228,8 +230,10 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
         c = col.row(align=True)
         c.alignment='LEFT'
         row.label(text='{}'.format(item.name))
-        c.label(text='              ')
-        c.label(text='{}'.format(item.render_camera), icon='CAMERA_DATA')
+
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        row.label(text='{}'.format(item.render_camera), icon='CAMERA_DATA')
 
 
         row = col.row(align=True)
@@ -250,7 +254,9 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
         export.asset_name = item.name
         export.mode = 'ASSET'
         
-        row.operator('scene.lm_importassets', text='', icon='IMPORT').asset_name = item.name
+        op = row.operator('scene.lm_importassets', text='', icon='IMPORT')
+        op.asset_name = item.name
+        op.mode = "ASSET"
         row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
         
         row.separator()

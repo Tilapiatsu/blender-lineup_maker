@@ -44,7 +44,7 @@ class LM_PT_main(bpy.types.Panel):
         else:
             text = 'Update modified assets'
             imported = True
-        b.operator("scene.lm_importassets", icon='IMPORT', text=text)
+        b.operator("scene.lm_importassets", icon='IMPORT', text=text).mode = "ALL"
         b.label(text=context.scene.lm_import_message)
         b.label(text=context.scene.lm_import_progress)
 
@@ -401,9 +401,12 @@ class LM_PT_RenderQueue(bpy.types.Panel):
 
 
         row.separator()
-        b.label(text='Render Queue')
         row = b.row()
-        rows = 20 if len(scn.lm_render_queue) > 10 else len(scn.lm_render_queue) * 2 + 1
+        row.label(text='Render Queue')
+        row.label(text='{}'.format(scn.lm_queue_message))
+        row.label(text='{}'.format(scn.lm_queue_progress))
+        row = b.row()
+        rows = 11 if len(scn.lm_render_queue) > 10 else len(scn.lm_render_queue) + 1
         row.template_list('LM_UL_asset_list_RenderQueue', '', scn, 'lm_render_queue', scn, 'lm_render_queue_idx', rows=rows)
         c = row.column(align=True)
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_UP').direction = "UP"
@@ -411,6 +414,9 @@ class LM_PT_RenderQueue(bpy.types.Panel):
 
         c.separator()
         c.operator("scene.lm_clear_asset_to_render_queue_list", text="", icon='TRASH')
+        c.separator()
+        c.operator("scene.lm_export_asset", text="", icon='IMPORT').mode = "QUEUE"
+        c.operator("scene.lm_export_asset", text="", icon='EXPORT').mode = "QUEUE"
         # c.operator("scene.lm_remove_asset_to_render", text="", icon='X')
 
         if len(scn.lm_render_queue):
