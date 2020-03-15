@@ -407,6 +407,7 @@ def register():
 
     bpy.types.Scene.lm_import_message = bpy.props.StringProperty(name="Import Message")
     bpy.types.Scene.lm_import_progress = bpy.props.StringProperty(name="Import Progress")
+    bpy.types.Scene.lm_viewlayer_progress = bpy.props.StringProperty(name="View Layer Progress")
 
     bpy.types.Scene.lm_pdf_message = bpy.props.StringProperty(name="Import Message")
     bpy.types.Scene.lm_pdf_progress = bpy.props.StringProperty(name="Import Progress")
@@ -414,8 +415,8 @@ def register():
     bpy.types.Scene.lm_queue_message = bpy.props.StringProperty(name="Queue Message")
     bpy.types.Scene.lm_queue_progress = bpy.props.StringProperty(name="Queue Progress")
 
-    bpy.types.Scene.lm_render_message = bpy.props.StringProperty(name="Queue Message")
-    bpy.types.Scene.lm_render_progress = bpy.props.StringProperty(name="Queue Progress")
+    bpy.types.Scene.lm_render_message = bpy.props.StringProperty(name="Render Message")
+    bpy.types.Scene.lm_render_progress = bpy.props.StringProperty(name="Render Progress")
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -476,6 +477,7 @@ def unregister():
     del bpy.types.Scene.lm_queue_progress 
     del bpy.types.Scene.lm_pdf_message 
     del bpy.types.Scene.lm_pdf_progress
+    del bpy.types.Scene.lm_viewlayer_progress
     del bpy.types.Scene.lm_import_progress
     del bpy.types.Scene.lm_import_message
     del bpy.types.Scene.lm_exported_asset_name

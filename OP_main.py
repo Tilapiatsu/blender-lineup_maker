@@ -272,11 +272,11 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 					curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
 					if curr_asset_view_layer:
 						curr_asset_view_layer.exclude = True
-		
+
 		self.updated_assets_number += 1
 		self.percent = round((self.updated_assets_number * 100 / self.total_assets), 2)
 		context.scene.lm_import_message = 'Updating ViewLayers : {}'.format(view_layer)
-		context.scene.lm_import_progress = '{} %  -  {}/{}'.format(self.percent, self.updated_assets_number, self.total_assets)
+		context.scene.lm_viewlayer_progress = '{} %  -  {}/{} layer(s) updated'.format(self.percent, self.updated_assets_number, self.total_assets)
 		self.updating_viewlayers = None
 		
 		if len(self.view_layer_list) == 0:
