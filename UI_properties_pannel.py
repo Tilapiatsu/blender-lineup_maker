@@ -436,12 +436,20 @@ class LM_PT_RenderQueue(bpy.types.Panel):
             b.prop(scn, 'lm_override_frames')
             b.prop(scn, 'lm_force_render', text='Force')
             b.operator('scene.lm_render_assets', text='Render queued list', icon='OUTPUT').render_list = 'QUEUED'
+            if len(context.scene.lm_render_message):
+                b.label(text=context.scene.lm_render_message)
+            if len(context.scene.lm_render_progress):
+                b.label(text=context.scene.lm_render_progress)
             b = layout.box()
             b.prop(scn,'lm_force_composite', text='Force Composite')
             b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'QUEUED'
             b = layout.box()
             b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
             b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
+            if len(context.scene.lm_pdf_message):
+                b.label(text=context.scene.lm_pdf_message)
+            if len(context.scene.lm_pdf_progress):
+                b.label(text=context.scene.lm_pdf_progress)
 
 
 class LM_PT_ExportAsset(bpy.types.Panel):          
