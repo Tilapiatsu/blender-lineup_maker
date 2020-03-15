@@ -55,6 +55,8 @@ class LM_PT_main(bpy.types.Panel):
             
             b.prop(scn, 'lm_force_render', text='Force Render')
             b.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets').render_list = 'ALL'
+            b.label(text=context.scene.lm_render_message)
+            b.label(text=context.scene.lm_render_progress)
             b = layout.box()
             b.prop(scn,'lm_force_composite', text='Force Composite')
             b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'ALL'

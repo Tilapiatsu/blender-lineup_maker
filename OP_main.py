@@ -334,13 +334,15 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	remaining_assets = None
 	rendering = None
 	need_render_asset = None
-	asset_number = 0
 	output_node = None
 	context = None
 	initial_view_layer = None
 	rendered_assets = []
 	render_filename = ''
 	render_path = ''
+	percent = 0
+	total_assets = 0
+	asset_number = 0
 
 	composite_filepath = ''
 
@@ -395,6 +397,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			queued_list = scene.lm_asset_list
 		elif self.render_list == 'QUEUED':
 			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue]
+
+		self.total_assets = len(queued_list)
 
 		for asset in queued_list:
 			render_path, render_filename = self.get_render_path(context, asset.name)
@@ -493,6 +497,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 			elif self.rendering is False:
 				H.clear_composite_tree(context)
+				self.percent = round(self.asset_number * 100 / self.total_assets, 2)
+				context.scene.lm_render_message = 'Rendering {}'.format(self.need_render_asset[0].name)
+				context.scene.lm_render_progress = '{} %  - Asset n° {} / {}'.format(self.percent, self.asset_number, self.total_assets)
 				self.render(context)
 
 		return {"PASS_THROUGH"}

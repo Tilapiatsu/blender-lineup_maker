@@ -414,6 +414,9 @@ def register():
     bpy.types.Scene.lm_queue_message = bpy.props.StringProperty(name="Queue Message")
     bpy.types.Scene.lm_queue_progress = bpy.props.StringProperty(name="Queue Progress")
 
+    bpy.types.Scene.lm_render_message = bpy.props.StringProperty(name="Queue Message")
+    bpy.types.Scene.lm_render_progress = bpy.props.StringProperty(name="Queue Progress")
+
     for cls in classes:
         bpy.utils.register_class(cls)
     
@@ -466,6 +469,9 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
+
+    del bpy.types.Scene.lm_render_message 
+    del bpy.types.Scene.lm_render_progress
     del bpy.types.Scene.lm_queue_message
     del bpy.types.Scene.lm_queue_progress 
     del bpy.types.Scene.lm_pdf_message 
