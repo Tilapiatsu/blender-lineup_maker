@@ -430,7 +430,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.need_render_asset = [a for a in scene.lm_asset_list if a.need_render]
 		self.remaining_assets = len(self.need_render_asset)
 		self.asset_number = 0
-		self.total_assets = len(need_render_asset)
+		self.total_assets = len(self.need_render_asset)
 		self.initial_view_layer = context.window.view_layer
 
 		self.frame_range = H.get_current_frame_range(context)
