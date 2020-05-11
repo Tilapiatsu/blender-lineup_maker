@@ -278,7 +278,7 @@ class LM_Composite_Image(LM_Composite):
 		composite_image = Image.new('RGBA', (self.composite_res[0], self.composite_res[1]), color=(self.content_background_color))
 
 		if os.path.isdir(asset.render_path):
-			files = os.listdir(asset.render_path)
+			files = [f for f in os.listdir(asset.render_path) if path.splitext(f)[1].lower() in V.LM_OUTPUT_EXTENSION.values()]
 		else:
 			files = []
 
