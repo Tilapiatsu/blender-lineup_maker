@@ -411,6 +411,7 @@ def register():
 
     bpy.types.Scene.lm_pdf_message = bpy.props.StringProperty(name="Import Message")
     bpy.types.Scene.lm_pdf_progress = bpy.props.StringProperty(name="Import Progress")
+    bpy.types.Scene.lm_pdf_export_last_rendered = bpy.props.BoolProperty(name='Export last rendered assets', default=True)
 
     bpy.types.Scene.lm_queue_message = bpy.props.StringProperty(name="Queue Message")
     bpy.types.Scene.lm_queue_progress = bpy.props.StringProperty(name="Queue Progress")
@@ -424,6 +425,7 @@ def register():
 
     bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
     bpy.types.Scene.lm_render_queue = bpy.props.CollectionProperty(type=LM_Asset_List)
+    bpy.types.Scene.lm_last_render_list = bpy.props.CollectionProperty(type=LM_Asset_List)
 
     bpy.types.Scene.lm_initial_view_layer = bpy.props.StringProperty(name="Initial ViewLayer")
 
@@ -466,6 +468,7 @@ def unregister():
     del bpy.types.Scene.lm_initial_view_layer
     del bpy.types.Scene.lm_asset_list
     del bpy.types.Scene.lm_render_queue
+    del bpy.types.Scene.lm_last_render_list
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
@@ -474,7 +477,8 @@ def unregister():
     del bpy.types.Scene.lm_render_message 
     del bpy.types.Scene.lm_render_progress
     del bpy.types.Scene.lm_queue_message
-    del bpy.types.Scene.lm_queue_progress 
+    del bpy.types.Scene.lm_queue_progress
+    del bpy.types.Scene.lm_pdf_export_last_rendered
     del bpy.types.Scene.lm_pdf_message 
     del bpy.types.Scene.lm_pdf_progress
     del bpy.types.Scene.lm_viewlayer_progress

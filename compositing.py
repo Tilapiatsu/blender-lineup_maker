@@ -51,8 +51,8 @@ class LM_Composite(object):
 		
 		return self._max_item_per_toc_page
 
-	def create_empty_toc_pages(self, pdf):
-		toc_page_count = self.get_toc_page_count()
+	def create_empty_toc_pages(self, pdf, asset_name_list):
+		toc_page_count = self.get_toc_page_count(asset_name_list)
 
 		for i in range(toc_page_count):
 			pdf.add_page()
@@ -68,7 +68,7 @@ class LM_Composite(object):
 		position = (self.composite_res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)
 		pdf.text(x=position[0], y=position[1], txt=text)
 
-	def composite_pdf_toc(self, pdf):
+	def composite_pdf_toc(self, pdf, asset_name_list):
 		print('Lineup Maker : Compositing Summary')
 		pdf.add_font(family='UbuntuMono-Bold', style='', fname=self.font_file, uni=True)
 		pdf.set_font('UbuntuMono-Bold', size=self.font_size_title)
@@ -83,7 +83,6 @@ class LM_Composite(object):
 
 		initial_pos = (self.character_size_title[0], self.character_size_title[1])
 
-		asset_name_list = [a.name for a in self.context.scene.lm_asset_list if a.rendered]
 		asset_name_list.sort()
 		
 		i = 0
@@ -200,8 +199,8 @@ class LM_Composite(object):
 	def get_max_item_per_toc_page(self):
 		return (math.floor(self.composite_res[1] / self.character_size_title[1])- 1) * 2 - 1
 
-	def get_toc_page_count(self):
-		rendered_assets = [a for a in self.context.scene.lm_asset_list if a.rendered]
+	def get_toc_page_count(self, asset_name_list):
+		rendered_assets = [a for a in self.context.scene.lm_asset_list if a.name in asset_name_list]
 		asset_count = len(rendered_assets)
 		chapter_count = 0
 		for asset in rendered_assets:

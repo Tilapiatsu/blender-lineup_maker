@@ -166,9 +166,12 @@ class LMAsset(object):
 			self.scn_asset.import_date = global_import_date / len(self.meshes)
 		else:
 			self.scn_asset.import_date = 0.0
-		
+
 		# Feed assets
 		self.asset = self.get_asset()
+
+		# Add newly imported asset to renderqueue
+		bpy.ops.scene.lm_add_asset_to_render_queue(asset_name=self.asset_name)
 	
 	@check_length
 	def update_mesh(self):

@@ -3,6 +3,7 @@ import os, time, math, subprocess, json, tempfile, re
 from fpdf import FPDF
 from os import path
 from . import variables as V
+from . import properties as P
 from . import helper as H
 from . import asset_format as A
 from . import naming_convention as N
@@ -324,7 +325,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_label = "Lineup Maker: Render all assets in the scene"
 	bl_options = {'REGISTER', 'UNDO'}
 	
-	render_list : bpy.props.EnumProperty(items=[("ALL", "All assets", ""), ("QUEUED", "Queded assets", "")])
+	render_list : bpy.props.EnumProperty(items=[("ALL", "All assets", ""), ("QUEUED", "Queded assets", ""), ("LAST_RENDERED", "Last Rendered", "")])
 
 	_timer = None
 	shots = None
@@ -342,13 +343,12 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	render_path = ''
 	percent = 0
 	total_assets = 0
-	asset_number = 0
+	asset_number = 1
 
 	composite_filepath = ''
 
 	def pre(self, d1, d2):
 		self.rendering = True
-		self.report({'INFO'}, "Lineup Maker : Rendering '{}'".format(os.path.join(self.need_render_asset[0].render_path, self.need_render_asset[0].name)))
 		
 	def post(self, d1, d2):
 		if self.remaining_frames <= 1:
@@ -397,6 +397,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			queued_list = scene.lm_asset_list
 		elif self.render_list == 'QUEUED':
 			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue]
+		elif self.render_list == 'LAST_RENDERED':
+			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_last_render_list]
 
 		for asset in queued_list:
 			render_path, render_filename = self.get_render_path(context, asset.name)
@@ -429,7 +431,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		
 		self.need_render_asset = [a for a in scene.lm_asset_list if a.need_render]
 		self.remaining_assets = len(self.need_render_asset)
-		self.asset_number = 0
+		self.asset_number = 1
 		self.total_assets = len(self.need_render_asset)
 		self.initial_view_layer = context.window.view_layer
 
@@ -453,7 +455,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	def modal(self, context, event):
 		if event.type == 'TIMER':
 
-			if True in (not self.need_render_asset, self.stop is True): 
+			if True in (not self.need_render_asset, self.stop is True):
 
 				self.unregister_render_handler()
 				bpy.context.window_manager.event_timer_remove(self._timer)
@@ -468,6 +470,16 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 					self.report({'INFO'}, "Lineup Maker : Render completed")
 					self.print_render_log()
 
+				context.scene.lm_last_render_list.clear()
+				for asset in self.rendered_assets:
+					a = context.scene.lm_last_render_list.add()
+					a.name = asset.name
+					a.composited = asset.composited
+
+				# Export lastly selected assets
+				if context.scene.lm_pdf_export_last_rendered:
+					bpy.ops.scene.lm_export_pdf(mode='LAST_RENDERED')
+				
 				self.rendered_assets = []
 				return {"FINISHED"} 
 
@@ -509,6 +521,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		asset = self.need_render_asset[0]
 
 		self.render_path, self.render_filename = self.get_render_path(context, asset.name)
+
+		self.report({'INFO'}, "Lineup Maker : Rendering '{}'".format(self.render_filename + (str(bpy.context.scene.frame_current).zfill(4)+'.png')))
 
 		# # Try to Skip Existing Files
 		# render_files = [f for f in os.listdir(self.render_path) if path.splitext(f)[1] == H.get_curr_render_extension(context) and ]
@@ -773,6 +787,8 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_label = "Lineup Maker: Export PDF in the Render Path"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	mode : bpy.props.EnumProperty(items=[("ALL", "All", ""), ("QUEUE", "Queue", ""), ("LAST_RENDERED", "Last Rendered", "")])
+
 	chapter = ''
 	cancelling = False
 	stopped = False
@@ -784,6 +800,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	composite = None
 	
 	asset_name_list = []
+	generated_pages = []
 	percent = 0
 	total_page_number = 0
 	updated_page_number = 0
@@ -795,8 +812,13 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		res = self.composite.composite_res
 		orientation = 'P' if res[1] < res[0] else 'L'
 		self.pdf = FPDF(orientation, 'pt', (res[0], res[1]))
-		
-		self.asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
+
+		if self.mode == 'ALL':
+			self.asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
+		elif self.mode == 'QUEUE':
+			self.asset_name_list = [a.name for a in context.scene.lm_render_queue if a.composited]
+		elif self.mode == 'LAST_RENDERED':
+			self.asset_name_list = [a.name for a in context.scene.lm_last_render_list]
 
 		self.asset_name_list.sort()
 
@@ -824,6 +846,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 				self.generate_empty_toc(context)
 			elif self.generating_page is None and len(self.asset_name_list):
 				self.generating_page = self.asset_name_list[0]
+				self.generated_pages.append(self.generating_page)
 				self.asset_name_list = self.asset_name_list[1:]
 				self.generate_page(context, self.generating_page)
 			elif self.pages_composited and len(self.asset_name_list) == 0 and not self.toc_page_composited:
@@ -835,7 +858,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 
 	def generate_empty_toc(self, context):
 		# create empty TOC page
-		self.composite.create_empty_toc_pages(self.pdf)
+		self.composite.create_empty_toc_pages(self.pdf, self.asset_name_list)
 		context.scene.lm_pdf_message = 'Empty Table Of Content Created !'
 		self.report({'INFO'}, 'Empty Table Of Content Created !')
 		self.empty_toc_page_composited = True
@@ -876,7 +899,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		context.scene.lm_pdf_message = 'Generating Table Of Content !'
 		self.report({'INFO'}, 'Generating Table Of Content !')
 		self.pdf.page = 1
-		self.composite.composite_pdf_toc(self.pdf)
+		self.composite.composite_pdf_toc(self.pdf, self.generated_pages)
 		context.scene.lm_pdf_message = 'Table Of Content Generated !'
 		self.report({'INFO'}, 'Table Of Content Generated !')
 		self.toc_page_composited = True
@@ -887,7 +910,12 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	def post(self, context, cancelled=False):
 		self.pdf.page = self.composite.curr_page
 		
-		pdf_file = path.join(context.scene.lm_render_path, 'lineup.pdf')
+		if self.mode== 'LAST_RENDERED':
+			export_name = 'lineup_last_rendered.pdf'
+		else:
+			export_name = 'lineup.pdf'
+
+		pdf_file = path.join(context.scene.lm_render_path, export_name)
 		self.pdf.output(pdf_file)
 
 		if context.scene.lm_open_pdf_when_exported:
