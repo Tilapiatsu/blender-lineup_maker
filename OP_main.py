@@ -1,5 +1,6 @@
 import bpy
 import os, time, math, subprocess, json, tempfile, re
+from datetime import date
 from fpdf import FPDF
 from os import path
 from . import variables as V
@@ -919,9 +920,9 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		self.pdf.page = self.composite.curr_page
 		
 		if self.mode== 'LAST_RENDERED':
-			export_name = 'lineup_last_rendered.pdf'
+			export_name = '{}_{}_lineup_preview.pdf'.format(date.today(), time.time())
 		else:
-			export_name = 'lineup.pdf'
+			export_name = '{}_{}_lineup.pdf'.format(date.today(), time.time())
 
 		pdf_file = path.join(context.scene.lm_render_path, export_name)
 		self.pdf.output(pdf_file)
