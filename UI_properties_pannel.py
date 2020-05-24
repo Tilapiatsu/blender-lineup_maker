@@ -72,7 +72,7 @@ class LM_PT_main(bpy.types.Panel):
             b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'ALL'
             b = layout.box()
             b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
-            b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
+            b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF').mode = 'ALL'
             if len(context.scene.lm_pdf_message):
                 b.label(text=context.scene.lm_pdf_message)
             if len(context.scene.lm_pdf_progress):
