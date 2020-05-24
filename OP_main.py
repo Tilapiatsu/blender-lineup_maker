@@ -364,6 +364,11 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		else:
 			self.remaining_frames -= 1
 
+	def end(self):
+		self.rendered_assets = []
+		self.need_render_asset = []
+
+
 	def cancelled(self, d1, d2):
 		self.stop = True
 
@@ -429,6 +434,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				asset.render_list.clear()
 				asset.need_render = True
 		
+		self.rendered_assets = []
 		self.need_render_asset = [a for a in scene.lm_asset_list if a.need_render]
 		self.remaining_assets = len(self.need_render_asset)
 		self.asset_number = 1
@@ -471,6 +477,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 					self.print_render_log()
 
 				context.scene.lm_last_render_list.clear()
+				
 				for asset in self.rendered_assets:
 					a = context.scene.lm_last_render_list.add()
 					a.name = asset.name
@@ -480,7 +487,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				if context.scene.lm_pdf_export_last_rendered:
 					bpy.ops.scene.lm_export_pdf(mode='LAST_RENDERED')
 				
-				self.rendered_assets = []
+				self.end()
 				return {"FINISHED"} 
 
 
@@ -812,6 +819,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		res = self.composite.composite_res
 		orientation = 'P' if res[1] < res[0] else 'L'
 		self.pdf = FPDF(orientation, 'pt', (res[0], res[1]))
+		self.generated_pages = []
 
 		if self.mode == 'ALL':
 			self.asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
@@ -918,7 +926,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		pdf_file = path.join(context.scene.lm_render_path, export_name)
 		self.pdf.output(pdf_file)
 
-		if context.scene.lm_open_pdf_when_exported:
+		if context.scene.lm_open_pdf_when_exported or self.mode == 'LAST_RENDERED':
 			os.system("start " + pdf_file)
 
 		if cancelled:
@@ -934,8 +942,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 
 	def end(self):
 		self.asset_name_list = []
-		self.generating_page = None
-		self.generated_pages = None
+		self.generated_pages = []
 		self.stopped = True
 		self.cancelling = False
 		self.generating_page = None
