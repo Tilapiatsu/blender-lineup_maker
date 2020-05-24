@@ -935,6 +935,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	def end(self):
 		self.asset_name_list = []
 		self.generating_page = None
+		self.generated_pages = None
 		self.stopped = True
 		self.cancelling = False
 		self.generating_page = None
