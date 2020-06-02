@@ -103,6 +103,7 @@ class LM_UI_RemoveAsset(bpy.types.Operator):
         idx, asset, _ = get_assets(context, self.asset_name)
 
         remove_asset(self, context, asset[self.asset_name], idx)
+        H.remove_bpy_struct_item(context.scene.lm_render_queue, self.asset_name)
 
         return {'FINISHED'}
 
