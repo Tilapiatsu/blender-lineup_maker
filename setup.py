@@ -7,6 +7,8 @@ from os import path
 def install_dependencies():
     blender_path = path.dirname(bpy.app.binary_path)
     blender_version = bpy.app.version_string.split(' ')[0]
+    blender_version = blender_version.split('.')
+    blender_version = '{}.{}'.format(blender_version[0], blender_version[1])
     blender_python_bin = path.join(blender_path, blender_version, 'python\\bin')
     blender_python_pip = path.join(blender_path, blender_version, 'python\\Scripts')
 
