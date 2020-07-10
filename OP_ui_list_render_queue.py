@@ -35,6 +35,22 @@ class LM_UI_AddAssetToRenderQueue(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+class LM_UI_AddNeedRenderToRenderQueue(bpy.types.Operator):
+    bl_idname = "scene.lm_add_need_render_to_render_queue"
+    bl_label = "Add Need render To Render Queue"
+    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Add all need render asset to render_queue"
+
+    def execute(self, context):
+        scn = context.scene
+        for a in scn.lm_asset_list:
+            if a.need_render or not a.rendered :
+                bpy.ops.scene.lm_add_asset_to_render_queue(asset_name=a.name)
+
+        return {'FINISHED'}
+
+
 class LM_UI_MoveAssetToRender(bpy.types.Operator):
     bl_idname = "scene.lm_move_asset_to_render"
     bl_label = "Move Asset To Render"

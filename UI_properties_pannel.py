@@ -412,6 +412,7 @@ class LM_PT_RenderQueue(bpy.types.Panel):
         c.operator("scene.lm_clear_asset_list", text="", icon='TRASH')
         # c.operator("scene.lm_remove_asset", text="", icon='X')
         c.separator()
+        c.operator('scene.lm_add_need_render_to_render_queue', text='', icon='SORT_ASC')
 
 
         row.separator()

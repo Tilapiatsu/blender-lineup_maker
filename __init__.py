@@ -114,6 +114,7 @@ classes = (
     LM_UL_AssetList_UIList,
     LM_UL_AssetListRQ_UIList,
     LM_UI_AddAssetToRenderQueue,
+    LM_UI_AddNeedRenderToRenderQueue,
     LM_UI_MoveAssetToRender,
     LM_UI_ClearAssetToRenderQueueList,
     LM_UI_RemoveAssetToRender,

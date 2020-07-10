@@ -279,6 +279,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		self.percent = round((self.updated_assets_number * 100 / self.total_assets), 2)
 		context.scene.lm_import_message = 'Updating ViewLayers : {}'.format(view_layer)
 		context.scene.lm_viewlayer_progress = '{} %  -  {}/{} layer(s) updated'.format(self.percent, self.updated_assets_number, self.total_assets)
+		self.log.info(context.scene.lm_import_message)
 		self.updating_viewlayers = None
 		
 		if len(self.view_layer_list) == 0:
@@ -1001,7 +1002,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 			if asset.render_date > asset.import_date:
 				if path.isdir(rendered_asset):
 					
-					rendered_files = [r for r in os.listdir(render_path)]
+					rendered_files = [r for r in os.listdir(render_path) if path.splitext(r)[1].lower() in V.LM_OUTPUT_EXTENSION.values()]
 
 					if len(rendered_files) == H.get_current_frame_range(context):
 						asset.rendered = True
