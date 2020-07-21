@@ -46,7 +46,7 @@ class LM_OP_UpdateLineup(bpy.types.Operator):
 	def modal(self, context, event):
 		if event.type == 'TIMER':
 			if not self.imported:
-				bpy.ops.scene.lm_importassets()
+				bpy.ops.scene.lm_import_assets()
 				self.imported = True
 			
 			elif not self.rendered:
@@ -69,7 +69,7 @@ class LM_OP_UpdateLineup(bpy.types.Operator):
 
 
 class LM_OP_ImportAssets(bpy.types.Operator):
-	bl_idname = "scene.lm_importassets"
+	bl_idname = "scene.lm_import_assets"
 	bl_label = "Lineup Maker: Import all assets from source folder"
 	bl_options = {'REGISTER', 'UNDO'}
 
@@ -147,7 +147,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
 		
 		elif self.mode == "QUEUE":
-			queue_asset_name = [a.name for a in context.scene.lm_render_queue]
+			queue_asset_name = [a.name for a in context.scene.lm_render_queue if a.checked]
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in queue_asset_name]
 		
 		self.total_assets = len(self.import_list)
@@ -403,7 +403,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		if self.render_list == 'ALL':
 			queued_list = scene.lm_asset_list
 		elif self.render_list == 'QUEUED':
-			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue]
+			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue if a.checked]
 		elif self.render_list == 'LAST_RENDERED':
 			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_last_render_list]
 
@@ -675,7 +675,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 		if self.composite_list == 'ALL':
 			queued_list = [a for a in scene.lm_asset_list if a.rendered]
 		elif self.composite_list == 'QUEUED':
-			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue if scene.lm_asset_list[a.name].rendered]
+			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue if a.checked and scene.lm_asset_list[a.name].rendered]
 
 		for asset in queued_list:
 
@@ -826,7 +826,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		if self.mode == 'ALL':
 			self.asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
 		elif self.mode == 'QUEUE':
-			self.asset_name_list = [a.name for a in context.scene.lm_render_queue if a.composited]
+			self.asset_name_list = [a.name for a in context.scene.lm_render_queue if a.checked and a.composited]
 		elif self.mode == 'LAST_RENDERED':
 			self.asset_name_list = [a.name for a in context.scene.lm_last_render_list]
 
@@ -1042,7 +1042,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 			return ''
 
 class LM_OP_ExportAsset(bpy.types.Operator):
-	bl_idname = "scene.lm_export_asset"
+	bl_idname = "scene.lm_export_assets"
 	bl_label = "Lineup Maker: Export Asset"
 	bl_options = {'REGISTER', 'UNDO'}
 
@@ -1098,7 +1098,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 				log.warning('Render Queue is empty, add asset to the queue first.')
 				return {'FINISHED'}
 			
-			self.export_list = [a.name for a in context.scene.lm_render_queue]
+			self.export_list = [a.name for a in context.scene.lm_render_queue if a.checked]
 			self.total_assets = len(self.export_list)
 			self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
 			bpy.context.window_manager.modal_handler_add(self)

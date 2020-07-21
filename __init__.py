@@ -118,6 +118,8 @@ classes = (
     LM_UI_MoveAssetToRender,
     LM_UI_ClearAssetToRenderQueueList,
     LM_UI_RemoveAssetToRender,
+    LM_UI_CheckAllRenderQueuedAsset,
+    LM_UI_UncheckAllRenderQueuedAsset,
     LM_UI_MoveAsset,
     LM_UI_ClearAssetList,
     LM_UI_RemoveAsset,

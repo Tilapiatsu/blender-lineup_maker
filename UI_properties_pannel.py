@@ -44,7 +44,7 @@ class LM_PT_main(bpy.types.Panel):
         else:
             text = 'Update modified assets'
             imported = True
-        b.operator("scene.lm_importassets", icon='IMPORT', text=text).mode = "ALL"
+        b.operator("scene.lm_import_assets", icon='IMPORT', text=text).mode = "ALL"
         if len(context.scene.lm_import_message):
             b.label(text=context.scene.lm_import_message)
         if len(context.scene.lm_import_progress):
@@ -424,14 +424,18 @@ class LM_PT_RenderQueue(bpy.types.Panel):
         rows = 11 if len(scn.lm_render_queue) > 10 else len(scn.lm_render_queue) + 1
         row.template_list('LM_UL_asset_list_RenderQueue', '', scn, 'lm_render_queue', scn, 'lm_render_queue_idx', rows=rows)
         c = row.column(align=True)
+        
+        c.operator('scene.lm_check_all_render_queued_asset', text='', icon='CHECKBOX_HLT')
+        c.operator('scene.lm_uncheck_all_render_queued_asset', text='', icon='CHECKBOX_DEHLT')
+        c.separator()
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_UP').direction = "UP"
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_DOWN').direction = "DOWN"
-
         c.separator()
         c.operator("scene.lm_clear_asset_to_render_queue_list", text="", icon='TRASH')
         c.separator()
-        c.operator("scene.lm_export_asset", text="", icon='IMPORT').mode = "QUEUE"
-        c.operator("scene.lm_export_asset", text="", icon='EXPORT').mode = "QUEUE"
+        c.operator("scene.lm_import_assets", text="", icon='IMPORT').mode = "QUEUE"
+        c.operator("scene.lm_export_assets", text="", icon='EXPORT').mode = "QUEUE"
+        
         # c.operator("scene.lm_remove_asset_to_render", text="", icon='X')
 
         if len(scn.lm_render_queue):
@@ -485,5 +489,5 @@ class LM_PT_ExportAsset(bpy.types.Panel):
         b.prop(scn, 'lm_exported_ld_status', text='LD Status')
         b.prop(scn, 'lm_exported_baking_status', text='Baking Status')
         if path.exists(asset_path):
-            export = b.operator('scene.lm_export_asset', text='Export Selected Asset', icon='EXPORT')
+            export = b.operator('scene.lm_export_assets', text='Export Selected Asset', icon='EXPORT')
             export.mode = 'SELECTED'
