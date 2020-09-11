@@ -200,9 +200,10 @@ def get_valid_camera(context, asset):
 	for camera_keyword in context.scene.lm_cameras:
 		match = True
 		for keyword in camera_keyword.keywords:
-			if naming_convention.naming_convention[keyword.keyword] != keyword.keyword_value.lower():
-				match = False
-				break
+			if keyword.keyword in naming_convention.naming_convention.keys():
+				if naming_convention.naming_convention[keyword.keyword] != keyword.keyword_value.lower():
+					match = False
+					break
 		
 		if match:		
 			cam = camera_keyword.camera
