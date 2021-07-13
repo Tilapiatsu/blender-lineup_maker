@@ -152,7 +152,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		
 		self.total_assets = len(self.import_list)
 
-		self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
+		self._timer = bpy.context.window_manager.event_timer_add(0.01, window=bpy.context.window)
 		bpy.context.window_manager.modal_handler_add(self)
 
 		return {"RUNNING_MODAL"}
@@ -260,18 +260,19 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			context.view_layer.use_pass_combined = False
 			context.view_layer.use_pass_z = False
 		else:
-			context.window.view_layer = context.scene.view_layers[view_layer]
+			pass
+			# context.window.view_layer = context.scene.view_layers[view_layer]
 
 		if view_layer in self.updated_assets:
 			for n in self.asset_view_layers.keys():
 				if view_layer != n and view_layer != context.scene.lm_render_collection.name:
-					curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+					curr_asset_view_layer = H.get_layer_collection(bpy.context.scene.view_layers[view_layer].layer_collection, n)
 					if curr_asset_view_layer:
 						curr_asset_view_layer.exclude = True
 		else:
 			for n in self.updated_assets:
 				if view_layer != n and view_layer != context.scene.lm_render_collection.name:
-					curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+					curr_asset_view_layer = H.get_layer_collection(bpy.context.scene.view_layers[view_layer].layer_collection, n)
 					if curr_asset_view_layer:
 						curr_asset_view_layer.exclude = True
 

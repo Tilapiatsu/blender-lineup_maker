@@ -10,4 +10,4 @@ def install_dependencies():
     if LineupMaker_dependencies_path not in sys.path: sys.path.append(LineupMaker_dependencies_path)
 
     dependencies = ['pillow', 'fpdf']
-    subprocess.check_call([bpy.app.binary_path_python, '-m', 'pip', 'install', *dependencies, '--target', LineupMaker_dependencies_path])
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', *dependencies, '--target', LineupMaker_dependencies_path])
