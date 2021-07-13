@@ -44,8 +44,14 @@ class LM_PT_main(bpy.types.Panel):
         else:
             text = 'Update modified assets'
             imported = True
-        b.operator("scene.lm_importassets", icon='IMPORT', text=text)
-        b.label(text=context.scene.lm_import_message)
+        b.operator("scene.lm_import_assets", icon='IMPORT', text=text).mode = "ALL"
+        if len(context.scene.lm_import_message):
+            b.label(text=context.scene.lm_import_message)
+        if len(context.scene.lm_import_progress):
+            b.label(text=context.scene.lm_import_progress)
+        if len(context.scene.lm_viewlayer_progress):
+            b.label(text=context.scene.lm_viewlayer_progress)
+        
 
         if imported:
             b = layout.box()
@@ -53,16 +59,27 @@ class LM_PT_main(bpy.types.Panel):
             b.prop(scn, 'lm_override_frames')
             
             b.prop(scn, 'lm_force_render', text='Force Render')
+            b.prop(scn, 'lm_pdf_export_last_rendered', text='Export Last rendered asset to pdf')
             b.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets').render_list = 'ALL'
+            b.operator("scene.lm_render_assets", icon='OUTPUT', text='Re-Render last rendered assets').render_list = 'LAST_RENDERED'
+            
+            if len(context.scene.lm_render_message):
+                b.label(text=context.scene.lm_render_message)
+            if len(context.scene.lm_render_progress):
+                b.label(text=context.scene.lm_render_progress)
             b = layout.box()
             b.prop(scn,'lm_force_composite', text='Force Composite')
             b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'ALL'
             b = layout.box()
             b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
-            b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
+            b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF').mode = 'ALL'
+            if len(context.scene.lm_pdf_message):
+                b.label(text=context.scene.lm_pdf_message)
+            if len(context.scene.lm_pdf_progress):
+                b.label(text=context.scene.lm_pdf_progress)
 
 
-class LM_PT_CompositLayout(bpy.types.Panel):          
+class LM_PT_CompositLayout(bpy.types.Panel):
     bl_label = "Composite Layout"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -395,19 +412,30 @@ class LM_PT_RenderQueue(bpy.types.Panel):
         c.operator("scene.lm_clear_asset_list", text="", icon='TRASH')
         # c.operator("scene.lm_remove_asset", text="", icon='X')
         c.separator()
+        c.operator('scene.lm_add_need_render_to_render_queue', text='', icon='SORT_ASC')
 
 
         row.separator()
-        b.label(text='Render Queue')
         row = b.row()
-        rows = 20 if len(scn.lm_render_queue) > 10 else len(scn.lm_render_queue) * 2 + 1
+        row.label(text='Render Queue')
+        row.label(text='{}'.format(scn.lm_queue_message))
+        row.label(text='{}'.format(scn.lm_queue_progress))
+        row = b.row()
+        rows = 11 if len(scn.lm_render_queue) > 10 else len(scn.lm_render_queue) + 1
         row.template_list('LM_UL_asset_list_RenderQueue', '', scn, 'lm_render_queue', scn, 'lm_render_queue_idx', rows=rows)
         c = row.column(align=True)
+        
+        c.operator('scene.lm_check_all_render_queued_asset', text='', icon='CHECKBOX_HLT')
+        c.operator('scene.lm_uncheck_all_render_queued_asset', text='', icon='CHECKBOX_DEHLT')
+        c.separator()
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_UP').direction = "UP"
         c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_DOWN').direction = "DOWN"
-
         c.separator()
         c.operator("scene.lm_clear_asset_to_render_queue_list", text="", icon='TRASH')
+        c.separator()
+        c.operator("scene.lm_import_assets", text="", icon='IMPORT').mode = "QUEUE"
+        c.operator("scene.lm_export_assets", text="", icon='EXPORT').mode = "QUEUE"
+        
         # c.operator("scene.lm_remove_asset_to_render", text="", icon='X')
 
         if len(scn.lm_render_queue):
@@ -415,13 +443,23 @@ class LM_PT_RenderQueue(bpy.types.Panel):
             b.prop(scn, 'lm_precomposite_frames')
             b.prop(scn, 'lm_override_frames')
             b.prop(scn, 'lm_force_render', text='Force')
+            b.prop(scn, 'lm_pdf_export_last_rendered', text='Export Last rendered asset to pdf')
             b.operator('scene.lm_render_assets', text='Render queued list', icon='OUTPUT').render_list = 'QUEUED'
+            b.operator("scene.lm_render_assets", icon='OUTPUT', text='Re-Render last rendered assets').render_list = 'LAST_RENDERED'
+            if len(context.scene.lm_render_message):
+                b.label(text=context.scene.lm_render_message)
+            if len(context.scene.lm_render_progress):
+                b.label(text=context.scene.lm_render_progress)
             b = layout.box()
             b.prop(scn,'lm_force_composite', text='Force Composite')
             b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'QUEUED'
             b = layout.box()
             b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
-            b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF')
+            b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF').mode = "QUEUE"
+            if len(context.scene.lm_pdf_message):
+                b.label(text=context.scene.lm_pdf_message)
+            if len(context.scene.lm_pdf_progress):
+                b.label(text=context.scene.lm_pdf_progress)
 
 
 class LM_PT_ExportAsset(bpy.types.Panel):          
@@ -451,5 +489,5 @@ class LM_PT_ExportAsset(bpy.types.Panel):
         b.prop(scn, 'lm_exported_ld_status', text='LD Status')
         b.prop(scn, 'lm_exported_baking_status', text='Baking Status')
         if path.exists(asset_path):
-            export = b.operator('scene.lm_export_asset', text='Export Selected Asset', icon='EXPORT')
+            export = b.operator('scene.lm_export_assets', text='Export Selected Asset', icon='EXPORT')
             export.mode = 'SELECTED'

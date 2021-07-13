@@ -30,10 +30,27 @@ class LM_UI_AddAssetToRenderQueue(bpy.types.Operator):
             c.final_composite_filepath = scn.lm_asset_list[self.asset_name].final_composite_filepath
             c.asset_path = scn.lm_asset_list[self.asset_name].asset_path
             c.render_camera = scn.lm_asset_list[self.asset_name].render_camera
+            c.checked = True
             
             scn.lm_render_queue_idx = len(scn.lm_render_queue) - 1
 
         return {'FINISHED'}
+
+
+class LM_UI_AddNeedRenderToRenderQueue(bpy.types.Operator):
+    bl_idname = "scene.lm_add_need_render_to_render_queue"
+    bl_label = "Add Need render To Render Queue"
+    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Add all need render asset to render_queue"
+
+    def execute(self, context):
+        scn = context.scene
+        for a in scn.lm_asset_list:
+            if a.need_render or not a.rendered :
+                bpy.ops.scene.lm_add_asset_to_render_queue(asset_name=a.name)
+
+        return {'FINISHED'}
+
 
 class LM_UI_MoveAssetToRender(bpy.types.Operator):
     bl_idname = "scene.lm_move_asset_to_render"
@@ -87,5 +104,37 @@ class LM_UI_RemoveAssetToRender(bpy.types.Operator):
 
     def execute(self, context):
         H.remove_bpy_struct_item(context.scene.lm_render_queue, self.asset_name)
+
+        return {'FINISHED'}
+
+class LM_UI_CheckAllRenderQueuedAsset(bpy.types.Operator):
+    bl_idname = "scene.lm_check_all_render_queued_asset"
+    bl_label = "Check all render queued asset"
+    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Check all render queued asset"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.lm_render_queue
+
+    def execute(self, context):
+        for a in context.scene.lm_render_queue:
+            a.checked = True
+
+        return {'FINISHED'}
+
+class LM_UI_UncheckAllRenderQueuedAsset(bpy.types.Operator):
+    bl_idname = "scene.lm_uncheck_all_render_queued_asset"
+    bl_label = "Uncheck all render queued asset"
+    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Uncheck all render queued asset"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.lm_render_queue
+
+    def execute(self, context):
+        for a in context.scene.lm_render_queue:
+            a.checked = False
 
         return {'FINISHED'}

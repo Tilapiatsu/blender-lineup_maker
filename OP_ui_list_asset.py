@@ -34,6 +34,9 @@ def remove_asset(self, context, asset, index, remove=True):
         print("Removing asset : {}".format(context.scene.lm_asset_list[index].name))
         context.scene.lm_asset_list.remove(index)
         context.scene.lm_asset_list_idx = index - 1 if index else 0
+
+        H.remove_bpy_struct_item(context.scene.lm_last_render_list, asset.name)
+
     
     H.renumber_assets(context)
     idx, _, _ = get_assets(context, asset.name)
@@ -100,6 +103,7 @@ class LM_UI_RemoveAsset(bpy.types.Operator):
         idx, asset, _ = get_assets(context, self.asset_name)
 
         remove_asset(self, context, asset[self.asset_name], idx)
+        H.remove_bpy_struct_item(context.scene.lm_render_queue, self.asset_name)
 
         return {'FINISHED'}
 

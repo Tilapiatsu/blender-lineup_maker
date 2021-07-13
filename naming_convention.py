@@ -134,6 +134,9 @@ class NamingConvention(object):
 		return self._keywords
 
 	def slice_name(self):
+		def hasNumbers(inputString):
+			return bool(re.search(r'\d', inputString))
+
 		def assign(return_dict, word, value, excluded):
 			return_dict[word] = value
 			if excluded is None:
@@ -217,6 +220,8 @@ class NamingConvention(object):
 							if names[i] in self.keywords[keyword.lower()]: # if the name is in the keyword values
 								naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
 								remaining = remaining -1
+							elif hasNumbers(names[i]) :
+								naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
 							else:
 								assigned = False
 

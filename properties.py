@@ -62,6 +62,8 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     vertices : bpy.props.IntProperty()
     has_uv2 : bpy.props.BoolProperty(default=False)
 
+    checked : bpy.props.BoolProperty(default=True)
+
 class LM_Shaders(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
 
@@ -191,11 +193,13 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         else:
             self.separator_iter(row, 3)
         
-        export = row.operator('scene.lm_export_asset', text='', icon='EXPORT')
+        export = row.operator('scene.lm_export_assets', text='', icon='EXPORT')
         export.asset_name = item.name
         export.mode = 'ASSET'
 
-        row.operator('scene.lm_importassets', text='', icon='IMPORT').asset_name = item.name
+        op = row.operator('scene.lm_import_assets', text='', icon='IMPORT')
+        op.asset_name = item.name
+        op.mode = "ASSET"
         row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
         
         row.separator()
@@ -213,7 +217,7 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         scn = context.scene
 
-        col = layout.column_flow(columns=2, align=True)
+        col = layout.column_flow(columns=3, align=True)
         text = item.name
 
         row = col.row(align=True)
@@ -224,12 +228,17 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
         else:
             eye_icon = 'HIDE_OFF'
             row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
-            
+        
         c = col.row(align=True)
         c.alignment='LEFT'
+
+        row.prop(item, 'checked', text='')
+
         row.label(text='{}'.format(item.name))
-        c.label(text='              ')
-        c.label(text='{}'.format(item.render_camera), icon='CAMERA_DATA')
+
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        row.label(text='{}'.format(item.render_camera), icon='CAMERA_DATA')
 
 
         row = col.row(align=True)
@@ -246,11 +255,13 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
             self.separator_iter(row, 3)
 
 
-        export = row.operator('scene.lm_export_asset', text='', icon='EXPORT')
+        export = row.operator('scene.lm_export_assets', text='', icon='EXPORT')
         export.asset_name = item.name
         export.mode = 'ASSET'
         
-        row.operator('scene.lm_importassets', text='', icon='IMPORT').asset_name = item.name
+        op = row.operator('scene.lm_import_assets', text='', icon='IMPORT')
+        op.asset_name = item.name
+        op.mode = "ASSET"
         row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
         
         row.separator()

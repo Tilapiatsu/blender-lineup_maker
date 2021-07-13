@@ -12,13 +12,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
-#   - Normal Map isn't exported correctly in Export Selected Asset
+#   - Export/ Import Queue
+#   - Rename Asset that rename the disk
+#   - Backup assets to avoid loss ?
 #   - Need to better sort Chapters by name
-#   - Need to fix the delete asset command
-#       - Need to store objects, images and actions in the asset to be able to remove them properly after
-#       - bpy.data.objects
-#       - bpy.data.images
-#       - bpy.data.actions
 #   - Compositing method
 #       - None
 #       - Solid --> Use lm_content_background_color
@@ -117,9 +114,12 @@ classes = (
     LM_UL_AssetList_UIList,
     LM_UL_AssetListRQ_UIList,
     LM_UI_AddAssetToRenderQueue,
+    LM_UI_AddNeedRenderToRenderQueue,
     LM_UI_MoveAssetToRender,
     LM_UI_ClearAssetToRenderQueueList,
     LM_UI_RemoveAssetToRender,
+    LM_UI_CheckAllRenderQueuedAsset,
+    LM_UI_UncheckAllRenderQueuedAsset,
     LM_UI_MoveAsset,
     LM_UI_ClearAssetList,
     LM_UI_RemoveAsset,
@@ -409,7 +409,18 @@ def register():
     bpy.types.Scene.lm_exported_asset_name = bpy.props.StringProperty(name="Export Name")
 
     bpy.types.Scene.lm_import_message = bpy.props.StringProperty(name="Import Message")
+    bpy.types.Scene.lm_import_progress = bpy.props.StringProperty(name="Import Progress")
+    bpy.types.Scene.lm_viewlayer_progress = bpy.props.StringProperty(name="View Layer Progress")
 
+    bpy.types.Scene.lm_pdf_message = bpy.props.StringProperty(name="Import Message")
+    bpy.types.Scene.lm_pdf_progress = bpy.props.StringProperty(name="Import Progress")
+    bpy.types.Scene.lm_pdf_export_last_rendered = bpy.props.BoolProperty(name='Export last rendered assets', default=True)
+
+    bpy.types.Scene.lm_queue_message = bpy.props.StringProperty(name="Queue Message")
+    bpy.types.Scene.lm_queue_progress = bpy.props.StringProperty(name="Queue Progress")
+
+    bpy.types.Scene.lm_render_message = bpy.props.StringProperty(name="Render Message")
+    bpy.types.Scene.lm_render_progress = bpy.props.StringProperty(name="Render Progress")
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -417,6 +428,7 @@ def register():
 
     bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
     bpy.types.Scene.lm_render_queue = bpy.props.CollectionProperty(type=LM_Asset_List)
+    bpy.types.Scene.lm_last_render_list = bpy.props.CollectionProperty(type=LM_Asset_List)
 
     bpy.types.Scene.lm_initial_view_layer = bpy.props.StringProperty(name="Initial ViewLayer")
 
@@ -459,10 +471,21 @@ def unregister():
     del bpy.types.Scene.lm_initial_view_layer
     del bpy.types.Scene.lm_asset_list
     del bpy.types.Scene.lm_render_queue
+    del bpy.types.Scene.lm_last_render_list
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
+
+    del bpy.types.Scene.lm_render_message 
+    del bpy.types.Scene.lm_render_progress
+    del bpy.types.Scene.lm_queue_message
+    del bpy.types.Scene.lm_queue_progress
+    del bpy.types.Scene.lm_pdf_export_last_rendered
+    del bpy.types.Scene.lm_pdf_message 
+    del bpy.types.Scene.lm_pdf_progress
+    del bpy.types.Scene.lm_viewlayer_progress
+    del bpy.types.Scene.lm_import_progress
     del bpy.types.Scene.lm_import_message
     del bpy.types.Scene.lm_exported_asset_name
     del bpy.types.Scene.lm_open_pdf_when_exported

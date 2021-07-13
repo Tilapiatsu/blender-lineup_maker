@@ -1,8 +1,10 @@
 import bpy
 import os, time, math, subprocess, json, tempfile, re
+from datetime import date
 from fpdf import FPDF
 from os import path
 from . import variables as V
+from . import properties as P
 from . import helper as H
 from . import asset_format as A
 from . import naming_convention as N
@@ -44,7 +46,7 @@ class LM_OP_UpdateLineup(bpy.types.Operator):
 	def modal(self, context, event):
 		if event.type == 'TIMER':
 			if not self.imported:
-				bpy.ops.scene.lm_importassets()
+				bpy.ops.scene.lm_import_assets()
 				self.imported = True
 			
 			elif not self.rendered:
@@ -67,105 +69,34 @@ class LM_OP_UpdateLineup(bpy.types.Operator):
 
 
 class LM_OP_ImportAssets(bpy.types.Operator):
-	bl_idname = "scene.lm_importassets"
+	bl_idname = "scene.lm_import_assets"
 	bl_label = "Lineup Maker: Import all assets from source folder"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 
 	folder_src = ''
 	asset_collection = ''
 	asset_view_layers = {}
 	import_list = []
+	view_layer_list = []
 	updated_assets = []
+	updated_view_layers = []
 	log = None
 	_timer = None
-	stop = None
+	stopped = None
 	importing_asset = None
-
-	def post(self, context, cancelled=False):
-		# create View Layers for each Assets and set visibility to show only the right object in the proper viewlayer
-		if len(self.updated_assets):
-			for name in self.asset_view_layers.keys():
-				if name not in context.scene.view_layers:
-					bpy.ops.scene.view_layer_add()
-					context.window.view_layer.name = name
-					context.view_layer.use_pass_combined = False
-					context.view_layer.use_pass_z = False
-				else:
-					context.window.view_layer = context.scene.view_layers[name]
-
-				if name in self.updated_assets:
-					for n in self.asset_view_layers.keys():
-						if name != n and name != context.scene.lm_render_collection.name:
-							curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
-							curr_asset_view_layer.exclude = True
-				else:
-					for n in self.updated_assets:
-						if name != n and name != context.scene.lm_render_collection.name:
-							curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
-							curr_asset_view_layer.exclude = True
-
-		# Set the global View_layer active
-		if len(self.asset_name):
-			context.window.view_layer = context.scene.view_layers[self.asset_name]
-		else:	
-			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
-
-		H.renumber_assets(context)
-
-		self.log.complete_progress_asset()
-
-		bpy.ops.scene.lm_refresh_asset_status()
-
-		if cancelled:
-			self.end()
-			context.scene.lm_import_message = 'Import/Update Cancelled'
-			self.report({'ERROR'}, 'Lineup Maker : Import/Update Cancelled')
-			return {'CANCELLED'}
-		else:
-			self.end()
-			context.scene.lm_import_message = 'Import/Update Completed'
-			self.report({'INFO'}, 'Lineup Maker : Import/Update Completed')
-			return {'FINISHED'}
-
-	def end(self):
-		bpy.context.window_manager.event_timer_remove(self._timer)
-		self.import_list = []
-		self.updated_assets = []
-		self.importing_asset = None
-		self.stop = True
-
-	def importing(self, context, asset):
-		updated = self.import_asset(context, asset)
-
-		if updated:
-			self.updated_assets.append(updated)
-		
-		self.importing_asset = None
+	updating_viewlayers = None
+	cancelling = False
+	percent = 0
+	total_assets = 0
+	updated_assets_number = 0
+	skipped_asset_number = 0
 
 	@classmethod
 	def poll(cls, context):
 		return context.scene.lm_render_collection and path.isdir(context.scene.lm_asset_path)
-
-	def modal(self, context, event):
-		if event.type == 'ESC':
-			self.post(context, True)
-
-		if event.type == 'TIMER':
-			if self.stop:
-				bpy.context.window_manager.event_timer_remove(self._timer)
-				return {'FINISHED'}
-			elif self.importing_asset is not None:
-				return{'PASS_THROUGH'}
-			elif self.importing_asset is None and len(self.import_list):
-				self.importing_asset = self.import_list.pop()
-				self.importing(context, self.importing_asset)
-			elif self.importing_asset is None and len(self.import_list) == 0:
-				bpy.context.window_manager.event_timer_remove(self._timer)
-				self.post(context)
-
-		return{'PASS_THROUGH'}
 
 	def execute(self, context):
 		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
@@ -200,24 +131,69 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			self.asset_view_layers[a.view_layer] = H.get_layer_collection(context.view_layer.layer_collection, a.name)
 
 		# if asset_name has been defined - Import one specific asset
-		if len(self.asset_name):
-			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f == self.asset_name]
-			if len(self.import_list):
-				H.remove_asset(context, self.asset_name)
-			else:
-				self.log.warning('Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
-				self.report({'INFO'}, 'Lineup Maker : Import cancelled, Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
+		if self.mode == "ASSET":
+			if len(self.asset_name):
+				self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f == self.asset_name]
+				if len(self.import_list):
+					H.remove_asset(context, self.asset_name)
+				else:
+					self.log.warning('Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
+					self.report({'INFO'}, 'Lineup Maker : Import cancelled, Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
 
-				return {'FINISHED'}
+					return {'FINISHED'}
 
 		# If asset_name has NOT been defined - scan all subfolders and import only the new necessary one
-		else:
+		elif self.mode == "ALL":
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
 		
+		elif self.mode == "QUEUE":
+			queue_asset_name = [a.name for a in context.scene.lm_render_queue if a.checked]
+			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in queue_asset_name]
+		
+		self.total_assets = len(self.import_list)
+
 		self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
 		bpy.context.window_manager.modal_handler_add(self)
 
 		return {"RUNNING_MODAL"}
+
+	def modal(self, context, event):
+		if event.type == 'ESC':
+			self.cancelling = True
+
+		if event.type == 'TIMER':
+			if self.stopped:
+				bpy.context.window_manager.event_timer_remove(self._timer)
+				return {'FINISHED'}
+			elif self.importing_asset is not None or self.updating_viewlayers is not None:
+				return{'PASS_THROUGH'}
+			elif not self.cancelling and self.importing_asset is None and len(self.import_list):
+				self.importing_asset = self.import_list.pop()
+				self.importing(context, self.importing_asset)
+			elif (self.importing_asset is None or self.cancelling) and len(self.view_layer_list) == 0:
+				if self.updated_assets_number:
+					self.view_layer_list = list(self.asset_view_layers.keys())
+					self.percent = 0
+					self.total_assets = len(self.asset_view_layers)
+					self.updated_assets_number = 0
+				else:
+					self.post(context, self.cancelling)
+			elif self.updating_viewlayers is None and len(self.view_layer_list):
+				self.updating_viewlayers = self.view_layer_list.pop()
+				self.update_viewlayers(context, self.updating_viewlayers)
+
+		return{'PASS_THROUGH'}
+
+	def importing(self, context, asset):
+		updated = self.import_asset(context, asset)
+
+		self.percent = round(100 - (len(self.import_list) * 100 / self.total_assets), 2)
+		context.scene.lm_import_progress = '{} %  -  {} / {}  -  {} asset(s) updated  -  {} assets(s) skipped'.format(self.percent, self.total_assets - len(self.import_list), self.total_assets, self.updated_assets_number, self.skipped_asset_number)
+
+		if updated:
+			self.updated_assets.append(updated)
+		
+		self.importing_asset = None
 
 	def import_asset(self, context, asset_path):
 		curr_asset = A.LMAsset(context, asset_path)
@@ -229,6 +205,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			context.scene.lm_import_message = 'Skipping Asset  :  Asset {} is not valid'.format(asset_name)
 			self.log.warning('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
 			self.log.store_failure('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
+			self.skipped_asset_number += 1
 			return
 
 		# Import new asset
@@ -240,6 +217,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			self.log.failure += failure
 			context.scene.lm_import_message = 'Importing Asset  :  {}'.format(asset_name)
 			self.report({'INFO'}, 'Asset {} have been imported'.format(asset_name))
+			self.updated_assets_number += 1
 
 		# Update Existing asset
 		else:
@@ -251,13 +229,18 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			if updated:
 				context.scene.lm_import_message = 'Update Asset  :  {}'.format(asset_name)
 				self.report({'INFO'}, 'Asset {} have been updated'.format(asset_name))
+				self.updated_assets_number += 1
 			else:
 				context.scene.lm_import_message = 'Skipping Asset  :  Asset {} is already Up to date'.format(asset_name)
 				self.report({'INFO'}, 'Asset {} have been skipped / is already up to date'.format(asset_name))
+				self.skipped_asset_number += 1
 			
 
 		curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
 
+		# Refresh UI
+		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
+		
 		if updated:
 			# Store asset collection view layer
 			self.asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
@@ -266,19 +249,85 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			# Hide asset in Global View Layer
 			curr_asset_view_layer.hide_viewport = True
 
-			# Refresh UI
-			bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
-
 			return asset_name
 		
 		return None
 
+	def update_viewlayers(self, context, view_layer):
+		if view_layer not in context.scene.view_layers:
+			bpy.ops.scene.view_layer_add()
+			context.window.view_layer.name = view_layer
+			context.view_layer.use_pass_combined = False
+			context.view_layer.use_pass_z = False
+		else:
+			context.window.view_layer = context.scene.view_layers[view_layer]
+
+		if view_layer in self.updated_assets:
+			for n in self.asset_view_layers.keys():
+				if view_layer != n and view_layer != context.scene.lm_render_collection.name:
+					curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+					if curr_asset_view_layer:
+						curr_asset_view_layer.exclude = True
+		else:
+			for n in self.updated_assets:
+				if view_layer != n and view_layer != context.scene.lm_render_collection.name:
+					curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+					if curr_asset_view_layer:
+						curr_asset_view_layer.exclude = True
+
+		self.updated_assets_number += 1
+		self.percent = round((self.updated_assets_number * 100 / self.total_assets), 2)
+		context.scene.lm_import_message = 'Updating ViewLayers : {}'.format(view_layer)
+		context.scene.lm_viewlayer_progress = '{} %  -  {}/{} layer(s) updated'.format(self.percent, self.updated_assets_number, self.total_assets)
+		self.log.info(context.scene.lm_import_message)
+		self.updating_viewlayers = None
+		
+		if len(self.view_layer_list) == 0:
+			self.post(context, self.cancelling)
+
+	def post(self, context, cancelled=False):
+		# Set the global View_layer active
+		if len(self.asset_name):
+			context.window.view_layer = context.scene.view_layers[self.asset_name]
+		else:	
+			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
+
+		H.renumber_assets(context)
+
+		self.log.complete_progress_asset()
+
+		bpy.ops.scene.lm_refresh_asset_status()
+
+		if cancelled:
+			self.end()
+			context.scene.lm_import_message = 'Import/Update Cancelled'
+			self.report({'ERROR'}, 'Lineup Maker : Import/Update Cancelled')
+			return {'CANCELLED'}
+		else:
+			self.end()
+			context.scene.lm_import_message = 'Import/Update Completed'
+			self.report({'INFO'}, 'Lineup Maker : Import/Update Completed')
+			return {'FINISHED'}
+
+	def end(self):
+		bpy.context.window_manager.event_timer_remove(self._timer)
+		self.import_list = []
+		self.view_layer_list = []
+		self.updated_assets = []
+		self.updated_view_layers = []
+		self.importing_asset = None
+		self.stopped = True
+		self.updating_viewlayers = False
+		self.cancelling = False
+		
+
+	
 class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_render_assets"
 	bl_label = "Lineup Maker: Render all assets in the scene"
 	bl_options = {'REGISTER', 'UNDO'}
 	
-	render_list : bpy.props.EnumProperty(items=[("ALL", "All assets", ""), ("QUEUED", "Queded assets", "")])
+	render_list : bpy.props.EnumProperty(items=[("ALL", "All assets", ""), ("QUEUED", "Queded assets", ""), ("LAST_RENDERED", "Last Rendered", "")])
 
 	_timer = None
 	shots = None
@@ -288,19 +337,20 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	remaining_assets = None
 	rendering = None
 	need_render_asset = None
-	asset_number = 0
 	output_node = None
 	context = None
 	initial_view_layer = None
 	rendered_assets = []
 	render_filename = ''
 	render_path = ''
+	percent = 0
+	total_assets = 0
+	asset_number = 1
 
 	composite_filepath = ''
 
 	def pre(self, d1, d2):
 		self.rendering = True
-		self.report({'INFO'}, "Lineup Maker : Rendering '{}'".format(os.path.join(self.need_render_asset[0].render_path, self.need_render_asset[0].name)))
 		
 	def post(self, d1, d2):
 		if self.remaining_frames <= 1:
@@ -315,6 +365,11 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 		else:
 			self.remaining_frames -= 1
+
+	def end(self):
+		self.rendered_assets = []
+		self.need_render_asset = []
+
 
 	def cancelled(self, d1, d2):
 		self.stop = True
@@ -348,7 +403,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		if self.render_list == 'ALL':
 			queued_list = scene.lm_asset_list
 		elif self.render_list == 'QUEUED':
-			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue]
+			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue if a.checked]
+		elif self.render_list == 'LAST_RENDERED':
+			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_last_render_list]
 
 		for asset in queued_list:
 			render_path, render_filename = self.get_render_path(context, asset.name)
@@ -379,9 +436,11 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				asset.render_list.clear()
 				asset.need_render = True
 		
+		self.rendered_assets = []
 		self.need_render_asset = [a for a in scene.lm_asset_list if a.need_render]
 		self.remaining_assets = len(self.need_render_asset)
-		self.asset_number = 0
+		self.asset_number = 1
+		self.total_assets = len(self.need_render_asset)
 		self.initial_view_layer = context.window.view_layer
 
 		self.frame_range = H.get_current_frame_range(context)
@@ -404,7 +463,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	def modal(self, context, event):
 		if event.type == 'TIMER':
 
-			if True in (not self.need_render_asset, self.stop is True): 
+			if True in (not self.need_render_asset, self.stop is True):
 
 				self.unregister_render_handler()
 				bpy.context.window_manager.event_timer_remove(self._timer)
@@ -419,7 +478,18 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 					self.report({'INFO'}, "Lineup Maker : Render completed")
 					self.print_render_log()
 
-				self.rendered_assets = []
+				context.scene.lm_last_render_list.clear()
+				
+				for asset in self.rendered_assets:
+					a = context.scene.lm_last_render_list.add()
+					a.name = asset.name
+					a.composited = asset.composited
+
+				# Export lastly selected assets
+				if context.scene.lm_pdf_export_last_rendered:
+					bpy.ops.scene.lm_export_pdf(mode='LAST_RENDERED')
+				
+				self.end()
 				return {"FINISHED"} 
 
 
@@ -447,6 +517,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 			elif self.rendering is False:
 				H.clear_composite_tree(context)
+				self.percent = round(self.asset_number * 100 / self.total_assets, 2)
+				context.scene.lm_render_message = 'Rendering {}'.format(self.need_render_asset[0].name)
+				context.scene.lm_render_progress = '{} %  - Asset n° {} / {}'.format(self.percent, self.asset_number, self.total_assets)
 				self.render(context)
 
 		return {"PASS_THROUGH"}
@@ -457,6 +530,8 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		asset = self.need_render_asset[0]
 
 		self.render_path, self.render_filename = self.get_render_path(context, asset.name)
+
+		self.report({'INFO'}, "Lineup Maker : Rendering '{}'".format(self.render_filename + (str(bpy.context.scene.frame_current).zfill(4)+'.png')))
 
 		# # Try to Skip Existing Files
 		# render_files = [f for f in os.listdir(self.render_path) if path.splitext(f)[1] == H.get_curr_render_extension(context) and ]
@@ -600,7 +675,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 		if self.composite_list == 'ALL':
 			queued_list = [a for a in scene.lm_asset_list if a.rendered]
 		elif self.composite_list == 'QUEUED':
-			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue if scene.lm_asset_list[a.name].rendered]
+			queued_list = [scene.lm_asset_list[a.name] for a in scene.lm_render_queue if a.checked and scene.lm_asset_list[a.name].rendered]
 
 		for asset in queued_list:
 
@@ -721,65 +796,164 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_label = "Lineup Maker: Export PDF in the Render Path"
 	bl_options = {'REGISTER', 'UNDO'}
 
+	mode : bpy.props.EnumProperty(items=[("ALL", "All", ""), ("QUEUE", "Queue", ""), ("LAST_RENDERED", "Last Rendered", "")])
+
 	chapter = ''
+	cancelling = False
+	stopped = False
+	generating_page = None
+	empty_toc_page_composited = False
+	pages_composited = False
+	toc_page_composited = False
+	pdf = None
+	composite = None
+	
+	asset_name_list = []
+	generated_pages = []
+	percent = 0
+	total_page_number = 0
+	updated_page_number = 0
 
 	def execute(self, context):
 		bpy.ops.scene.lm_refresh_asset_status()
 
-		composite = C.LM_Composite_Image(context)
-		res = composite.composite_res
+		self.composite = C.LM_Composite_Image(context)
+		res = self.composite.composite_res
 		orientation = 'P' if res[1] < res[0] else 'L'
-		pdf = FPDF(orientation, 'pt', (res[0], res[1]))
+		self.pdf = FPDF(orientation, 'pt', (res[0], res[1]))
+		self.generated_pages = []
+
+		if self.mode == 'ALL':
+			self.asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
+		elif self.mode == 'QUEUE':
+			self.asset_name_list = [a.name for a in context.scene.lm_render_queue if a.checked and a.composited]
+		elif self.mode == 'LAST_RENDERED':
+			self.asset_name_list = [a.name for a in context.scene.lm_last_render_list]
+
+		self.asset_name_list.sort()
+
+		self.total_page_number = len(self.asset_name_list)
+
+		self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
+		bpy.context.window_manager.modal_handler_add(self)
+
+		return {"RUNNING_MODAL"}
+	
+	def modal(self, context, event):
+		if event.type == 'ESC':
+			self.cancelling = True
+
+		if event.type == 'TIMER':
+			if self.stopped:
+				bpy.context.window_manager.event_timer_remove(self._timer)
+				return {'FINISHED'}
+			elif self.generating_page is not None:
+				return{'PASS_THROUGH'}
+			elif self.cancelling:
+				context.scene.lm_pdf_message = 'PDF Export Cancelled !'
+				self.end()
+			elif not self.empty_toc_page_composited:
+				self.generate_empty_toc(context)
+			elif self.generating_page is None and len(self.asset_name_list):
+				self.generating_page = self.asset_name_list[0]
+				self.generated_pages.append(self.generating_page)
+				self.asset_name_list = self.asset_name_list[1:]
+				self.generate_page(context, self.generating_page)
+			elif self.pages_composited and len(self.asset_name_list) == 0 and not self.toc_page_composited:
+				self.generate_toc(context)
+			elif self.toc_page_composited:
+				self.post(context, cancelled=self.cancelling)
+
+		return{'PASS_THROUGH'}
+
+	def generate_empty_toc(self, context):
+		# create empty TOC page
+		self.composite.create_empty_toc_pages(self.pdf, self.asset_name_list)
+		context.scene.lm_pdf_message = 'Empty Table Of Content Created !'
+		self.report({'INFO'}, 'Empty Table Of Content Created !')
+		self.empty_toc_page_composited = True
+		# Refresh UI
+		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
+
+	def generate_page(self, context, page):
+		asset = context.scene.lm_asset_list[page]
+		chapter_naming_convention = N.NamingConvention(context, self.chapter, context.scene.lm_chapter_naming_convention)
+		asset_naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
+
+		new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
+
+		if new_chapter:
+			self.pdf.add_page()
+			self.composite.curr_page += 1
+			self.composite.composite_pdf_chapter(self.pdf, self.chapter)
+
+		self.pdf.add_page()
+		self.composite.curr_page += 1
+		self.composite.composite_pdf_asset_info(self.pdf, asset.name)
+
+		self.updated_page_number += 1
+		self.percent = round(self.updated_page_number * 100 / self.total_page_number, 2)
+		context.scene.lm_pdf_message = 'Generating page  :  {}'.format(asset.name)
+		context.scene.lm_pdf_progress = '{} %  -  {} / {}'.format(self.percent, self.updated_page_number, self.total_page_number)
+		self.report({'INFO'}, 'Generating page  :  {}  {} / {}'.format(asset.name, self.updated_page_number, self.total_page_number))
+
+		if len(self.asset_name_list) == 0:
+			self.pages_composited = True
 		
-		asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
-		# chapter_name_dict = {}
-		# for i, asset in enumerate(asset_name_list):
-		# 	chapter_nc = N.NamingConvention(context, asset, context.scene.lm_chapter_naming_convention)
-		# 	new_name = ''
-		# 	for word in chapter_nc.naming_convention['name']:
-		# 		new_name += '_' + word
-		# 	chapter_name_dict[asset] = [new_name, i]
+		self.generating_page = None
 
-		# chapter_name_list = chapter_name_dict.values()
+		# Refresh UI
+		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 
-		# for i,name in enumerate(chapter_name_list):
-		# 	asset_name_list[name[1]] = name[0]
-
-		asset_name_list.sort()
-
-		# create TOC
-		composite.create_empty_toc_pages(pdf)
-
-		for name in asset_name_list:
-			asset = context.scene.lm_asset_list[name]
-			chapter_naming_convention = N.NamingConvention(context, self.chapter, context.scene.lm_chapter_naming_convention)
-			asset_naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
-
-			new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
-
-			if new_chapter:
-				pdf.add_page()
-				composite.curr_page += 1
-				composite.composite_pdf_chapter(pdf, self.chapter)
-
-			pdf.add_page()
-			composite.curr_page += 1
-			composite.composite_pdf_asset_info(pdf, asset.name)
+	def generate_toc(self, context):
+		context.scene.lm_pdf_message = 'Generating Table Of Content !'
+		self.report({'INFO'}, 'Generating Table Of Content !')
+		self.pdf.page = 1
+		self.composite.composite_pdf_toc(self.pdf, self.generated_pages)
+		context.scene.lm_pdf_message = 'Table Of Content Generated !'
+		self.report({'INFO'}, 'Table Of Content Generated !')
+		self.toc_page_composited = True
 		
-		pdf.page = 1
-		composite.composite_pdf_toc(pdf)
+		# Refresh UI
+		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 
-		pdf.page = composite.curr_page
+	def post(self, context, cancelled=False):
+		self.pdf.page = self.composite.curr_page
 		
-		pdf_file = path.join(context.scene.lm_render_path, 'lineup.pdf')
-		pdf.output(pdf_file)
+		if self.mode== 'LAST_RENDERED':
+			export_name = '{}_{}_lineup_preview.pdf'.format(date.today(), time.time())
+		else:
+			export_name = '{}_{}_lineup.pdf'.format(date.today(), time.time())
 
-		self.report({'INFO'}, 'Lineup Maker : PDF File exported correctly : "{}"'.format(pdf_file))
+		pdf_file = path.join(context.scene.lm_render_path, export_name)
+		self.pdf.output(pdf_file)
 
-		if context.scene.lm_open_pdf_when_exported:
+		if context.scene.lm_open_pdf_when_exported or self.mode == 'LAST_RENDERED':
 			os.system("start " + pdf_file)
 
-		return {'FINISHED'}
+		if cancelled:
+			self.end()
+			context.scene.lm_pdf_message = 'PDF Export Cancelled'
+			self.report({'ERROR'}, 'Lineup Maker : PDF Export Cancelled')
+			return {'CANCELLED'}
+		else:
+			self.end()
+			context.scene.lm_pdf_message = 'PDF Export Completed'
+			self.report({'INFO'}, 'Lineup Maker : PDF Export Completed')
+			return {'FINISHED'}
+
+	def end(self):
+		self.asset_name_list = []
+		self.generated_pages = []
+		self.stopped = True
+		self.cancelling = False
+		self.generating_page = None
+		self.empty_toc_page_composited = False
+		self.pages_composited = False
+		self.toc_page_composited = False
+		self.pdf = None
+		self.composite = None
+		
 
 
 class LM_OP_RefreshAssetStatus(bpy.types.Operator):
@@ -828,7 +1002,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 			if asset.render_date > asset.import_date:
 				if path.isdir(rendered_asset):
 					
-					rendered_files = [r for r in os.listdir(render_path)]
+					rendered_files = [r for r in os.listdir(render_path) if path.splitext(r)[1].lower() in V.LM_OUTPUT_EXTENSION.values()]
 
 					if len(rendered_files) == H.get_current_frame_range(context):
 						asset.rendered = True
@@ -868,21 +1042,19 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 			return ''
 
 class LM_OP_ExportAsset(bpy.types.Operator):
-	bl_idname = "scene.lm_export_asset"
+	bl_idname = "scene.lm_export_assets"
 	bl_label = "Lineup Maker: Export Asset"
 	bl_options = {'REGISTER', 'UNDO'}
 
 	export_path = ''
-	mode : bpy.props.EnumProperty(items=[("SELECTED", "Selected", ""), ("ASSET", "Asset", "")])
+	mode : bpy.props.EnumProperty(items=[("SELECTED", "Selected", ""), ("ASSET", "Asset", ""), ("QUEUE", "Queue", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
-
-	# @classmethod
-	# def poll(cls, context):
-	# 	if self.mode =='SELECTED':
-	# 		object_types = [o.type for o in context.selected_objects]
-	# 		return len(object_types) and 'MESH' in object_types and len(context.scene.lm_exported_asset_name)
-	# 	elif self.mode == 'ASSET':
-	# 		return len(self.asset_name)
+	cancelling = False
+	stopped = False
+	exporting_asset = None
+	export_list = []
+	percent = 0
+	total_assets = 0
 
 	def execute(self, context):
 		log = L.Logger(context='EXPORT_ASSETS')
@@ -903,6 +1075,9 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 					self.report({'ERROR'}, 'Lineup Maker : Select at least one Mesh object')
 					return {'CANCELLED'}
 			self.export_path = path.join(context.scene.lm_asset_path, context.scene.lm_exported_asset_name)
+			self.asset_name = context.scene.lm_exported_asset_name
+			self.export_asset(context)
+
 		elif self.mode == 'ASSET':
 			if not len(self.asset_name):
 				log.warning('Asset Name is not defined. Export aboard')
@@ -915,6 +1090,71 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			self.export_path = path.join(context.scene.lm_asset_path, self.asset_name)
 
 			H.select_asset(context, self.asset_name)
+
+			self.export_asset(context)
+
+		elif self.mode == "QUEUE":
+			if not len(context.scene.lm_render_queue):
+				log.warning('Render Queue is empty, add asset to the queue first.')
+				return {'FINISHED'}
+			
+			self.export_list = [a.name for a in context.scene.lm_render_queue if a.checked]
+			self.total_assets = len(self.export_list)
+			self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
+			bpy.context.window_manager.modal_handler_add(self)
+
+			return {"RUNNING_MODAL"}
+		
+		if self.mode not in ["QUEUE"]:
+			bpy.ops.scene.lm_openfolder(folder_path=self.export_path)
+
+		
+		return {'FINISHED'}
+	
+	def modal(self, context, event):
+		if event.type == 'ESC':
+			self.cancelling = True
+
+		if event.type == 'TIMER':
+			if self.stopped:
+				bpy.context.window_manager.event_timer_remove(self._timer)
+				self.report({'INFO'}, 'Lineup Maker : Export complete')
+				return {'FINISHED'}
+			elif self.exporting_asset is not None:
+				return{'PASS_THROUGH'}
+			elif not self.cancelling and self.exporting_asset is None and len(self.export_list):
+				self.exporting_asset = self.export_list.pop()
+				self.asset_name = self.exporting_asset
+
+				self.percent = round(100 - len(self.export_list) * 100 / self.total_assets, 2)
+				context.scene.lm_queue_progress = '{} %  -  {} / {}'.format(self.percent, self.total_assets - len(self.export_list), self.total_assets)
+				context.scene.lm_queue_message = 'Exporting {}'.format(self.asset_name)
+
+				context.window.view_layer = context.scene.view_layers[self.asset_name]
+				self.export_path = path.join(context.scene.lm_asset_path, self.exporting_asset)
+				H.select_asset(context, self.exporting_asset)
+
+				self.export_asset(context)
+
+		return{'PASS_THROUGH'}
+	
+	def post(self, context):
+		self.json_data = []
+		self.exporting_asset = None
+		if not len(self.export_list):
+			self.end()
+
+	def end(self):
+		self.cancelling = False
+		self.stopped = True
+		self.exporting_asset = None
+		self.export_list = []
+		self.json_data = []
+		self.total_assets = 0
+		self.percet = 0
+
+	def export_asset(self, context):
+		self.report({'INFO'}, 'Lineup Maker : Exporting {}'.format(self.asset_name))
 
 		texture_list = self.get_textures(context)
 		tmpdir = tempfile.mkdtemp()
@@ -942,11 +1182,8 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 
 		self.write_json(context)
 
-		bpy.ops.scene.lm_openfolder(folder_path=self.export_path)
+		self.post(context)
 
-		
-		return {'FINISHED'}
-	
 	def copy_textures(self, context, source, destination):
 		for mesh, textures in source.items():
 			destination_path = path.join(destination, mesh)
