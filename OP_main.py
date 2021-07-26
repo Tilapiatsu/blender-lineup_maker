@@ -323,9 +323,60 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		self.stopped = True
 		self.updating_viewlayers = False
 		self.cancelling = False
-		
 
+
+class LM_OP_UpdateJson(bpy.types.Operator):
+	bl_idname = "scene.lm_update_json"
+	bl_label = "Lineup Maker: update json data in the current scene"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", "")])
+	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset update Json data')
+
+	@classmethod
+	def poll(cls, context):
+		return path.isdir(context.scene.lm_asset_path)
+
+	def execute(self, context):
+		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
+
+		# Init the scene and store the right variables
+		self.folder_src = bpy.path.abspath(context.scene.lm_asset_path)
+
+		if not path.isdir(self.folder_src):
+			self.log.error('The asset path is not valid : \n{} '.format(self.folder_src))
+			self.report({'ERROR	'}, 'Lineup Maker : The asset path is not valid')
+			return {'FINISHED'}
+
+		# if asset_name has been defined - Import one specific asset
+		if self.mode == "ASSET":
+			if len(self.asset_name):
+				self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f == self.asset_name]
+				if len(self.import_list):
+					self.update_json()
+				else:
+					self.log.warning('Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
+					self.report({'INFO'}, 'Lineup Maker : Update cancelled, Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
+
+		# If asset_name has NOT been defined - scan all subfolders and import only the new necessary one
+		elif self.mode == "ALL":
+			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
+		
+		elif self.mode == "QUEUE":
+			queue_asset_name = [a.name for a in context.scene.lm_render_queue if a.checked]
+			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in queue_asset_name]
+
+		for a in self.import_list:
+			self.update_json(context, a)
+
+		return {'FINISHED'}
 	
+	def update_json(self, context, asset):
+		a = A.LMAsset(context, asset)
+		for m in a.meshes:
+			a.update_json(m, context.scene.lm_asset_list[a.asset_name])
+
+
 class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_render_assets"
 	bl_label = "Lineup Maker: Render all assets in the scene"
@@ -795,6 +846,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 			asset.render_date = time.time()
 			asset.rendered = False
 
+
 class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_idname = "scene.lm_export_pdf"
 	bl_label = "Lineup Maker: Export PDF in the Render Path"
@@ -959,7 +1011,6 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		self.composite = None
 		
 
-
 class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 	bl_idname = "scene.lm_refresh_asset_status"
 	bl_label = "Lineup Maker: Refresh asset status"
@@ -1044,6 +1095,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 			return g.group(2)
 		else:
 			return ''
+
 
 class LM_OP_ExportAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_export_assets"

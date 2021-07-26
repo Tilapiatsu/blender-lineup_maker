@@ -61,6 +61,8 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     triangles : bpy.props.IntProperty()
     vertices : bpy.props.IntProperty()
     has_uv2 : bpy.props.BoolProperty(default=False)
+    section : bpy.props.StringProperty(name="Section")
+    from_file : bpy.props.StringProperty(name="From File")
 
     checked : bpy.props.BoolProperty(default=True)
 
@@ -203,6 +205,7 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
         
         row.separator()
+        row.operator('scene.lm_print_asset_data', text='', icon='ALIGN_JUSTIFY' ).asset_name = item.name
         row.operator('scene.lm_add_asset_to_render_queue', text='', icon='SORT_ASC').asset_name = item.name
         row.operator('scene.lm_remove_asset', text='', icon='X').asset_name = item.name
 
@@ -265,6 +268,7 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
         row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
         
         row.separator()
+        row.operator('scene.lm_print_asset_data', text='', icon='ALIGN_JUSTIFY' ).asset_name = item.name
         row.operator('scene.lm_remove_asset_to_render', text='', icon='X').asset_name = item.name
         
 
