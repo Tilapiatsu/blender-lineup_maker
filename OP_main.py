@@ -152,7 +152,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		
 		self.total_assets = len(self.import_list)
 
-		self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
+		self._timer = bpy.context.window_manager.event_timer_add(0.01, window=bpy.context.window)
 		bpy.context.window_manager.modal_handler_add(self)
 
 		return {"RUNNING_MODAL"}
@@ -170,7 +170,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			elif not self.cancelling and self.importing_asset is None and len(self.import_list):
 				self.importing_asset = self.import_list.pop()
 				self.importing(context, self.importing_asset)
-			elif (self.importing_asset is None or self.cancelling) and len(self.view_layer_list) == 0:
+			elif (self.importing_asset is None or self.cancelling) and len(self.import_list) == 0:
 				if self.updated_assets_number:
 					self.view_layer_list = list(self.asset_view_layers.keys())
 					self.percent = 0
@@ -178,9 +178,9 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 					self.updated_assets_number = 0
 				else:
 					self.post(context, self.cancelling)
-			elif self.updating_viewlayers is None and len(self.view_layer_list):
-				self.updating_viewlayers = self.view_layer_list.pop()
-				self.update_viewlayers(context, self.updating_viewlayers)
+			# elif self.updating_viewlayers is None and len(self.view_layer_list):
+			# 	self.updating_viewlayers = self.view_layer_list.pop()
+			# 	self.update_viewlayers(context, self.updating_viewlayers)
 
 		return{'PASS_THROUGH'}
 
@@ -252,7 +252,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			return asset_name
 		
 		return None
-
+	
 	def update_viewlayers(self, context, view_layer):
 		if view_layer not in context.scene.view_layers:
 			bpy.ops.scene.view_layer_add()
@@ -260,18 +260,19 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			context.view_layer.use_pass_combined = False
 			context.view_layer.use_pass_z = False
 		else:
-			context.window.view_layer = context.scene.view_layers[view_layer]
+			pass
+			# context.window.view_layer = context.scene.view_layers[view_layer]
 
 		if view_layer in self.updated_assets:
 			for n in self.asset_view_layers.keys():
 				if view_layer != n and view_layer != context.scene.lm_render_collection.name:
-					curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+					curr_asset_view_layer = H.get_layer_collection(bpy.context.scene.view_layers[view_layer].layer_collection, n)
 					if curr_asset_view_layer:
 						curr_asset_view_layer.exclude = True
 		else:
 			for n in self.updated_assets:
 				if view_layer != n and view_layer != context.scene.lm_render_collection.name:
-					curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, n)
+					curr_asset_view_layer = H.get_layer_collection(bpy.context.scene.view_layers[view_layer].layer_collection, n)
 					if curr_asset_view_layer:
 						curr_asset_view_layer.exclude = True
 
@@ -285,7 +286,10 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		if len(self.view_layer_list) == 0:
 			self.post(context, self.cancelling)
 
+
 	def post(self, context, cancelled=False):
+		for a in self.view_layer_list:
+			self.update_viewlayers(context, a)
 		# Set the global View_layer active
 		if len(self.asset_name):
 			context.window.view_layer = context.scene.view_layers[self.asset_name]
