@@ -77,6 +77,20 @@ class LMAsset(object):
 
 		return updated, self.log.success, self.log.failure
 
+	def update_json(self, mesh, scene_asset):
+		if mesh.use_json:
+			scene_asset.wip = mesh.json.is_wip
+			scene_asset.triangles = mesh.json.triangles
+			scene_asset.vertices = mesh.json.vertices
+			scene_asset.has_uv2 = mesh.json.has_uv2
+
+			scene_asset.hd_status = mesh.json.hd_status
+			scene_asset.ld_status = mesh.json.ld_status
+			scene_asset.baking_status = mesh.json.baking_status
+
+			scene_asset.section = mesh.json.section
+			scene_asset.from_file = mesh.json.from_file
+
 	@check_length
 	def import_mesh(self, update=False):
 		curr_asset_collection, _ = H.create_asset_collection(self.context, self.asset_name)
@@ -95,16 +109,8 @@ class LMAsset(object):
 			if not m.is_valid:
 				self.log.info('Mesh "{}" dosn\'t exist or file format "{}" not compatible'.format(m.name, m.ext))
 				continue
-			
-			if m.use_json:
-				self.scn_asset.wip = m.json.is_wip
-				self.scn_asset.triangles = m.json.triangles
-				self.scn_asset.vertices = m.json.vertices
-				self.scn_asset.has_uv2 = m.json.has_uv2
 
-				self.scn_asset.hd_status = m.json.hd_status
-				self.scn_asset.ld_status = m.json.ld_status
-				self.scn_asset.baking_status = m.json.baking_status
+			self.update_json(m, self.scn_asset)
 			
 			mesh_path = m.path
 			file = m.file
@@ -962,6 +968,14 @@ class LMJson(LMFile):
 	def baking_status(self):
 		return self.get_json_attr('BakingStatus')
 	
+	@property
+	def section(self):
+		return self.get_json_attr('section')
+
+	@property
+	def from_file(self):
+		return self.get_json_attr('fromFile')
+
 	def get_json_attr(self, attr):
 		if not self.json_data:
 			return ''

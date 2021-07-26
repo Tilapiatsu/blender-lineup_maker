@@ -94,6 +94,8 @@ class LM_Composite(object):
 
 			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
 
+			# TODO : Need to use json to set Chapter based on json.section data if set otherwise set the chapter to "Uncategorized"
+
 			# Change page if max_item_per_toc_page is reached
 			if i > self.max_item_per_toc_page:
 				pdf.page += 1
