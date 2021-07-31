@@ -73,7 +73,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_label = "Lineup Maker: Import all assets from source folder"
 	bl_options = {'REGISTER', 'UNDO'}
 
-	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", "")])
+	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", ""), ("IMPORT", "Import", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 
 	folder_src = ''
@@ -109,7 +109,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			self.report({'ERROR	'}, 'Lineup Maker : The asset path is not valid')
 			return {'FINISHED'}
 
-		H.set_active_collection(context, V.LM_MASTER_COLLECTION)
+		H.set_active_collection(context, bpy.context.scene.collection.name)
 		if context.scene.lm_asset_collection is None:
 			self.asset_collection, _ = H.create_asset_collection(context, V.LM_ASSET_COLLECTION)
 		else:
@@ -150,6 +150,10 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			queue_asset_name = [a.name for a in context.scene.lm_render_queue if a.checked]
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in queue_asset_name]
 		
+		elif self.mode == "IMPORT":
+			import_asset_name = [a.name for a in context.scene.lm_import_list if a.checked]
+			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in import_asset_name]
+
 		self.total_assets = len(self.import_list)
 
 		self._timer = bpy.context.window_manager.event_timer_add(0.01, window=bpy.context.window)
@@ -301,6 +305,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		self.log.complete_progress_asset()
 
 		bpy.ops.scene.lm_refresh_asset_status()
+		bpy.ops.scene.lm_refresh_import_list()
 
 		if cancelled:
 			self.end()

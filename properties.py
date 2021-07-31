@@ -53,6 +53,8 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     need_write_info : bpy.props.BoolProperty(default=False)
     info_written : bpy.props.BoolProperty(default=False)
 
+    is_valid : bpy.props.BoolProperty(default=False)
+
     asset_number : bpy.props.IntProperty()
     asset_index : bpy.props.IntProperty()
     hd_status : bpy.props.IntProperty(default=-1)
@@ -155,6 +157,50 @@ class LM_UL_Cameras_UIList(bpy.types.UIList):
                 text += ' and '
         row.label(text='"{}" : {}'.format(item.camera.name, text))
 
+class LM_UL_ImportList_UIList(bpy.types.UIList):
+    bl_idname = "LM_UL_import_list"
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        scn = context.scene
+
+        col = layout.column_flow(columns=2, align=True)
+        text = item.name
+
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+
+        c = col.row(align=True)
+        c.alignment='LEFT'
+
+        row.prop(item, 'checked', text='')
+
+        row.label(text='{}'.format(item.name))
+
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+
+        if scn.lm_import_list[item.name].is_valid:
+            row.label(text='', icon='CHECKMARK')
+        else:
+            self.separator_iter(row, 3)
+
+        if scn.lm_import_list[item.name].asset_folder_exists:
+            row.operator('scene.lm_open_import_folder', text='', icon='SNAP_VOLUME').asset_name = item.name
+        else:
+            self.separator_iter(row, 3)
+        
+        op = row.operator('scene.lm_import_assets', text='', icon='IMPORT')
+        op.asset_name = item.name
+        op.mode = "ASSET"
+        row.operator('scene.lm_rename_asset_folder', text='', icon='SMALL_CAPS').asset_name = item.name
+        
+        row.separator()
+        row.operator('scene.lm_remove_asset_folder', text='', icon='X').asset_name = item.name
+        
+    def separator_iter(self, ui, iter) :
+        for i in range(iter):
+            ui.separator()
+
 class LM_UL_AssetList_UIList(bpy.types.UIList):
     bl_idname = "LM_UL_asset_list"
 
@@ -202,6 +248,7 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
         op = row.operator('scene.lm_import_assets', text='', icon='IMPORT')
         op.asset_name = item.name
         op.mode = "ASSET"
+        row.operator('scene.lm_rename_asset', text='', icon='SMALL_CAPS').asset_name = item.name
         row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
         
         row.separator()
@@ -265,11 +312,12 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
         op = row.operator('scene.lm_import_assets', text='', icon='IMPORT')
         op.asset_name = item.name
         op.mode = "ASSET"
+        row.operator('scene.lm_rename_asset', text='', icon='SMALL_CAPS').asset_name = item.name
         row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
         
         row.separator()
         row.operator('scene.lm_print_asset_data', text='', icon='ALIGN_JUSTIFY' ).asset_name = item.name
-        row.operator('scene.lm_remove_asset_to_render', text='', icon='X').asset_name = item.name
+        row.operator('scene.lm_remove_asset_from_render', text='', icon='X').asset_name = item.name
         
 
         

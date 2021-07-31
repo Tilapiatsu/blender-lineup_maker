@@ -634,15 +634,9 @@ class LMAsset(object):
 				self.log.error('No valid mesh file in the asset root : {}'.format(self.root_folder))
 				return self._valid
 
-			a_nc = self.asset_naming_convention
-			kw_nc = N.NamingConvention(self.context, self.asset_name, self.context.scene.lm_asset_naming_convention)
-			keywords = '\n'
-			for keyword in a_nc['keywords']:
-				keywords += keyword + '\n'
-				if keyword not in a_nc.keys() and keyword not in kw_nc.optionnal_words:
-					self._valid = False
-					self.log.error('Invalid Keyword : {}'.format(keyword))
-					return self._valid
+			asset_convention = self.param['lm_asset_naming_convention']
+			asset_naming_convention = N.NamingConvention(self.context, self.asset_name, asset_convention)
+			self._valid = asset_naming_convention.is_valid
 		
 		return self._valid
 

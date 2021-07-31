@@ -9,6 +9,7 @@ from . import logger as L
 
 class NamingConvention(object):
 	def __init__(self, context, name, convention, filepath=None):
+		self.log = L.Logger(context='NAMING_CONVENTION')
 		self.context = context
 		self.scn = context.scene
 		self.param = V.GetParam(self.scn).param
@@ -30,6 +31,8 @@ class NamingConvention(object):
 		self._channels = None
 
 		self._json = None
+
+		self._valid = None
 
 	def __eq__(self, other):
 		if isinstance(other, NamingConvention):
@@ -59,7 +62,7 @@ class NamingConvention(object):
 			self._naming_convention = naming_convention
 
 		else:
-			print('"{}" need to be a dict'.format(naming_convention))
+			self.log.error('"{}" need to be a dict'.format(naming_convention))
 
 	@property
 	def json(self):
@@ -133,6 +136,21 @@ class NamingConvention(object):
 		
 		return self._keywords
 
+	@property
+	def is_valid(self):
+		if self._valid is None:
+			self._valid = True
+			
+			keywords = '\n'
+			for keyword in self.naming_convention['keywords']:
+				keywords += keyword + '\n'
+				if keyword not in self.naming_convention.keys() and keyword not in self.optionnal_words:
+					self._valid = False
+					self.log.error('Invalid Keyword : {}'.format(keyword))
+					return self._valid
+		
+		return self._valid
+	
 	def slice_name(self):
 		def hasNumbers(inputString):
 			return bool(re.search(r'\d', inputString))
@@ -247,7 +265,7 @@ class NamingConvention(object):
 	def pop_name(self, item, duplicate=True):
 		new_naming = self.naming_convention
 		if item not in new_naming['fullname']:
-			print('Lineup Maker : Naming Convention : Word "{}" is not in the filename {}'.format(item, new_naming['fullname']))
+			self.log.error('Lineup Maker : Naming Convention : Word "{}" is not in the filename {}'.format(item, new_naming['fullname']))
 			return
 
 		if item in new_naming['name']:
