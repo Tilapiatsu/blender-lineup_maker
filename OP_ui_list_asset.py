@@ -42,9 +42,6 @@ def remove_asset(self, context, asset, index, remove=True):
 	H.renumber_assets(context)
 	idx, _, _ = get_assets(context, asset.name)
 
-	
-	
-
 
 class LM_UI_MoveAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_move_asset"
@@ -162,6 +159,7 @@ class LM_UI_ShowAsset(bpy.types.Operator):
 		context.window.view_layer = context.scene.view_layers[self.asset_name]
 
 		return {'FINISHED'}
+
 
 class LM_UI_PrintAssetData(bpy.types.Operator):
 	bl_idname = "scene.lm_print_asset_data"

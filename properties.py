@@ -37,6 +37,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
     texture_list : bpy.props.CollectionProperty(type=LM_Texture_List)
     view_layer : bpy.props.StringProperty(name="View Layer")
     collection : bpy.props.PointerProperty(type=bpy.types.Collection)
+    need_update : bpy.props.BoolProperty(default=False)
     need_render : bpy.props.BoolProperty()
     rendered : bpy.props.BoolProperty()
     need_composite : bpy.props.BoolProperty()
@@ -184,6 +185,13 @@ class LM_UL_ImportList_UIList(bpy.types.UIList):
         else:
             self.separator_iter(row, 3)
 
+        need_update = scn.lm_import_list[item.name].need_update
+
+        if need_update:
+            row.label(text='', icon='FILE_REFRESH')
+        else:
+            self.separator_iter(row, 3)
+
         if scn.lm_import_list[item.name].asset_folder_exists:
             row.operator('scene.lm_open_import_folder', text='', icon='SNAP_VOLUME').asset_name = item.name
         else:
@@ -195,6 +203,7 @@ class LM_UL_ImportList_UIList(bpy.types.UIList):
         row.operator('scene.lm_rename_asset_folder', text='', icon='SMALL_CAPS').asset_name = item.name
         
         row.separator()
+        row.operator('scene.lm_print_naming_convention', text='', icon='ALIGN_JUSTIFY').asset_name = item.name
         row.operator('scene.lm_remove_asset_folder', text='', icon='X').asset_name = item.name
         
     def separator_iter(self, ui, iter) :

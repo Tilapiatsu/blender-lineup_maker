@@ -398,8 +398,13 @@ class LM_PT_AssetList(bpy.types.Panel):
 		
 		row.template_list('LM_UL_import_list', '', scn, 'lm_import_list', scn, 'lm_import_list_idx', rows=rows)
 		c = row.column(align=True)
+		
 		c.operator('scene.lm_refresh_import_list', text='', icon='FILE_REFRESH')
 		
+		c.separator()
+		c.operator("scene.lm_check_all_import_list", text="", icon='CHECKBOX_HLT')
+		c.operator("scene.lm_uncheck_all_import_list", text="", icon='CHECKBOX_DEHLT')
+
 		c.separator()
 		c.operator("scene.lm_clear_asset_folder", text="", icon='TRASH')
 
