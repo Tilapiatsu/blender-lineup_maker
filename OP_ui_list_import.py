@@ -32,10 +32,13 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 	
 	def execute(self, context):
 		folder_src = context.scene.lm_asset_path
+
+		# If asset_name is not specified, processed all assets
 		if not len(self.asset_name):
 			asset_folders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f))]
 			asset_folders_name = [path.basename(f) for f in asset_folders]
 			bpy.ops.scene.lm_refresh_asset_status()
+		# Else process only specified asset
 		else:
 			folder_path = path.join(folder_src, self.asset_name,)
 			if not path.isdir(folder_path):
@@ -48,7 +51,7 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 
 		for f in asset_folders:
 			asset_name = path.basename(f)
-			# If asset is not imported
+			# If asset is not in the import list nor in the asset list
 			if asset_name not in context.scene.lm_import_list and asset_name not in context.scene.lm_asset_list:
 				asset = context.scene.lm_import_list.add()
 				asset.name = asset_name
@@ -58,8 +61,8 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 				asset_naming_convention = N.NamingConvention(context, asset_name, context.scene.lm_asset_naming_convention)
 				asset.is_valid = asset_naming_convention.is_valid
 
-			# If asset is already imported
-			elif asset_name in context.scene.lm_asset_list:
+			# If asset is already imported and is not yet in Import List
+			elif asset_name in context.scene.lm_asset_list and asset_name not in context.scene.lm_import_list:
 				# Check if the asset need to be updated
 				asset = context.scene.lm_asset_list[asset_name]
 				if asset.need_update:
@@ -115,7 +118,7 @@ class LM_UI_ClearAssetFolder(bpy.types.Operator):
 
 	def invoke(self, context, event):
 		wm = context.window_manager
-		return wm.invoke_confirm(self)
+		return wm.invoke_confirm(self, event)
 
 	def execute(self, context):
 		for a in context.scene.lm_import_list:

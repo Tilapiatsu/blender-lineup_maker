@@ -343,7 +343,7 @@ class LM_OP_UpdateJson(bpy.types.Operator):
 		return path.isdir(context.scene.lm_asset_path)
 
 	def execute(self, context):
-		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
+		self.log = L.LoggerProgress(context='UPDATE JSON')
 
 		# Init the scene and store the right variables
 		self.folder_src = bpy.path.abspath(context.scene.lm_asset_path)
@@ -1251,7 +1251,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 		H.delete_folder_if_exist(tmpdir)
 
 		selection = context.selected_objects
-
+		
 		# Clear Mesh list
 		if self.scene_asset is not None:
 			self.scene_asset.mesh_list.clear()
@@ -1268,6 +1268,9 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			if self.scene_asset is not None:
 				m = self.scene_asset.mesh_list.add()
 				m = A.LMMeshFile(export_filename)
+
+		self.scene_asset.asset_path = self.export_path
+		self.scene_asset.asset_folder_exists = True
 
 		self.write_json(context)
 
@@ -1295,17 +1298,13 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 					'triangles':stats.triangle_count,
 					'vertices':stats.vertex_count,
 					'hasUV2':stats.uv_count > 1,
+					'section':scn.lm_asset_list[self.asset_name].section,
+					'fromFile':scn.lm_asset_list[self.asset_name].from_file,
 					'materials':[]}
 			for slot in material_slots:
 				mat = slot.material
 				node_tree = mat.node_tree
 				nodes = node_tree.nodes
-
-				# for n in nodes:
-				# 	print(n)
-				# 	for d in dir(n):
-				# 		print(d)
-				# 		print(getattr(n, d))
 
 				output_nodes = [n for n in nodes if n.type == "OUTPUT_MATERIAL"]
 
@@ -1315,14 +1314,6 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 					shaders = self.get_children_node(context, node_tree, output_node)
 					
 					shader = shaders[0] if len(shaders) else None
-
-					# links = node_tree.links
-					# for l in links:
-					# 	print(l.from_node)
-					# 	print(dir(l))
-					# 	print(l.to_socket)
-					# 	print(dir(l.to_socket))
-					# 	print(l.to_socket.name)
 
 					json['materials'].append({'material':mat.name, 'textures':[]})
 					if shader:
