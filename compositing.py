@@ -18,10 +18,14 @@ class LM_Composite(object):
 		self.render_res = self.get_render_resolution()
 
 		self.text_color = (self.to_srgb(self.context.scene.lm_font_color[0]), self.to_srgb(self.context.scene.lm_font_color[1]), self.to_srgb(self.context.scene.lm_font_color[2]), 255)
-		self.text_summary_color = self.color_multiply(self.text_color, 0.6)
+		self.text_section_color = self.color_multiply_color(self.text_color, (110, 240, 255, 255))
+		self.text_chapter_color = self.text_color
+		self.text_summary_color = self.color_multiply_value(self.text_color, 0.6)
 		self.text_background_color = (self.to_srgb(self.context.scene.lm_text_background_color[0]), self.to_srgb(self.context.scene.lm_text_background_color[1]), self.to_srgb(self.context.scene.lm_text_background_color[2]), 255)
 		self.content_background_color = (self.to_srgb(self.context.scene.lm_content_background_color[0]), self.to_srgb(self.context.scene.lm_content_background_color[1]), self.to_srgb(self.context.scene.lm_content_background_color[2]), 255)
 
+		self.font_size_section = int(math.floor(self.composite_res[0]*120/self.composite_res[1]))
+		self.character_size_section = (math.ceil(self.font_size_section/2), self.font_size_section)
 		self.font_size_chapter = int(math.floor(self.composite_res[0]*100/self.composite_res[1]))
 		self.character_size_chapter = (math.ceil(self.font_size_chapter/2), self.font_size_chapter)
 		self.font_size_title = int(math.floor(self.composite_res[0]*45/self.composite_res[1]))
@@ -33,11 +37,13 @@ class LM_Composite(object):
 
 		self.font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Fonts')
 		self.font_file = os.path.join(self.font_path, 'UbuntuMono-Bold.ttf')
+		self.font_section = ImageFont.truetype(self.font_file, size=self.font_size_section)
 		self.font_chapter = ImageFont.truetype(self.font_file, size=self.font_size_chapter)
 		self.font_title = ImageFont.truetype(self.font_file, size=self.font_size_title)
 		self.font_paragraph = ImageFont.truetype(self.font_file, size=self.font_size_paragraph)
 
 		self.chapter = ''
+		self.section = ''
 
 		self.curr_page = 0
 		self.pages = {}
@@ -68,6 +74,16 @@ class LM_Composite(object):
 		position = (self.composite_res[0] - self.character_size_paragraph[0] * len(text) - self.character_size_paragraph[0], self.composite_res[1] - self.character_size_paragraph[1]/2)
 		pdf.text(x=position[0], y=position[1], txt=text)
 
+	def change_page_if_needed(self, pdf, i):
+		# Change page if max_item_per_toc_page is reached
+		if i > self.max_item_per_toc_page:
+			pdf.page += 1
+			pdf.rect(x=0, y=0, w=self.composite_res[0], h=self.composite_res[1], style='F')
+			self.write_pdf_page_number(pdf)
+			pdf.set_font_size(self.font_size_title)
+			i = 0
+		return pdf, i
+
 	def composite_pdf_toc(self, pdf, asset_name_list):
 		print('Lineup Maker : Compositing Summary')
 		pdf.add_font(family='UbuntuMono-Bold', style='', fname=self.font_file, uni=True)
@@ -82,50 +98,69 @@ class LM_Composite(object):
 		pdf.set_font_size(self.font_size_title)
 
 		initial_pos = (self.character_size_title[0], self.character_size_title[1])
-
-		asset_name_list.sort()
 		
 		i = 0
 		for asset in asset_name_list:
+			print('creating TOC for asset : {}'.format(asset))
 			chapter_naming_convention = N.NamingConvention(self.context, self.chapter, self.context.scene.lm_chapter_naming_convention)
 			asset_naming_convention = N.NamingConvention(self.context, asset, self.context.scene.lm_asset_naming_convention)
 
-			new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
+			self.new_chapter, self.new_section = H.set_chapter(self, bpy.context.scene.lm_asset_list[asset], chapter_naming_convention, asset_naming_convention)
 
 			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
 
-			# TODO : Need to use json to set Chapter based on json.section data if set otherwise set the chapter to "Uncategorized"
-
-			# Change page if max_item_per_toc_page is reached
-			if i > self.max_item_per_toc_page:
-				pdf.page += 1
-				pdf.rect(x=0, y=0, w=self.composite_res[0], h=self.composite_res[1], style='F')
-				self.write_pdf_page_number(pdf)
-				pdf.set_font_size(self.font_size_title)
-				i = 0
+			pdf, i = self.change_page_if_needed(pdf, i)
 			
+			# Create  a new section if needed
+			if self.new_section:
+				# Empty Line
+				pdf.set_text_color(r=self.text_section_color[0], g=self.text_section_color[1], b=self.text_section_color[2])
+				column = (self.character_size_title[1] * i) % (self.composite_res[1] - self.character_size_title[1])
+				position = self.add_position(initial_pos, (0 if (self.character_size_title[1] * i) < self.composite_res[1] - self.character_size_title[1] else int(self.composite_res[0]/2), column))
+				pdf.text(x=position[0], y=position[1], txt='')
+				i += 1
+				
+				# Section Line
+				column = (self.character_size_title[1] * i) % (self.composite_res[1] - self.character_size_title[1])
+				text = self.section
+				position = self.add_position(initial_pos, (0 if (self.character_size_title[1] * i) < self.composite_res[1] - self.character_size_title[1] else int(self.composite_res[0]/2), column))
+				pdf.text(x=position[0], y=position[1], txt=text)
+				link = self.pages[self.section][0]
+				pdf.link(x=position[0], y=position[1] - self.character_size_title[1], w=len(text)*self.character_size_title[0], h=self.character_size_title[1], link=self.pages[self.section][0])
+				i += 1
+
+			pdf, i = self.change_page_if_needed(pdf, i)
+
 			# Create a new chapter if needed
-			if new_chapter:
+			if self.new_chapter:
+				pdf.set_text_color(r=self.text_chapter_color[0], g=self.text_chapter_color[1], b=self.text_chapter_color[2])
 				column = (self.character_size_title[1] * i) % (self.composite_res[1] - self.character_size_title[1])
 				text = self.chapter
-				position = self.add_position(initial_pos, (0 if (self.character_size_title[1] * i) < self.composite_res[1] - self.character_size_title[1] else int(self.composite_res[0]/2), column))
+				position = self.add_position(initial_pos, (100 if (self.character_size_title[1] * i) < self.composite_res[1] - self.character_size_title[1] else 100 + int(self.composite_res[0]/2), column))
 				pdf.text(x=position[0], y=position[1], txt=text)
 				pdf.link(x=position[0], y=position[1] - self.character_size_title[1], w=len(text)*self.character_size_title[0], h=self.character_size_title[1], link=self.pages[self.chapter][0])
 				i += 1
 			
+			pdf, i = self.change_page_if_needed(pdf, i)
+
 			pdf.set_text_color(r=self.text_summary_color[0], g=self.text_summary_color[1], b=self.text_summary_color[2])
 			column = (self.character_size_title[1] * i) % (self.composite_res[1] - self.character_size_title[1])
 			text = asset
-			position = self.add_position(initial_pos, (100 if (self.character_size_title[1] * i) < self.composite_res[1] - self.character_size_title[1] else 100 + int(self.composite_res[0]/2), column))
+			position = self.add_position(initial_pos, (200 if (self.character_size_title[1] * i) < self.composite_res[1] - self.character_size_title[1] else 200 + int(self.composite_res[0]/2), column))
 			pdf.text(x=position[0], y=position[1], txt=text)
 			pdf.link(x=position[0], y=position[1] - self.character_size_title[1], w=len(text)*self.character_size_title[0], h=self.character_size_title[1], link=self.pages[asset][0])
 			i += 1
 	
-	def composite_pdf_chapter(self, pdf, chapter_name):
+	def composite_pdf_chapter(self, pdf, chapter_name, is_section=False):
 		print('Lineup Maker : Compositing pdf chapter "{}"'.format(chapter_name))
 		pdf.add_font(family='UbuntuMono-Bold', style='', fname=self.font_file, uni=True)
 		pdf.set_font('UbuntuMono-Bold', size=self.font_size_chapter)
-		pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
+
+		if is_section:
+			pdf.set_text_color(r=self.text_section_color[0], g=self.text_section_color[1], b=self.text_section_color[2])
+		else:
+			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
+
 		pdf.set_fill_color(r=self.text_background_color[0], g=self.text_background_color[1], b=self.text_background_color[2])
 
 		pdf.rect(x=0, y=0, w=self.composite_res[0], h=self.composite_res[1], style='F')
@@ -135,11 +170,15 @@ class LM_Composite(object):
 		position = (int(math.ceil(self.composite_res[0]/2)) - self.character_size_chapter[0] * math.ceil(len(text)/2), int(math.ceil(self.composite_res[1]/2)) - self.character_size_chapter[1]/2)
 		pdf.text(x=position[0], y=position[1], txt=text)
 
+		pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
 		self.write_pdf_page_number(pdf)
 
 		page_link = pdf.add_link()
 		self.pages[chapter_name] = [page_link, pdf.page_no()]
 		pdf.set_link(self.pages[chapter_name][0], self.pages[chapter_name][1])
+
+	def sort_pages_list(self, asset_name_list):
+		return H.sort_asset_list(asset_name_list)
 
 	def composite_chapter(self):
 		if self.asset.final_composite_filepath != '':
@@ -202,22 +241,29 @@ class LM_Composite(object):
 		return (math.floor(self.composite_res[1] / self.character_size_title[1])- 1) * 2 - 1
 
 	def get_toc_page_count(self, asset_name_list):
-		rendered_assets = [a for a in self.context.scene.lm_asset_list if a.name in asset_name_list]
+		rendered_assets = [a.name for a in self.context.scene.lm_asset_list if a.name in asset_name_list]
+		rendered_assets = self.sort_pages_list(rendered_assets)
 		asset_count = len(rendered_assets)
 		chapter_count = 0
-		for asset in rendered_assets:
+		section_count = 0
+		for asset_name in rendered_assets:
 			chapter_naming_convention = N.NamingConvention(self.context, self.chapter, self.context.scene.lm_chapter_naming_convention)
-			asset_naming_convention = N.NamingConvention(self.context, asset.name, self.context.scene.lm_asset_naming_convention)
+			asset_naming_convention = N.NamingConvention(self.context, asset_name, self.context.scene.lm_asset_naming_convention)
 
-			new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
+			new_chapter, new_section = H.set_chapter(self, self.context.scene.lm_asset_list[asset_name], chapter_naming_convention, asset_naming_convention)
 
 			if new_chapter:
+				print('chapter : {}'.format(asset_name))
 				chapter_count += 1
+			
+			if new_section :
+				print('section : {}'.format(asset_name))
+				section_count += 1
 
 		max_item = self.max_item_per_toc_page
 
 		if max_item:
-			toc_page_count = math.ceil((asset_count + chapter_count) / max_item) - 1
+			toc_page_count = math.ceil((asset_count + chapter_count + section_count * 2) / max_item) - 1
 		else:
 			toc_page_count = 1
 		
@@ -234,12 +280,28 @@ class LM_Composite(object):
 
 		return max(min(int(srgb * 255 + 0.5), 255), 0)
 
-	def color_multiply(self, color, value):
+	def color_multiply_value(self, color, value):
 		result = ()
 		for c in color:
 			result += (c*value,)
 		return result
 
+	def color_divide_value(self, color, value):
+		result = ()
+		for c in color:
+			result += (c/value,)
+		return result
+
+	def color_multiply_color(self, color1, color2):
+		result = ()
+		color1 = self.color_divide_value(color1, 255)
+		color2 = self.color_divide_value(color2, 255)
+		for i,c in enumerate(color1):
+			result += (c*color2[i],)
+
+		result = self.color_multiply_value(result, 255)
+		return (math.ceil(result[0]), math.ceil(result[1]), math.ceil(result[2]), math.ceil(result[3]))
+	
 	def color_add(self, color, value):
 		result = ()
 		for c in color:
@@ -514,22 +576,23 @@ class LM_Composite_Image(LM_Composite):
 			position = (int(math.ceil(self.composite_res[0]/2)), self.character_size_title[1]*1.2 + self.character_size_paragraph[1] * 3)
 			pdf.text(x=position[0], y=position[1], txt=baking_status)
 
-			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
-
 			pdf.set_font_size(self.font_size_paragraph)
+			pdf.set_text_color(r=self.text_section_color[0], g=self.text_section_color[1], b=self.text_section_color[2])
+
+			# Geometry_Info : Section
+			text = 'Section : {}'.format(self.context.scene.lm_asset_list[name].section)
+			position = (self.character_size_paragraph[0], self.character_size_paragraph[1])
+			pdf.text(x=position[0], y=position[1], txt=text)
+
+			pdf.set_text_color(r=self.text_color[0], g=self.text_color[1], b=self.text_color[2])
 
 			# Geometry_Info : Triangles
 			text = 'Triangle Count : {}'.format(self.prettify_number(self.context.scene.lm_asset_list[name].triangles, ' '))
-			position = (self.character_size_paragraph[0], self.character_size_paragraph[1])
+			position = self.add_position(position, (0, self.character_size_paragraph[1]))
 			pdf.text(x=position[0], y=position[1], txt=text)
 
 			# Geometry_Info : Vertices
 			text = 'Vertices Count : {}'.format(self.prettify_number(self.context.scene.lm_asset_list[name].vertices, ' '))
-			position = self.add_position(position, (0, self.character_size_paragraph[1]))
-			pdf.text(x=position[0], y=position[1], txt=text)
-
-			# Geometry_Info : Has UV2
-			text = 'UV2 : {}'.format(self.context.scene.lm_asset_list[name].has_uv2)
 			position = self.add_position(position, (0, self.character_size_paragraph[1]))
 			pdf.text(x=position[0], y=position[1], txt=text)
 

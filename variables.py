@@ -28,6 +28,8 @@ LM_OUTPUT_EXTENSION = {'BMP':'.bmp',
 LM_FINAL_COMPOSITE_FOLDER_NAME = '00_Final_Composite'
 LM_FINAL_COMPOSITE_SUFFIX = '_final_composite'
 
+LM_DEFAULT_SECTION = 'UNCATEGORIZED'
+
 class GetParam(object):
 	def  __init__(self, scn):
 		param = {}
