@@ -2,7 +2,10 @@ import bpy, os, logging, tempfile
 from os import path
 
 def get_log_file():
-	filepath = bpy.data.filepath
+	try:
+		filepath = bpy.data.filepath
+	except AttributeError:
+		filepath = ''
 	if path.exists(filepath):
 		log_file = path.join(path.dirname(filepath), '{}.log'.format(path.splitext(path.basename(filepath))[0]))
 	else:
