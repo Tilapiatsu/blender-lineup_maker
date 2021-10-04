@@ -282,9 +282,10 @@ class LM_UI_ImportAssetList(bpy.types.Operator, ImportHelper):
 		with open(self.filepath, 'r', encoding='utf-8-sig') as json_file:  
 			json_data = json.load(json_file)
 
-			for k in json_data.keys():
-				if k not in context.scene.lm_import_list:
-					bpy.ops.scene.lm_refresh_import_list(asset_name = k)
+			for a in json_data['assets']:
+				name = a['name']
+				if name not in context.scene.lm_import_list:
+					bpy.ops.scene.lm_refresh_import_list(asset_name = name)
 
 
 		return {'FINISHED'}
