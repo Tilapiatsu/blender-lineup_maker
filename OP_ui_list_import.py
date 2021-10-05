@@ -4,6 +4,7 @@ from os import path
 from . import helper as H
 from . import logger as L
 from . import naming_convention as N
+from . import asset_format as A
 from bpy_extras.io_utils import ImportHelper
 
 
@@ -37,8 +38,8 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 		asset.asset_path = path
 		asset.asset_folder_exists = True
 
-		asset_naming_convention = N.NamingConvention(context, asset_name, context.scene.lm_asset_naming_convention)
-		asset.is_valid = asset_naming_convention.is_valid
+		a = A.LMAsset(context, path)
+		asset.is_valid = a.is_valid
 		
 		if update:
 			asset.need_update = True
@@ -48,19 +49,19 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 
 		# If asset_name is not specified, processed all assets
 		if not len(self.asset_name):
-			asset_folders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f)) and f == self.asset_name]
+			asset_folders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f))]
 			asset_folders_name = [path.basename(f) for f in asset_folders]
-			bpy.ops.scene.lm_refresh_asset_status()
+			# bpy.ops.scene.lm_refresh_asset_status()
 		# Else process only specified asset
 		else:
 			folder_path = path.join(folder_src, self.asset_name,)
 			if not path.isdir(folder_path):
 				self.report({'ERROR'}, 'Lineup Maker : Asset folder "{}" doesn\'t exists'.format(self.asset_name))
 				return {'CANCELLED'}
-			else:
-				asset_folders = [folder_path]
-				asset_folders_name = [self.asset_name]
-				bpy.ops.scene.lm_refresh_asset_status(asset_name = self.asset_name)
+			
+			asset_folders = [folder_path]
+			asset_folders_name = [self.asset_name]
+			# bpy.ops.scene.lm_refresh_asset_status(asset_name = self.asset_name)
 
 		for f in asset_folders:
 			asset_name = path.basename(f)
@@ -69,18 +70,19 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 			else:
 				# If asset is not in the import list nor in the asset list
 				if asset_name not in context.scene.lm_import_list and asset_name not in context.scene.lm_asset_list:
-					self.add_asset(context, self.asset_name, f)
+					self.add_asset(context, asset_name, f)
 
 				# If asset is already imported and is not yet in Import List
 				elif asset_name in context.scene.lm_asset_list and asset_name not in context.scene.lm_import_list:
 					# Check if the asset need to be updated
 					asset = context.scene.lm_asset_list[asset_name]
 					if asset.need_update:
-						self.add_asset(context, self.asset_name, f, update=True)
+						self.add_asset(context, asset_name, f, update=True)
 
 		if not len(self.asset_name):
 			for a in context.scene.lm_import_list:
 				if a.name not in asset_folders_name or ( a.name in context.scene.lm_asset_list and not context.scene.lm_import_list[a.name].need_update):
+					self.report({'INFO'}, 'Lineup Maker : remove asset from import list "{}"'.format(a.name))
 					H.remove_bpy_struct_item(context.scene.lm_import_list, a.name)
 
 		return {'FINISHED'}
@@ -289,3 +291,31 @@ class LM_UI_ImportAssetList(bpy.types.Operator, ImportHelper):
 
 
 		return {'FINISHED'}
+
+class LM_UI_ShowImportAssetWarning(bpy.types.Operator):
+	bl_idname = "scene.lm_show_import_asset_warnings"
+	bl_label = "Show Import Asset Warnings"
+	bl_options = {'REGISTER', 'UNDO'}
+	bl_description = "Show Import Asset Warnings"
+
+	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to rename')
+
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_asset_list
+
+	def invoke(self, context, event):
+		wm = context.window_manager
+		return wm.invoke_props_dialog(self, width=1000)
+
+	def execute(self, context):
+		return {'FINISHED'}
+
+	def draw(self, context):
+		layout = self.layout
+		col = layout.column()
+		col.label(text='Warning for asset : "{}"'.format(self.asset_name))
+		col.separator()
+		col.separator()
+		for w in context.scene.lm_import_list[self.asset_name].warnings:
+			col.label(text='{}'.format(w.message))

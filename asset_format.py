@@ -27,6 +27,8 @@ class LMAsset(object):
 		self._meshes = None
 		self._mesh_names = None
 		self._textures = None
+		self._scn_asset = None
+		self._asset_files = None
 		self._jsons = None
 		self._texture_channels = None
 		self._channels = None
@@ -36,7 +38,6 @@ class LMAsset(object):
 		self._valid = None
 
 		self.asset = None
-		self.scn_asset = None
 		
 	# Decorators
 	def check_asset_folder_exist(func):
@@ -44,7 +45,7 @@ class LMAsset(object):
 			if path.exists(self.root_folder):
 				return func(self, *args, **kwargs)
 			else:
-				self.log.info('Asset folder doesn\'t exist')
+				self.log.warning('Asset folder doesn\'t exist : "{}"'.format(self.asset_name), asset=self.scn_asset)
 				return None
 		return func_wrapper
 
@@ -53,14 +54,17 @@ class LMAsset(object):
 			if self.asset_name in bpy.data.collections:
 				return func(self, *args, **kwargs)
 			else:
-				self.log.info('Asset doesn\'t exist in current scene')
+				self.log.warning('Asset doesn\'t exist in current scene : "{}"'.format(self.asset_name), asset=self.scn_asset)
 				return None
 		return func_wrapper
 
 	def check_length(func):
 		def func_wrapper(self, *args, **kwargs):
+			if self.meshes is None:
+				self.log.warning('No mesh file found in the asset folder : "{}"'.format(self.asset_name), asset=self.scn_asset)
+				return None
 			if not len(self.meshes):
-				self.log.info('No file found in the asset folder')
+				self.log.warning('No mesh file found in the asset folder : "{}"'.format(self.asset_name), asset=self.scn_asset)
 				return None
 			else:
 				return func(self, *args, **kwargs)
@@ -513,9 +517,8 @@ class LMAsset(object):
 	
 	def get_asset(self):
 		asset = {}
-		asset_files = LMAssetFiles(self.root_folder)
 		
-		for mesh in asset_files.files:
+		for mesh in self.asset_files.files:
 			texture_sets = {}
 
 			if mesh.use_json:
@@ -553,22 +556,31 @@ class LMAsset(object):
 			asset[mesh.name] = (mesh, texture_sets)
 
 		return asset
-	
 
-	def get_json_data(self):
-		json_data = {}
-		if not len(self.jsons):
-			return None
-		
-		for j in self.jsons:
-			json_name = path.splitext(path.basename(j))[0]
-			with open(j, 'r', encoding='utf-8-sig') as json_file:  
-				data = json.load(json_file)
-				json_data[json_name] = data
-
-		return json_data
 
 	# Properties
+	@property
+	def asset_files(self):
+		if self._asset_files is None:
+			self._asset_files = LMAssetFiles(self.root_folder)
+
+		return self._asset_files
+
+	@property
+	def scn_asset(self):
+		if self._scn_asset is None:
+			if self.asset_name in bpy.context.scene.lm_import_list:
+				self._scn_asset = bpy.context.scene.lm_import_list[self.asset_name]
+			elif self.asset_name in bpy.context.scene.lm_asset_list:	
+				self._scn_asset = bpy.context.scene.lm_asset_list[self.asset_name]
+
+		return self._scn_asset
+	
+
+	@scn_asset.setter
+	def scn_asset(self, value):
+		self._scn_asset = value
+
 	@property
 	def global_import_date(self):
 		mesh_pathes = [m.path for m in self.meshes]
@@ -647,12 +659,21 @@ class LMAsset(object):
 
 			if len(self.meshes) < 1:
 				self._valid = False
-				self.log.error('No valid mesh file in the asset root : {}'.format(self.root_folder))
-				return self._valid
+				self.log.error('No valid mesh file in the asset root : {}'.format(self.root_folder), asset=self.scn_asset)
 
 			asset_convention = self.param['lm_asset_naming_convention']
 			asset_naming_convention = N.NamingConvention(self.context, self.asset_name, asset_convention)
-			self._valid = asset_naming_convention.is_valid
+			naming_valid = asset_naming_convention.is_valid
+
+			if not naming_valid:
+				self.log.error('Invalid naming convention : {}'.format(self.asset_name), asset=self.scn_asset)
+
+			self._valid = self._valid and asset_naming_convention.is_valid
+
+			for mesh in self.asset_files.files:
+				for mat, ts in mesh.materials.items():
+					if not ts.match_json_data:
+						self._valid = False
 		
 		return self._valid
 
@@ -684,7 +705,7 @@ class LMAsset(object):
 							self.log.info(' 		{} '.format(t))
 				except FileNotFoundError as e:
 					self._textures[m] = []
-					self.log.warning('folder dosn\'t exist "{}"'.format(path.join(self.root_folder, m)))
+					self.log.warning('folder dosn\'t exist "{}"'.format(path.join(self.root_folder, m)), asset=self.scn_asset)
 		
 		return self._textures
 
@@ -792,6 +813,7 @@ class LMMeshFile(LMFile):
 		self._json_data = None
 		self._materials = None
 		self._asset_root = None
+		self._asset = None
 		self._asset_name = None
 		self._mesh_name = None
 		self._texture_root = None
@@ -804,6 +826,19 @@ class LMMeshFile(LMFile):
 			self._asset_name = path.basename(self.asset_root)
 
 		return self._asset_name
+
+
+	@property
+	def asset(self):
+		if self._asset is None:
+			if self.asset_name in bpy.context.scene.lm_import_list:
+				self._asset = bpy.context.scene.lm_import_list[self.asset_name]
+			elif self.asset_name not in bpy.context.scene.lm_asset_list:
+				self._asset = bpy.context.scene.lm_asset_list[self.asset_name]
+			else:
+				self_asset = None
+
+		return self._asset
 
 	@property
 	def is_valid(self):
@@ -859,10 +894,11 @@ class LMMeshFile(LMFile):
 	@property
 	def texture_file_path(self):
 		if self._texture_file_path is None:
-			if path.exists(self.texture_root):
-				self._texture_file_path = [path.join(self.texture_root, f) for f in listdir(self.texture_root) if path.splitext(f)[1] in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
+			if self.texture_root is None:
+				self._texture_file_path = []
 			else:
-				self._texture_file_path = [] 
+				self._texture_file_path = [path.join(self.texture_root, f) for f in listdir(self.texture_root) if path.splitext(f)[1] in V.LM_COMPATIBLE_TEXTURE_FORMAT.keys()]
+
 		
 		return self._texture_file_path
 	
@@ -870,6 +906,10 @@ class LMMeshFile(LMFile):
 	def texture_root(self):
 		if self._texture_root is None:
 			self._texture_root = path.join(self.asset_root, self.name)
+			if not path.exists(self._texture_root):
+				self.log.warning('texture folder doesn\'t exist "{}"'.format(self.texture_root))
+				self._texture_root = None
+
 	
 		return self._texture_root
 
@@ -900,7 +940,7 @@ class LMMeshFile(LMFile):
 						if t['file'] in all_textures:
 							textures.append(path.join(self.texture_root, t['file']))
 							
-					self._materials[mat['material']] = LMTextureSet(textures, self.json_data)
+					self._materials[mat['material']] = LMTextureSet(self.asset, textures, self.json_data)
 			else:
 				pass
 
@@ -1030,15 +1070,17 @@ class LMTextureFile(LMFile):
 
 	
 class LMTextureSet(object):
-	def __init__(self, texture_file_path, json_data=None):
+	def __init__(self, asset, texture_file_path, json_data=None):
 		self.log = L.Logger('LMTextureSet')
 		self.texture_file_path = texture_file_path
 		self.json_data = json_data
+		self.asset = asset
 		self._material = None
 		self._imported_material = None
 		self._texture_root = None
 		self._textures = None
 		self._texture_names = None
+
 	
 	def __len__(self):
 		return len(self.textures)
@@ -1074,10 +1116,26 @@ class LMTextureSet(object):
 
 	@property
 	def texture_names(self):
-		if self._texture_names is None:
-			self._texture_names = [path.basename(t) for t in self.texture_file_path]
-
+		self._texture_names = [path.basename(t) for t in self.texture_file_path]
 		return self._texture_names
+
+	@property
+	def match_json_data(self):
+		match = True
+		if not self.json_data:
+			self.log.warning('Json data is missing for "{}"'.format(self.asset.name), self.asset)
+			return False
+
+		for mat in self.json_data['materials']:
+			for t in mat['textures']:
+				if t['file'] == 'null' or t['file'] is None or self.texture_root is None:
+					continue
+
+				elif t['file'] not in self.texture_names:
+					self.log.warning('"{}" is missing in the texture folder : "{}"'.format(t['file'], self.texture_root), self.asset)
+					match = False
+
+		return match
 
 	@property
 	def material(self):

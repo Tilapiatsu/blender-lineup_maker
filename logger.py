@@ -28,20 +28,32 @@ class Logger(object):
 
 		self._pretty = '---------------------'
 
-	def info(self, message):
+	def info(self, message, asset=None):
 		self.set_basic_config()
+		if asset is not None:
+			warning = asset.warnings.add()
+			warning.message = message
 		logging.info(message)
 	
-	def debug(self, message):
+	def debug(self, message, asset=None):
 		self.set_basic_config()
+		if asset is not None:
+			warning = asset.warnings.add()
+			warning.message = message
 		logging.debug(message)
 
-	def warning(self, message):
+	def warning(self, message, asset=None):
 		self.set_basic_config()
+		if asset is not None:
+			warning = asset.warnings.add()
+			warning.message = message
 		logging.warning(message)
 
-	def error(self, message):
+	def error(self, message, asset=None):
 		self.set_basic_config()
+		if asset is not None:
+			warning = asset.warnings.add()
+			warning.message = message
 		logging.error(message)
 
 	def set_basic_config(self):
