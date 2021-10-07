@@ -76,6 +76,7 @@ class NamingConvention(object):
 		word_pattern = re.compile(r'[{0}]?(<([a-zA-Z0-9]+)(\?)?(\!)?>)[{0}]?|[{0}]?([^<][a-zA-Z0-9]+[^>])[{0}]?'.format(self.param['lm_separator']), re.IGNORECASE)
 		self._words = word_pattern.finditer(self.convention)
 		return self._words
+		# ((?:mypattern)?) --> Patern to catch optionnal words to test from Marc Robert
 	
 	@property
 	def word_list(self):
