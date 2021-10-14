@@ -1021,7 +1021,10 @@ class LMJson(LMFile):
 	
 	@property
 	def section(self):
-		return self.get_json_attr('section')
+		section = self.get_json_attr('section')
+		if section is None:
+			section = ""
+		return section
 
 	@property
 	def from_file(self):

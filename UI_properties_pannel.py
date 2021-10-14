@@ -391,7 +391,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 
 		col = layout.column(align=True)
 		b = col.box()
-		b.label(text='Import List')
+		b.label(text='Import List  |  {} asset(s)'.format(len(scn.lm_import_list)))
 
 		row = b.row()
 		rows = 20 if len(scn.lm_import_list) > 10 else len(scn.lm_import_list) * 2 + 1
@@ -416,7 +416,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 
 		c.separator()
 		c.separator()
-		b.label(text='Asset List')
+		b.label(text='Asset List  |  {} asset(s)'.format(len(scn.lm_asset_list)))
 		row = b.row()
 		
 		rendered = [a for a in scn.lm_asset_list if a.rendered]
@@ -439,7 +439,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 
 		row.separator()
 		row = b.row()
-		row.label(text='Render Queue')
+		row.label(text='Render Queue  |  {} asset(s)'.format(len(scn.lm_render_queue)))
 		row.label(text='{}'.format(scn.lm_queue_message))
 		row.label(text='{}'.format(scn.lm_queue_progress))
 		row = b.row()
