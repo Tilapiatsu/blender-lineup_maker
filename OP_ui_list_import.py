@@ -82,8 +82,12 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 						self.add_asset(context, asset_name, f, update=True)
 
 		for a in context.scene.lm_import_list:
+			if a.name in context.scene.lm_asset_list:
+				asset = A.LMAsset(context, a.asset_path)
+				context.scene.lm_asset_list[a.name].need_update = asset.need_update
+
 			# if the asset is not in the drive, or asset is in the asset list and doesn't need update, then remove from the import_list
-			if a.name not in asset_folders_name or (a.name in context.scene.lm_asset_list and not self.force_import and not context.scene.lm_import_list[a.name].need_update):
+			if a.name not in asset_folders_name or (a.name in context.scene.lm_asset_list and not self.force_import) or (a.name in context.scene.lm_asset_list and not context.scene.lm_import_list[a.name].need_update):
 				self.report({'INFO'}, 'Lineup Maker : remove asset from import list "{}"'.format(a.name))
 				H.remove_bpy_struct_item(context.scene.lm_import_list, a.name)
 			elif a.name not in self.new_assets:
