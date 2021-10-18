@@ -557,7 +557,6 @@ class LMAsset(object):
 
 		return asset
 
-
 	# Properties
 	@property
 	def asset_files(self):
@@ -1083,7 +1082,6 @@ class LMTextureSet(object):
 		self._texture_root = None
 		self._textures = None
 		self._texture_names = None
-
 	
 	def __len__(self):
 		return len(self.textures)
@@ -1119,7 +1117,7 @@ class LMTextureSet(object):
 
 	@property
 	def texture_names(self):
-		self._texture_names = [path.basename(t) for t in self.texture_file_path]
+		self._texture_names = [path.basename(t) for t in listdir(self.texture_root)]
 		return self._texture_names
 
 	@property
@@ -1131,9 +1129,11 @@ class LMTextureSet(object):
 
 		for mat in self.json_data['materials']:
 			for t in mat['textures']:
+				# no file is linked in Json or not texture folder exists
 				if t['file'] == 'null' or t['file'] is None or self.texture_root is None:
 					continue
-
+				
+				# file is linked in Json and not in texture folder
 				elif t['file'] not in self.texture_names:
 					self.log.warning('"{}" is missing in the texture folder : "{}"'.format(t['file'], self.texture_root), self.asset)
 					match = False
