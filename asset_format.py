@@ -833,7 +833,7 @@ class LMMeshFile(LMFile):
 		if self._asset is None:
 			if self.asset_name in bpy.context.scene.lm_import_list:
 				self._asset = bpy.context.scene.lm_import_list[self.asset_name]
-			elif self.asset_name not in bpy.context.scene.lm_asset_list:
+			elif self.asset_name in bpy.context.scene.lm_asset_list:
 				self._asset = bpy.context.scene.lm_asset_list[self.asset_name]
 			else:
 				self_asset = None

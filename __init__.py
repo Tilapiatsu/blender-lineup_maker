@@ -110,6 +110,7 @@ classes = (
     LM_UL_AssetListRQ_UIList,
     LM_IU_RefreshImportList,
     LM_UI_RemoveAsseFolder,
+    LM_UI_RemoveAsseFromImportList,
     LM_UI_ClearAssetFolder,
     LM_UI_OpenImportFolder,
     LM_UI_RenameAssetFolder,

@@ -133,14 +133,17 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		# if asset_name has been defined - Import one specific asset
 		if self.mode == "ASSET":
 			if len(self.asset_name):
-				self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f == self.asset_name]
-				if len(self.import_list):
-					H.remove_asset(context, self.asset_name)
-				else:
+				asset_path = path.join(self.folder_src, self.asset_name)
+
+				if not path.isdir(asset_path):
 					self.log.warning('Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
 					self.report({'INFO'}, 'Lineup Maker : Import cancelled, Asset {} doesn\'t exist in the asset folder {}'.format(self.asset_name, self.folder_src))
 
 					return {'FINISHED'}
+
+				self.import_list = [asset_path]
+
+				H.remove_asset(context, self.asset_name)
 
 		# If asset_name has NOT been defined - scan all subfolders and import only the new necessary one
 		elif self.mode == "ALL":
@@ -166,14 +169,21 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			self.cancelling = True
 
 		if event.type == 'TIMER':
+			# stopped
 			if self.stopped:
 				bpy.context.window_manager.event_timer_remove(self._timer)
 				return {'FINISHED'}
+
+			# importing in progress
 			elif self.importing_asset is not None or self.updating_viewlayers is not None:
 				return{'PASS_THROUGH'}
+			
+			# importing current file done -> switch to next file
 			elif not self.cancelling and self.importing_asset is None and len(self.import_list):
 				self.importing_asset = self.import_list.pop()
 				self.importing(context, self.importing_asset)
+			
+			# import not started -> init import
 			elif (self.importing_asset is None or self.cancelling) and len(self.import_list) == 0:
 				if self.updated_assets_number:
 					self.view_layer_list = list(self.asset_view_layers.keys())
@@ -304,16 +314,17 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		self.log.complete_progress_asset()
 
-		bpy.ops.scene.lm_refresh_asset_status()
-		bpy.ops.scene.lm_refresh_import_list()
+		for a in self.updated_assets:
+			bpy.ops.scene.lm_refresh_asset_status(asset_name = a)
+			bpy.ops.scene.lm_remove_asset_from_import_list(asset_name = a)
+
+		self.end()
 
 		if cancelled:
-			self.end()
 			context.scene.lm_import_message = 'Import/Update Cancelled'
 			self.report({'ERROR'}, 'Lineup Maker : Import/Update Cancelled')
 			return {'CANCELLED'}
 		else:
-			self.end()
 			context.scene.lm_import_message = 'Import/Update Completed'
 			self.report({'INFO'}, 'Lineup Maker : Import/Update Completed')
 			return {'FINISHED'}
