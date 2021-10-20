@@ -101,7 +101,7 @@ class LMAsset(object):
 			scene_asset.ld_status = mesh.json.ld_status
 			scene_asset.baking_status = mesh.json.baking_status
 
-			scene_asset.section = mesh.json.section
+			scene_asset.section = self.context.scene.lm_import_list[self.asset_name].section
 			scene_asset.from_file = mesh.json.from_file
 
 	@check_length
@@ -708,6 +708,15 @@ class LMAsset(object):
 		
 		return self._textures
 
+	@property
+	def section(self):
+		section = "UINCATEGORIZED"
+		if len(self.meshes):
+			try:
+				section = self.meshes[0].json.section
+			except ValueError:
+				pass
+		return section
 
 class LMAssetFiles(object):
 	def __init__(self, asset_root):
@@ -1024,7 +1033,7 @@ class LMJson(LMFile):
 		if section is None:
 			section = ""
 		return section
-
+	
 	@property
 	def from_file(self):
 		return self.get_json_attr('fromFile')

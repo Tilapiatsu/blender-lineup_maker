@@ -25,35 +25,48 @@ class Logger(object):
 
 		self.success = []
 		self.failure = []
+		# self.message_list = []
 
 		self._pretty = '---------------------'
 
-	def info(self, message, asset=None):
+	def info(self, message, asset=None, print_log=True):
 		self.set_basic_config()
 		if asset is not None:
 			warning = asset.warnings.add()
 			warning.message = message
+		# if print_log:
+		# 	self.message_list.append(message)
+		# 	print_progress(bpy.context, self.message_list, title=self.context, icon='NONE')
 		logging.info(message)
 	
-	def debug(self, message, asset=None):
+	def debug(self, message, asset=None, print_log=True):
 		self.set_basic_config()
 		if asset is not None:
 			warning = asset.warnings.add()
 			warning.message = message
+		# if print_log:
+		# 	self.message_list.append(message)
+		# 	print_progress(bpy.context, self.message_list, title=self.context, icon='NONE')
 		logging.debug(message)
 
-	def warning(self, message, asset=None):
+	def warning(self, message, asset=None, print_log=True):
 		self.set_basic_config()
 		if asset is not None:
 			warning = asset.warnings.add()
 			warning.message = message
+		# if print_log:
+		# 	self.message_list.append(message)
+		# 	print_progress(bpy.context, self.message_list, title=self.context, icon='NONE')
 		logging.warning(message)
 
-	def error(self, message, asset=None):
+	def error(self, message, asset=None, print_log=True):
 		self.set_basic_config()
 		if asset is not None:
 			warning = asset.warnings.add()
 			warning.message = message
+		# if print_log:
+		# 	self.message_list.append(message)
+		# 	print_progress(bpy.context, self.message_list, title=self.context, icon='NONE')
 		logging.error(message)
 
 	def set_basic_config(self):
@@ -100,3 +113,43 @@ class LoggerProgress(Logger):
 			self.info('{}'.format(s))
 		for f in self.failure:
 			self.info('{}'.format(f))
+
+list_length = 20
+
+def print_progress(context, message_list, title = "Message Box", icon = 'INFO'):
+	def draw(self, context):
+		layout = self.layout
+		col = layout.column()
+		message = message_list[-list_length:]
+		for m in message:
+			col.label(text='{}'.format(m))
+
+	context.window_manager.popup_menu(draw, title = title, icon = icon)
+
+class LoggerPrintLog(bpy.types.Operator):
+	bl_idname = "scene.lm_print_progress"
+	bl_label = "Show print log"
+	bl_options = {'REGISTER', 'UNDO'}
+	bl_description = "Show print log"
+
+	message : bpy.props.StringProperty(name="Message", default="")
+
+	message_list = []
+	list_length = 20
+
+
+	def invoke(self, context, event):
+		self.message_list.append(self.message)
+		wm = context.window_manager
+		return wm.popup_menu(self, width=1000)
+
+	def execute(self, context):
+		return {'FINISHED'}
+
+	def draw(self, context):
+		layout = self.layout
+		col = layout.column()
+		message = self.message_list[-self.list_length:]
+		for m in message:
+			col.label(text='{}'.format(m))
+

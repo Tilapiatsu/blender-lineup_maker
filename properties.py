@@ -199,6 +199,8 @@ class LM_UL_ImportList_UIList(bpy.types.UIList):
 		row = col.row(align=True)
 		row.alignment = 'RIGHT'
 
+		row.prop(item, 'section', text='', icon='FILE_TEXT')
+
 		if scn.lm_import_list[item.name].is_valid:
 			row.label(text='', icon='CHECKMARK')
 		else:
