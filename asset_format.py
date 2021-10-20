@@ -90,7 +90,7 @@ class LMAsset(object):
 
 		return updated, self.log.success, self.log.failure
 
-	def update_json(self, mesh, scene_asset):
+	def update_json_values(self, mesh, scene_asset):
 		if mesh.use_json:
 			scene_asset.wip = mesh.json.is_wip
 			scene_asset.triangles = mesh.json.triangles
@@ -100,9 +100,12 @@ class LMAsset(object):
 			scene_asset.hd_status = mesh.json.hd_status
 			scene_asset.ld_status = mesh.json.ld_status
 			scene_asset.baking_status = mesh.json.baking_status
-
-			scene_asset.section = self.context.scene.lm_import_list[self.asset_name].section
 			scene_asset.from_file = mesh.json.from_file
+
+			if self.asset_name in self.context.scene.lm_import_list:
+				scene_asset.section = self.context.scene.lm_import_list[self.asset_name].section
+			else:
+				scene_asset.section = mesh.json.section
 
 	@check_length
 	def import_mesh(self, update=False):
@@ -123,7 +126,7 @@ class LMAsset(object):
 				self.log.info('Mesh "{}" dosn\'t exist or file format "{}" not compatible'.format(m.name, m.ext))
 				continue
 
-			self.update_json(m, self.scn_asset)
+			self.update_json_values(m, self.scn_asset)
 			
 			mesh_path = m.path
 			file = m.file
