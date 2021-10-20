@@ -10,39 +10,14 @@ def get_assets(context, name):
 	assets = context.scene.lm_asset_list
 	if name in context.scene.lm_asset_list:
 		idx = context.scene.lm_asset_list[name].asset_index
+		active = context.scene.lm_asset_list[name]
 	else:
-		idx = 0
+		idx = context.scene.lm_asset_list_idx
+		active = context.scene.lm_asset_list[idx]
 
 	active = assets[idx] if assets else None
 
 	return idx, assets, active
-
-def remove_asset(self, context, asset, index, remove=True):
-	self.report({'INFO'},'Remove {}'.format(asset.name))
-	try:
-		context.window.view_layer = context.scene.view_layers[asset.view_layer]
-	except KeyError as e:
-		print(e)
-
-	if context.scene.lm_asset_list[asset.name].collection:
-		H.remove_asset(context, asset.name, False)
-
-	try:
-		context.scene.view_layers.remove(context.scene.view_layers[context.scene.lm_asset_list[asset.name].view_layer])
-	except KeyError as e:
-		print(e)
-
-	if remove:
-		print("Removing asset : {}".format(context.scene.lm_asset_list[index].name))
-		context.scene.lm_asset_list.remove(index)
-		context.scene.lm_asset_list_idx = index - 1 if index else 0
-
-		H.remove_bpy_struct_item(context.scene.lm_last_render_list, asset.name)
-
-	
-	H.renumber_assets(context)
-	idx, _, _ = get_assets(context, asset.name)
-
 
 class LM_UI_MoveAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_move_asset"
@@ -99,10 +74,10 @@ class LM_UI_RemoveAsset(bpy.types.Operator):
 		return context.scene.lm_asset_list
 
 	def execute(self, context):
-		idx, asset, _ = get_assets(context, self.asset_name)
+		idx, _, asset = get_assets(context, self.asset_name)
 
-		remove_asset(self, context, asset[self.asset_name], idx)
-		H.remove_bpy_struct_item(context.scene.lm_render_queue, self.asset_name)
+		H.remove_asset(context, asset.name)
+		context.scene.lm_asset_list_idx = idx - 1 if idx else 0
 
 		return {'FINISHED'}
 
@@ -158,12 +133,19 @@ class LM_UI_ShowAsset(bpy.types.Operator):
 	def execute(self, context):
 		
 		context.window.view_layer = context.scene.view_layers[self.asset_name]
-		camera_name = context.scene.lm_asset_list[self.asset_name].render_camera
-		self.set_local_camera(context, camera_name)
+		if self.asset_name in context.scene.lm_asset_list:
+			camera_name = context.scene.lm_asset_list[self.asset_name].render_camera
+			self.set_local_camera(context, camera_name)
+		else:
+			camera_name = context.scene.lm_default_camera.name
+			self.set_local_camera(context, camera_name)
 
 		return {'FINISHED'}
 
 	def set_local_camera(self, context, camera_name):
+		camera_list = [o.name for o in context.scene.objects if o.type == 'CAMERA']
+		if not len(camera_name) or camera_name not in camera_list:
+			return
 		for a in context.screen.areas:
 			if a.type == 'VIEW_3D':
 				for s in a.spaces:
@@ -297,7 +279,7 @@ class LM_UI_RenameAsset(bpy.types.Operator):
 		removed = False
 		if current_asset.name in context.scene.lm_render_queue:
 			removed=True
-			bpy.ops.scene.lm_remove_asset_from_render(asset_name=self.asset_name)
+			bpy.ops.scene.lm_remove_asset_from_render_queue(asset_name=self.asset_name)
 
 		new_asset_path = current_asset.asset_path.replace(self.asset_name, self.new_name)
 		new_render_path = current_asset.render_path.replace(self.asset_name, self.new_name)
@@ -305,8 +287,12 @@ class LM_UI_RenameAsset(bpy.types.Operator):
 		
 		# renaming asset and rendering folder
 		os.rename(current_asset.asset_path, new_asset_path)
-		os.rename(current_asset.render_path, new_render_path)
-		os.rename(current_asset.final_composite_filepath, new_final_composite_filepath)
+
+		if len(new_render_path):
+			os.rename(current_asset.render_path, new_render_path)
+
+		if len(new_final_composite_filepath):
+			os.rename(current_asset.final_composite_filepath, new_final_composite_filepath)
 		
 		# update the assets Datas
 		current_asset.name = self.new_name

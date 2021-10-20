@@ -284,7 +284,9 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
 		op.asset_name = item.name
 		op.mode = "ASSET"
 		row.operator('scene.lm_rename_asset', text='', icon='SMALL_CAPS').asset_name = item.name
-		row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
+		op = row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH')
+		op.asset_name = item.name
+		op.mode='ASSET'
 		
 		row.separator()
 		row.operator('scene.lm_print_asset_data', text='', icon='ALIGN_JUSTIFY' ).asset_name = item.name
@@ -353,11 +355,13 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
 		op.asset_name = item.name
 		op.mode = "ASSET"
 		row.operator('scene.lm_rename_asset', text='', icon='SMALL_CAPS').asset_name = item.name
-		row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name = item.name
+		op = row.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH')
+		op.asset_name = item.name
+		op.mode='ASSET'
 		
 		row.separator()
 		row.operator('scene.lm_print_asset_data', text='', icon='ALIGN_JUSTIFY' ).asset_name = item.name
-		row.operator('scene.lm_remove_asset_from_render', text='', icon='X').asset_name = item.name
+		row.operator('scene.lm_remove_asset_from_render_queue', text='', icon='X').asset_name = item.name
 		
 
 		

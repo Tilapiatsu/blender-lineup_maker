@@ -159,6 +159,8 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		self.total_assets = len(self.import_list)
 
+		self.switch_shadingtype(context, 'SOLID')
+
 		self._timer = bpy.context.window_manager.event_timer_add(0.01, window=bpy.context.window)
 		bpy.context.window_manager.modal_handler_add(self)
 
@@ -251,15 +253,16 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			
 
 		curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
-
-		# Refresh UI
-		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 		
 		if updated:
 			# Store asset collection view layer
 			self.asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
 			context.scene.lm_asset_list[curr_asset_view_layer.name].view_layer = curr_asset_view_layer.name
 
+			self.switch_current_viewlayer(context, curr_asset_view_layer.name)
+
+			# Refresh UI
+			bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 			# Hide asset in Global View Layer
 			curr_asset_view_layer.hide_viewport = True
 
@@ -280,6 +283,26 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		if len(self.view_layer_list) == 0:
 			self.post(context, self.cancelling)
 
+	def switch_current_viewlayer(self, context, viewlayer_name):
+		if viewlayer_name in context.scene.view_layers:
+				context.window.view_layer = context.scene.view_layers[viewlayer_name]
+
+	def switch_shadingtype(self, context, shading_type):
+		for a in context.screen.areas:
+			if a.type == 'VIEW_3D':
+				for s in a.spaces:
+					if s.type =='VIEW_3D':
+						s.shading.type = shading_type
+
+	def set_local_camera(self, context, camera_name):
+		if not len(camera_name):
+			return
+		for a in context.screen.areas:
+			if a.type == 'VIEW_3D':
+				for s in a.spaces:
+					if s.type =='VIEW_3D':
+						s.camera = bpy.data.objects[camera_name]
+						s.use_local_camera=True
 
 	def post(self, context, cancelled=False):
 		for a in self.view_layer_list:
@@ -295,7 +318,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		self.log.complete_progress_asset()
 
 		for a in self.updated_assets:
-			bpy.ops.scene.lm_refresh_asset_status(asset_name = a)
+			bpy.ops.scene.lm_refresh_asset_status(mode= 'ASSET', asset_name = a)
 			bpy.ops.scene.lm_remove_asset_from_import_list(asset_name = a)
 
 		self.end()
@@ -1021,14 +1044,20 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
+	mode : bpy.props.EnumProperty(items=[("ALL", "All", ""), ("QUEUE", "Queue", ""), ("ASSET", "Asset", "")])
 
 	def execute(self, context):
 		log = L.Logger(context='EXPORT_ASSETS')
 		context.scene.lm_render_path
 
-		if self.asset_name == '':
+		if self.mode == 'ALL':
 			need_update_list = [a for a in context.scene.lm_asset_list] + [ a for a in context.scene.lm_render_queue]
-		else:
+		elif self.mode == 'QUEUE':
+			need_update_list = [a for a in context.scene.lm_render_queue if a.checked]
+			need_update_list_name = [a.name for a in need_update_list]
+			need_update_list += [a for a in context.scene.lm_asset_list if a.name in need_update_list_name]
+
+		elif self.mode =='ASSET':
 			try:
 				need_update_list = [context.scene.lm_asset_list[self.asset_name]]
 			except KeyError:
@@ -1038,8 +1067,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 				need_update_list += [context.scene.lm_render_queue[self.asset_name]]
 			except KeyError:
 				pass
-
-
+			
 		for asset in need_update_list:
 			self.report({'INFO'}, 'Lineup Maker : Refresh asset status for : "{}"'.format(asset.name))
 			log.info('Lineup Maker : Refresh asset status for : "{}"'.format(asset.name))
@@ -1104,7 +1132,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 				asset.need_update = True
 
 			# set rendering camera
-			cam = H.set_rendering_camera(context, asset)
+			H.set_rendering_camera(context, asset)
 
 		return {'FINISHED'}
 
@@ -1137,12 +1165,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 
 		self.report({'INFO'}, 'Lineup Maker : Exporting selected objects to asset folder')
 		self.json_data = []
-		if self.asset_name in context.scene.lm_asset_list:
-			self.scene_asset = context.scene.lm_asset_list[self.asset_name]
-		else:
-			self.scene_asset = None
 			
-
 		if self.mode =='SELECTED':
 			if not len(context.selected_objects):
 				self.report({'ERROR'}, 'Lineup Maker : Select at least one Mesh object')
@@ -1167,6 +1190,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 				log.warning('Asset Name not in the asset list. Export aboard')
 				return {'FINISHED'}
 
+			self.scene_asset = context.scene.lm_asset_list[self.asset_name]
 			context.window.view_layer = context.scene.view_layers[self.asset_name]
 			self.export_path = path.join(context.scene.lm_asset_path, self.asset_name)
 
@@ -1189,7 +1213,6 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 		if self.mode not in ["QUEUE"]:
 			bpy.ops.scene.lm_openfolder(folder_path=self.export_path)
 
-		
 		return {'FINISHED'}
 	
 	def modal(self, context, event):
@@ -1206,6 +1229,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			elif not self.cancelling and self.exporting_asset is None and len(self.export_list):
 				self.exporting_asset = self.export_list.pop()
 				self.asset_name = self.exporting_asset
+				self.scene_asset = context.scene.lm_asset_list[self.asset_name]
 
 				self.percent = round(100 - len(self.export_list) * 100 / self.total_assets, 2)
 				context.scene.lm_queue_progress = '{} %  -  {} / {}'.format(self.percent, self.total_assets - len(self.export_list), self.total_assets)
@@ -1222,7 +1246,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 	def post(self, context):
 		self.json_data = []
 		self.exporting_asset = None
-		bpy.ops.scene.lm_refresh_asset_status(asset_name=self.asset_name)
+		bpy.ops.scene.lm_refresh_asset_status(mode='ASSET', asset_name=self.asset_name)
 		if not len(self.export_list):
 			self.end()
 
@@ -1271,9 +1295,10 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			if self.scene_asset is not None:
 				m = self.scene_asset.mesh_list.add()
 				m = A.LMMeshFile(export_filename)
-
-		self.scene_asset.asset_path = self.export_path
-		self.scene_asset.asset_folder_exists = True
+		
+		if self.scene_asset is not None:
+			self.scene_asset.asset_path = self.export_path
+			self.scene_asset.asset_folder_exists = True
 
 		self.write_json(context)
 
