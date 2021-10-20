@@ -472,3 +472,37 @@ def get_global_import_date(meshes):
 		return global_import_date / mesh_number
 	else:
 		return 0.0
+
+def update_view_layer(context, view_layer, updated_asset_list, view_layer_dict):
+	print('LineupMaker : Updating Viewlayer "{}"'.format(view_layer))
+	if view_layer not in context.scene.view_layers:
+		print('LineupMaker : ViewLayer missing - Creating new Viewlayer "{}"'.format(view_layer))
+		bpy.ops.scene.view_layer_add()
+		context.window.view_layer.name = view_layer
+		context.view_layer.use_pass_combined = False
+		context.view_layer.use_pass_z = False
+	else:
+		pass
+		# context.window.view_layer = context.scene.view_layers[view_layer]
+
+	if view_layer in updated_asset_list:
+		print('LineupMaker : Updating visibility "{}"'.format(view_layer))
+		for n in view_layer_dict.keys():
+			if view_layer != n and view_layer != context.scene.lm_render_collection.name:
+				curr_asset_view_layer = get_layer_collection(bpy.context.scene.view_layers[view_layer].layer_collection, n)
+				if curr_asset_view_layer:
+					curr_asset_view_layer.exclude = True
+	else:
+		print('LineupMaker : Updating visibility "{}"'.format(view_layer))
+		for n in updated_asset_list:
+			if view_layer != n and view_layer != context.scene.lm_render_collection.name:
+				curr_asset_view_layer = get_layer_collection(bpy.context.scene.view_layers[view_layer].layer_collection, n)
+				if curr_asset_view_layer:
+					curr_asset_view_layer.exclude = True
+
+				
+def get_view_layer_dict(context):
+	d = {}
+	for a in context.scene.lm_asset_list:
+			d[a.view_layer] = get_layer_collection(context.view_layer.layer_collection, a.name)
+	return d

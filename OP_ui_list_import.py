@@ -310,7 +310,7 @@ class LM_UI_PrintNamingConvention(bpy.types.Operator):
 		col.label(text='Fullname = {}'.format(self.asset_name))
 		col.label(text='Is Valid = {}'.format(self.naming_convention.is_valid))
 		for k, v in zip(self.naming_convention.name_list, self.naming_convention.included_words):
-			col.label(text='{} = {}'.format(k, v))
+			col.label(text='{} = {}'.format(v, k))
 
 class LM_UI_ImportAssetList(bpy.types.Operator, ImportHelper):
 	bl_idname = "scene.lm_import_list"

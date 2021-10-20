@@ -268,27 +268,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		return None
 	
 	def update_viewlayers(self, context, view_layer):
-		if view_layer not in context.scene.view_layers:
-			bpy.ops.scene.view_layer_add()
-			context.window.view_layer.name = view_layer
-			context.view_layer.use_pass_combined = False
-			context.view_layer.use_pass_z = False
-		else:
-			pass
-			# context.window.view_layer = context.scene.view_layers[view_layer]
-
-		if view_layer in self.updated_assets:
-			for n in self.asset_view_layers.keys():
-				if view_layer != n and view_layer != context.scene.lm_render_collection.name:
-					curr_asset_view_layer = H.get_layer_collection(bpy.context.scene.view_layers[view_layer].layer_collection, n)
-					if curr_asset_view_layer:
-						curr_asset_view_layer.exclude = True
-		else:
-			for n in self.updated_assets:
-				if view_layer != n and view_layer != context.scene.lm_render_collection.name:
-					curr_asset_view_layer = H.get_layer_collection(bpy.context.scene.view_layers[view_layer].layer_collection, n)
-					if curr_asset_view_layer:
-						curr_asset_view_layer.exclude = True
+		H.update_view_layer(context, view_layer, self.updated_assets, self.asset_view_layers)
 
 		self.updated_assets_number += 1
 		self.percent = round((self.updated_assets_number * 100 / self.total_assets), 2)
