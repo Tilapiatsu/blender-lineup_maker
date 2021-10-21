@@ -393,6 +393,8 @@ def register():
     bpy.types.Scene.lm_import_list_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_asset_list_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_render_queue_idx = bpy.props.IntProperty()
+
+    bpy.types.Scene.lm_import_autosave_step = bpy.props.IntProperty(name='Number of import before autosave', default=10)
     
     bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_texture_channel_name)
     bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
@@ -525,6 +527,7 @@ def unregister():
     del bpy.types.Scene.lm_shader_name
     del bpy.types.Scene.lm_shader_idx
     del bpy.types.Scene.lm_asset_list_idx
+    del bpy.types.Scene.lm_import_autosave_step
     del bpy.types.Scene.lm_render_queue_idx
     del bpy.types.Scene.lm_import_list_idx
     del bpy.types.Scene.lm_camera_idx

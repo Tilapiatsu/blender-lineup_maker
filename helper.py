@@ -479,27 +479,50 @@ def get_global_import_date(meshes):
 	else:
 		return 0.0
 
-def update_view_layer(context, view_layer, updated_asset_list, view_layer_dict):
-	print('LineupMaker : Updating Viewlayer "{}"'.format(view_layer))
+
+def switch_current_viewlayer( context, viewlayer_name):
+	if viewlayer_name in context.scene.view_layers:
+			context.window.view_layer = context.scene.view_layers[viewlayer_name]
+
+def switch_shadingtype(context, shading_type):
+	for a in context.screen.areas:
+		if a.type == 'VIEW_3D':
+			for s in a.spaces:
+				if s.type =='VIEW_3D':
+					s.shading.type = shading_type
+
+def set_local_camera( context, camera_name):
+	if not len(camera_name):
+		return
+	for a in context.screen.areas:
+		if a.type == 'VIEW_3D':
+			for s in a.spaces:
+				if s.type =='VIEW_3D':
+					s.camera = bpy.data.objects[camera_name]
+					s.use_local_camera=True
+
+def create_asset_view_layer(context, view_layer, default_view_layer_name):
 	if view_layer not in context.scene.view_layers:
 		print('LineupMaker : ViewLayer missing - Creating new Viewlayer "{}"'.format(view_layer))
 		bpy.ops.scene.view_layer_add()
 		context.window.view_layer.name = view_layer
 		context.view_layer.use_pass_combined = False
 		context.view_layer.use_pass_z = False
-	else:
-		pass
-		# context.window.view_layer = context.scene.view_layers[view_layer]
+
+		switch_current_viewlayer(context, default_view_layer_name)
+
+def update_view_layer(context, view_layer, updated_asset_list, view_layer_dict):
+	print('LineupMaker : Updating Viewlayer "{}"'.format(view_layer))
 
 	if view_layer in updated_asset_list:
-		print('LineupMaker : Updating visibility "{}"'.format(view_layer))
+		# print('LineupMaker : Updating visibility "{}"'.format(view_layer))
 		for n in view_layer_dict.keys():
 			if view_layer != n and view_layer != context.scene.lm_render_collection.name:
 				curr_asset_view_layer = get_layer_collection(bpy.context.scene.view_layers[view_layer].layer_collection, n)
 				if curr_asset_view_layer:
 					curr_asset_view_layer.exclude = True
 	else:
-		print('LineupMaker : Updating visibility "{}"'.format(view_layer))
+		# print('LineupMaker : Updating visibility "{}"'.format(view_layer))
 		for n in updated_asset_list:
 			if view_layer != n and view_layer != context.scene.lm_render_collection.name:
 				curr_asset_view_layer = get_layer_collection(bpy.context.scene.view_layers[view_layer].layer_collection, n)

@@ -153,6 +153,7 @@ class LM_UI_RemoveAsseFromImportList(bpy.types.Operator):
 			self.report({'WARNING'}, 'Lineup Maker : Asset "{}" is present in Import List, cannot Remove'.format(self.asset_name))
 			return {'CANCELLED'}
 
+		self.report({'INFO'}, 'Lineup Maker : removing Asset "{}" from Import List'.format(self.asset_name))
 		H.remove_bpy_struct_item(context.scene.lm_import_list, self.asset_name)
 
 		return {'FINISHED'}

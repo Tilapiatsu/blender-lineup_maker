@@ -78,6 +78,8 @@ class LMAsset(object):
 		if not len(self.log.failure):
 			self.log.store_success('Asset "{}" imported successfully'.format(self.asset_name))
 
+		H.create_asset_view_layer(self.context, self.asset_name, self.context.scene.view_layers[self.context.scene.lm_initial_view_layer].name)
+
 		return True, self.log.success, self.log.failure
 	
 	def update_asset(self):
