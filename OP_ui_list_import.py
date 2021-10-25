@@ -28,6 +28,7 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 
 	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to remove')
 	force_import : bpy.props.BoolProperty(default=False)
+	refresh_warnings :bpy.props.BoolProperty(default=True)
 
 	new_assets = []
 
@@ -90,7 +91,7 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 			if a.name not in asset_folders_name or (a.name in context.scene.lm_asset_list and not self.force_import) or (a.name in context.scene.lm_asset_list and not context.scene.lm_import_list[a.name].need_update):
 				self.report({'INFO'}, 'Lineup Maker : remove asset from import list "{}"'.format(a.name))
 				H.remove_bpy_struct_item(context.scene.lm_import_list, a.name)
-			elif a.name not in self.new_assets:
+			elif a.name not in self.new_assets and self.refresh_warnings:
 				context.scene.lm_import_list[a.name].warnings.clear()
 				asset = A.LMAsset(context, path.join(folder_src, a.name,))
 				context.scene.lm_import_list[a.name].is_valid = asset.is_valid
@@ -120,7 +121,6 @@ class LM_UI_RemoveAsseFolder(bpy.types.Operator):
 		asset = context.scene.lm_import_list[self.asset_name]
 
 		shutil.rmtree(asset.asset_path, ignore_errors=True)
-		print(idx)
 		context.scene.lm_import_list_idx = idx-1 if idx else 0
 		H.remove_bpy_struct_item(context.scene.lm_import_list, self.asset_name)
 
@@ -130,6 +130,31 @@ class LM_UI_RemoveAsseFolder(bpy.types.Operator):
 		layout = self.layout
 		col = layout.column()
 		col.label(text='This operation will delete the folder DEFINITELY from your hard drive')
+
+class LM_UI_RemoveAsseFromImportList(bpy.types.Operator):
+	bl_idname = "scene.lm_remove_asset_from_import_list"
+	bl_label = "Remove Asset from impotrt list"
+	bl_options = {'REGISTER', 'UNDO'}
+	bl_description = "Remove Asset from impotrt list, the folder stays on disk"
+
+	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to remove')
+
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_import_list
+
+	def execute(self, context):
+		if not len(self.asset_name) :
+			self.report({'ERROR'}, 'Lineup Maker : Asset "{}" is not defined'.format(self.asset_name))
+			return {'CANCELLED'}
+		if self.asset_name not in context.scene.lm_import_list:
+			self.report({'WARNING'}, 'Lineup Maker : Asset "{}" is present in Import List, cannot Remove'.format(self.asset_name))
+			return {'CANCELLED'}
+
+		H.remove_bpy_struct_item(context.scene.lm_import_list, self.asset_name)
+
+		return {'FINISHED'}
+
 
 class LM_UI_ClearAssetFolder(bpy.types.Operator):
 	bl_idname = "scene.lm_clear_asset_folder"

@@ -190,7 +190,7 @@ def remove_asset(context, asset_name, remove=True):
 				bpy.data.objects.remove(o)
 		for m in datas['meshes']:
 			if m is not None and m.name in bpy.data.meshes:
-				print('Removing meshe : ', m.name)
+				print('Removing mesh : ', m.name)
 				bpy.data.meshes.remove(m)
 		for a in datas['actions']:
 			if a is not None and a.name in bpy.data.actions:
