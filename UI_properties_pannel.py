@@ -391,7 +391,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 
 		col = layout.column(align=True)
 		b = col.box()
-		b.label(text='Import List  |  {} asset(s)'.format(len(scn.lm_import_list)))
+		
 		if len(context.scene.lm_import_message):
 			b.label(text=context.scene.lm_import_message)
 		if len(context.scene.lm_import_progress):
@@ -399,6 +399,8 @@ class LM_PT_AssetList(bpy.types.Panel):
 		if len(context.scene.lm_viewlayer_progress):
 			b.label(text=context.scene.lm_viewlayer_progress)
 
+		b.label(text='Import List  |  {} asset(s)'.format(len(scn.lm_import_list)))
+		
 		b.prop(scn, 'lm_import_autosave_step')
 		row = b.row()
 		rows = 20 if len(scn.lm_import_list) > 10 else len(scn.lm_import_list) * 2 + 1
