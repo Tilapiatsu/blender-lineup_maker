@@ -377,7 +377,7 @@ class LM_PT_Chapter(bpy.types.Panel):
 		row.operator('scene.lm_remove_chapter_keyword', icon='X', text="")
 
 
-class LM_PT_RenderQueue(bpy.types.Panel):          
+class LM_PT_AssetList(bpy.types.Panel):          
 	bl_label = "Asset List"
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
@@ -391,24 +391,40 @@ class LM_PT_RenderQueue(bpy.types.Panel):
 
 		col = layout.column(align=True)
 		b = col.box()
+		b.label(text='Import List')
+
+		row = b.row()
+		rows = 20 if len(scn.lm_import_list) > 10 else len(scn.lm_import_list) * 2 + 1
+		
+		row.template_list('LM_UL_import_list', '', scn, 'lm_import_list', scn, 'lm_import_list_idx', rows=rows)
+		c = row.column(align=True)
+		c.operator('scene.lm_refresh_import_list', text='', icon='FILE_REFRESH')
+		
+		c.separator()
+		c.operator("scene.lm_clear_asset_folder", text="", icon='TRASH')
+
+		c.separator()
+		c.operator('scene.lm_import_assets', text='', icon='IMPORT').mode = 'IMPORT'
+
+		c.separator()
+		c.separator()
 		b.label(text='Asset List')
+		row = b.row()
 		
 		rendered = [a for a in scn.lm_asset_list if a.rendered]
 		composited = [a for a in scn.lm_asset_list if a.composited]
 		b.label(text='{} assets  /  {} rendered  /  {} composited'.format(len(scn.lm_asset_list), len(rendered), len(composited)))
 		b.separator()
-		row = b.row()
 		rows = 20 if len(scn.lm_asset_list) > 10 else len(scn.lm_asset_list) * 2 + 1
 		
 		row.template_list('LM_UL_asset_list', '', scn, 'lm_asset_list', scn, 'lm_asset_list_idx', rows=rows)
 		c = row.column(align=True)
 		c.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name=''
-		# c.operator("scene.lm_move_asset", text="", icon='TRIA_UP').direction = "UP"
-		# c.operator("scene.lm_move_asset", text="", icon='TRIA_DOWN').direction = "DOWN"
+
 
 		c.separator()
 		c.operator("scene.lm_clear_asset_list", text="", icon='TRASH')
-		# c.operator("scene.lm_remove_asset", text="", icon='X')
+
 		c.separator()
 		c.operator('scene.lm_add_need_render_to_render_queue', text='', icon='SORT_ASC')
 
@@ -434,7 +450,7 @@ class LM_PT_RenderQueue(bpy.types.Panel):
 		c.operator("scene.lm_import_assets", text="", icon='IMPORT').mode = "QUEUE"
 		c.operator("scene.lm_export_assets", text="", icon='EXPORT').mode = "QUEUE"
 		
-		# c.operator("scene.lm_remove_asset_to_render", text="", icon='X')
+		# c.operator("scene.lm_remove_asset_from_render", text="", icon='X')
 
 		if len(scn.lm_render_queue):
 			b = layout.box()

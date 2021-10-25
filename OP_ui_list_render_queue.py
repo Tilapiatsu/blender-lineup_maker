@@ -91,7 +91,7 @@ class LM_UI_ClearAssetToRenderQueueList(bpy.types.Operator):
 
 
 class LM_UI_RemoveAssetToRender(bpy.types.Operator):
-    bl_idname = "scene.lm_remove_asset_to_render"
+    bl_idname = "scene.lm_remove_asset_from_render"
     bl_label = "Remove selected asset to render"
     bl_options = {'REGISTER', 'UNDO'}
     bl_description = "Remove selected asset to render."

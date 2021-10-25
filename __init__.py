@@ -52,6 +52,7 @@ from .OP_files import *
 from .UI_properties_pannel import *
 from .preferences import *
 from .properties import *
+from .OP_ui_list_import import *
 from .OP_ui_list_asset import *
 from .OP_ui_list_render_queue import *
 from .OP_ui_list_texture import *
@@ -92,7 +93,7 @@ classes = (
     LM_PT_Chapter,
     LM_PT_CompositLayout,
     LM_PT_main,
-    LM_PT_RenderQueue,
+    LM_PT_AssetList,
     LM_Render_List,
     LM_Texture_List,
     LM_Material_List,
@@ -112,8 +113,14 @@ classes = (
     LM_UL_Keywords_UIList,
     LM_UL_KeywordValues_UIList,
     LM_UL_Cameras_UIList,
+    LM_UL_ImportList_UIList,
     LM_UL_AssetList_UIList,
     LM_UL_AssetListRQ_UIList,
+    LM_IU_RefreshImportList,
+    LM_UI_RemoveAsseFolder,
+    LM_UI_ClearAssetFolder,
+    LM_UI_OpenImportFolder,
+    LM_UI_RenameAssetFolder,
     LM_UI_AddAssetToRenderQueue,
     LM_UI_AddNeedRenderToRenderQueue,
     LM_UI_MoveAssetToRender,
@@ -126,6 +133,7 @@ classes = (
     LM_UI_RemoveAsset,
     LM_UI_OpenRenderFolder,
     LM_UI_OpenAssetFolder,
+    LM_UI_RenameAsset,
     LM_UI_ShowAsset,
     LM_UI_PrintAssetData,
     LM_UI_AddChapterKeyword,
@@ -380,6 +388,7 @@ def register():
     bpy.types.Scene.lm_shader_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_camera_idx = bpy.props.IntProperty()
 
+    bpy.types.Scene.lm_import_list_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_asset_list_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_render_queue_idx = bpy.props.IntProperty()
     
@@ -427,7 +436,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     
-
+    bpy.types.Scene.lm_import_list = bpy.props.CollectionProperty(type=LM_Asset_List)
     bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
     bpy.types.Scene.lm_render_queue = bpy.props.CollectionProperty(type=LM_Asset_List)
     bpy.types.Scene.lm_last_render_list = bpy.props.CollectionProperty(type=LM_Asset_List)
@@ -472,6 +481,7 @@ def unregister():
     del bpy.types.Scene.lm_texture_channels
     del bpy.types.Scene.lm_initial_view_layer
     del bpy.types.Scene.lm_asset_list
+    del bpy.types.Scene.lm_import_list
     del bpy.types.Scene.lm_render_queue
     del bpy.types.Scene.lm_last_render_list
 
@@ -514,6 +524,7 @@ def unregister():
     del bpy.types.Scene.lm_shader_idx
     del bpy.types.Scene.lm_asset_list_idx
     del bpy.types.Scene.lm_render_queue_idx
+    del bpy.types.Scene.lm_import_list_idx
     del bpy.types.Scene.lm_camera_idx
     del bpy.types.Scene.lm_channel_name
     del bpy.types.Scene.lm_channel_idx

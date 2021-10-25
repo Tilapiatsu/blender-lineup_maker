@@ -1,7 +1,8 @@
-import bpy
+import bpy, os
 from os import path
 from . import helper as H
 from . import logger as L
+from . import naming_convention as N
 
 def get_assets(context, name):
 	H.renumber_assets(context)
@@ -185,7 +186,6 @@ class LM_UI_PrintAssetData(bpy.types.Operator):
 		return wm.invoke_props_dialog(self, width=800)
 
 	def execute(self, context):
-
 		return {'FINISHED'}
 	
 	def draw(self, context):
@@ -226,4 +226,67 @@ class LM_UI_PrintAssetData(bpy.types.Operator):
 			col.label(text='section = {}'.format(self.asset.section))
 			col.label(text='from_file = {}'.format(self.asset.from_file))
 
+		
+class LM_UI_RenameAsset(bpy.types.Operator):
+	bl_idname = "scene.lm_rename_asset"
+	bl_label = "Rename Asset"
+	bl_options = {'REGISTER', 'UNDO'}
+	bl_description = "Rename Asset"
+
+	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to rename')
+	new_name : bpy.props.StringProperty(name="New Name", default="", description='New Name')
+
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_asset_list
+
+	def invoke(self, context, event):
+		self.new_name = self.asset_name
+		wm = context.window_manager
+		return wm.invoke_props_dialog(self)
+
+	def execute(self, context):
+		asset_naming_convention = N.NamingConvention(context, self.new_name, context.scene.lm_asset_naming_convention)
+		if not asset_naming_convention.is_valid:
+			self.report({'ERROR	'}, 'Lineup Maker : The new asset name "{}" is not valid'.format(self.new_name))
+			wm = context.window_manager
+			return wm.invoke_props_dialog(self)
+		# rename the asset in Blender File and in Disk
+		else:
+			_, _, current_asset = get_assets(context, self.asset_name)
+			removed = False
+			if current_asset.name in context.scene.lm_render_queue:
+				removed=True
+				bpy.ops.scene.lm_remove_asset_from_render(asset_name=self.asset_name)
+
+			new_asset_path = current_asset.asset_path.replace(self.asset_name, self.new_name)
+			new_render_path = current_asset.render_path.replace(self.asset_name, self.new_name)
+			new_final_composite_filepath = current_asset.final_composite_filepath.replace(self.asset_name, self.new_name)
+			
+			
+			os.rename(current_asset.asset_path, new_asset_path)
+			os.rename(current_asset.render_path, new_render_path)
+			os.rename(current_asset.final_composite_filepath, new_final_composite_filepath)
+				
+			current_asset.name = self.new_name
+			current_asset.asset_path = new_asset_path
+			current_asset.render_path = new_render_path
+			current_asset.final_composite_filepath = new_final_composite_filepath
+			current_asset.collection.name = current_asset.collection.name.replace(self.asset_name, self.new_name)
+			current_asset.view_layer = current_asset.view_layer.replace(self.asset_name, self.new_name)
+
+			for f in os.listdir(current_asset.render_path):
+				filepath = path.join(current_asset.render_path, f)
+				os.rename(filepath, filepath.replace(self.asset_name, self.new_name))
+			
+			if removed:
+				bpy.ops.scene.lm_add_asset_to_render_queue(asset_name= self.new_name)
+
+		return {'FINISHED'}
+
+	def draw(self, context):
+		layout = self.layout
+		col = layout.column()
+		col.label(text='From "{}" to :'.format(self.asset_name))
+		col.prop(self, 'new_name')
 		
