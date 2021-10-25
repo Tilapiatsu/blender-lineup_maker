@@ -12,7 +12,7 @@ def get_assets(context, name):
 	H.renumber_assets(context, context.scene.lm_import_list)
 	assets = context.scene.lm_import_list
 	if name in context.scene.lm_import_list:
-		idx = context.scene.lm_import_list[name].asset_index
+		idx = context.scene.lm_import_list[name].asset_number
 	else:
 		idx = 0
 
@@ -27,26 +27,28 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 	bl_description = "Refresh Import List"
 
 	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to remove')
+	force_import : bpy.props.BoolProperty(default=False)
+
+	new_assets = []
 
 	@classmethod
 	def poll(cls, context):
 		return len(context.scene.lm_asset_path) and path.isdir(context.scene.lm_asset_path)
 	
 	def add_asset(self, context, asset_name, path, update=False):
-		asset = context.scene.lm_import_list.add()
-		asset.name = asset_name
-		asset.asset_path = path
-		asset.asset_folder_exists = True
+		self.new_assets = context.scene.lm_import_list.add()
+		self.new_assets.name = asset_name
+		self.new_assets.asset_path = path
+		self.new_assets.asset_folder_exists = True
 
 		a = A.LMAsset(context, path)
-		asset.is_valid = a.is_valid
+		self.new_assets.is_valid = a.is_valid
 		
 		if update:
-			asset.need_update = True
+			self.new_assets.need_update = True
 
 	def execute(self, context):
 		folder_src = context.scene.lm_asset_path
-
 		# If asset_name is not specified, processed all assets
 		if not len(self.asset_name):
 			asset_folders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f))]
@@ -69,21 +71,27 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 				self.add_asset(context, self.asset_name, f)
 			else:
 				# If asset is not in the import list nor in the asset list
-				if asset_name not in context.scene.lm_import_list and asset_name not in context.scene.lm_asset_list:
+				if asset_name not in context.scene.lm_import_list and (asset_name not in context.scene.lm_asset_list or self.force_import):
 					self.add_asset(context, asset_name, f)
 
 				# If asset is already imported and is not yet in Import List
 				elif asset_name in context.scene.lm_asset_list and asset_name not in context.scene.lm_import_list:
 					# Check if the asset need to be updated
-					asset = context.scene.lm_asset_list[asset_name]
+					asset = A.LMAsset(context, f)
 					if asset.need_update:
 						self.add_asset(context, asset_name, f, update=True)
 
-		if not len(self.asset_name):
-			for a in context.scene.lm_import_list:
-				if a.name not in asset_folders_name or ( a.name in context.scene.lm_asset_list and not context.scene.lm_import_list[a.name].need_update):
-					self.report({'INFO'}, 'Lineup Maker : remove asset from import list "{}"'.format(a.name))
-					H.remove_bpy_struct_item(context.scene.lm_import_list, a.name)
+		for a in context.scene.lm_import_list:
+			# if the asset is not in the drive, or asset is in the asset list and doesn't need update, then remove from the import_list
+			if a.name not in asset_folders_name or (a.name in context.scene.lm_asset_list and not self.force_import and not context.scene.lm_import_list[a.name].need_update):
+				self.report({'INFO'}, 'Lineup Maker : remove asset from import list "{}"'.format(a.name))
+				H.remove_bpy_struct_item(context.scene.lm_import_list, a.name)
+			elif a.name not in self.new_assets:
+				context.scene.lm_import_list[a.name].warnings.clear()
+				asset = A.LMAsset(context, path.join(folder_src, a.name,))
+				context.scene.lm_import_list[a.name].is_valid = asset.is_valid
+		
+		self.new_assets = []
 
 		return {'FINISHED'}
 
@@ -104,10 +112,14 @@ class LM_UI_RemoveAsseFolder(bpy.types.Operator):
 		return wm.invoke_confirm(self, event)
 
 	def execute(self, context):
+		idx, _, _ = get_assets(context, self.asset_name)
 		asset = context.scene.lm_import_list[self.asset_name]
 
 		shutil.rmtree(asset.asset_path, ignore_errors=True)
+		print(idx)
+		context.scene.lm_import_list_idx = idx-1 if idx else 0
 		H.remove_bpy_struct_item(context.scene.lm_import_list, self.asset_name)
+
 		return {'FINISHED'}
 
 	def draw(self, context):
@@ -198,6 +210,8 @@ class LM_UI_RenameAssetFolder(bpy.types.Operator):
 			if removed:
 				bpy.ops.scene.lm_add_asset_to_render_queue(asset_name= self.new_name)
 
+			bpy.ops.scene.lm_refresh_import_list(asset_name=self.new_name)
+
 		return {'FINISHED'}
 
 	def draw(self, context):
@@ -287,7 +301,7 @@ class LM_UI_ImportAssetList(bpy.types.Operator, ImportHelper):
 			for a in json_data['assets']:
 				name = a['name']
 				if name not in context.scene.lm_import_list:
-					bpy.ops.scene.lm_refresh_import_list(asset_name = name)
+					bpy.ops.scene.lm_refresh_import_list(asset_name=name, force_import=True)
 
 
 		return {'FINISHED'}
