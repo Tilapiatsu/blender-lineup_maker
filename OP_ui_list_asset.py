@@ -233,7 +233,6 @@ class LM_UI_PrintAssetData(bpy.types.Operator):
 
 		self.registered_annotations = []
 		for k in self.__annotations__.keys():
-			print(k)
 			if k in ['asset_name']:
 				continue
 			
@@ -363,3 +362,30 @@ class LM_UI_ShowAssetWarning(bpy.types.Operator):
 		col.separator()
 		for w in context.scene.lm_asset_list[self.asset_name].warnings:
 			col.label(text='{}'.format(w.message))
+
+		
+class LM_UI_FixViewLayers(bpy.types.Operator):
+	bl_idname = "scene.lm_fix_view_layers"
+	bl_label = "Fix View layers visibility"
+	bl_options = {'REGISTER', 'UNDO'}
+	bl_description = "Fix View layers visibility"
+
+	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to rename')
+
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_asset_list
+
+
+	def execute(self, context):
+		view_layer_list = H.get_view_layer_dict(context)
+
+		if len(self.asset_name):
+			updated_asset_list = [self.asset_name]
+		else:
+			updated_asset_list = [a.name for a in context.scene.lm_asset_list]
+
+		for l in context.scene.view_layers:
+			H.update_view_layer(context, l.name, updated_asset_list, view_layer_list)
+
+		return {'FINISHED'}

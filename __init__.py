@@ -134,6 +134,7 @@ classes = (
     LM_UI_OpenAssetFolder,
     LM_UI_RenameAsset,
     LM_UI_ShowAssetWarning,
+    LM_UI_FixViewLayers,
     LM_UI_ShowAsset,
     LM_UI_PrintAssetData,
     LM_UI_AddChapterKeyword,

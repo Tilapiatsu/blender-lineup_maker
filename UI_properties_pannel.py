@@ -428,6 +428,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 		row.template_list('LM_UL_asset_list', '', scn, 'lm_asset_list', scn, 'lm_asset_list_idx', rows=rows)
 		c = row.column(align=True)
 		c.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name=''
+		c.operator('scene.lm_fix_view_layers', text='', icon='MODIFIER_DATA').asset_name=''
 
 
 		c.separator()
