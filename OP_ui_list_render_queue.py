@@ -146,7 +146,7 @@ class LM_UI_ExportRenderQueueList(bpy.types.Operator, ExportHelper):
 	bl_options = {'REGISTER'}
 	bl_description = "Export queue list"
 
-	json_data = {}
+	json_data = {'assets':[]}
 	filename_ext = ".json"
 	filter_glob: bpy.props.StringProperty(
 		default="*.json",
@@ -162,12 +162,12 @@ class LM_UI_ExportRenderQueueList(bpy.types.Operator, ExportHelper):
 		for a in context.scene.lm_render_queue:
 			if a.checked:
 				asset = context.scene.lm_asset_list[a.name]
-				self.json_data[asset.name] = {'fromFile':asset.from_file}
+				self.json_data['assets'].append({'name':asset.name, 'fromFile':asset.from_file})
 
 
 		with open(self.filepath, 'w', encoding='utf-8') as outfile:
 			json.dump(self.json_data, outfile, ensure_ascii=False, indent=4)
 		
-		json_data = {}
+		self.json_data = {'assets':[]}
 
 		return {'FINISHED'}
