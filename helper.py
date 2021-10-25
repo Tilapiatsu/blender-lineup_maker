@@ -205,19 +205,24 @@ def remove_asset(context, asset_name, remove=True):
 				print('Removing material : ', m.name)
 				bpy.data.materials.remove(m)
 		
-		unused_images_list = unused_images()
+		# unused_images_list = unused_images()
 
-		for i in unused_images_list:
-			if i in bpy.data.images:
-				print('Removing image : ', i)
-				bpy.data.images.remove(bpy.data.images[i])
+		# for i in unused_images_list:
+		# 	if i in bpy.data.images:
+		# 		print('Removing image : ', i)
+		# 		bpy.data.images.remove(bpy.data.images[i])
 		
 		bpy.data.collections.remove(bpy.data.collections[asset_name])
 		set_active_collection(context, V.LM_ASSET_COLLECTION)
+
+	if asset_name in context.scene.view_layers:
+		context.scene.view_layers.remove(context.scene.view_layers[context.scene.lm_asset_list[asset_name].view_layer])
+
 	if asset_name in context.scene.lm_asset_list:
 		if remove:
 			remove_bpy_struct_item(context.scene.lm_asset_list, asset_name)
 			remove_bpy_struct_item(context.scene.lm_render_queue, asset_name)
+			remove_bpy_struct_item(context.scene.lm_last_render_list, asset_name)
 
 
 def get_valid_camera(context, asset):
@@ -242,6 +247,7 @@ def set_rendering_camera(context, asset):
 		cam = get_valid_camera(context, asset)
 		context.scene.camera = bpy.data.objects[cam.name]
 		asset.render_camera = cam.name
+		
 def image_all(image_key):
 	# returns a list of keys of every data-block that uses this image
 

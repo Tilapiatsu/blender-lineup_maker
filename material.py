@@ -24,10 +24,10 @@ def create_bsdf_material(asset, material, texture_set=None):
 	context = asset.context
 	log = L.Logger(context='CREATE_BSDF_MATERIAL')
 	input_indices = {'Base Color':{'index':0},
-					'Metallic':{'index':4},
-					'Roughness':{'index':7},
-					'Alpha':{'index':19},
-					'Normal':{'index':20}}
+					'Metallic':{'index':6},
+					'Roughness':{'index':9},
+					'Alpha':{'index':21},
+					'Normal':{'index':22}}
 	
 	input_indices = feed_input_indices(context, input_indices)
 
@@ -70,7 +70,8 @@ def create_bsdf_material(asset, material, texture_set=None):
 			if t is None:
 				continue
 			if channel == 'Alpha':
-				material.blend_method = 'CLIP'
+				material.blend_method = 'HASHED'
+				material.alpha_threshold = 0.2
 
 			material_texture = context.scene.lm_asset_list[asset.asset_name].material_list[material.name].texture_list.add()
 			material_texture.file_path = t

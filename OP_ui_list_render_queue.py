@@ -75,8 +75,8 @@ class LM_UI_MoveAssetToRender(bpy.types.Operator):
 		return {'FINISHED'}
 
 
-class LM_UI_ClearAssetToRenderQueueList(bpy.types.Operator):
-	bl_idname = "scene.lm_clear_asset_to_render_queue_list"
+class LM_UI_ClearAssetFromRenderQueueList(bpy.types.Operator):
+	bl_idname = "scene.lm_clear_asset_from_render_queue_list"
 	bl_label = "Clear all assets of render queue"
 	bl_options = {'REGISTER', 'UNDO'}
 	bl_description = "Clear all assets of render queue."
@@ -91,8 +91,8 @@ class LM_UI_ClearAssetToRenderQueueList(bpy.types.Operator):
 		return {'FINISHED'}
 
 
-class LM_UI_RemoveAssetToRender(bpy.types.Operator):
-	bl_idname = "scene.lm_remove_asset_from_render"
+class LM_UI_RemoveAssetFromRenderQueue(bpy.types.Operator):
+	bl_idname = "scene.lm_remove_asset_from_render_queue"
 	bl_label = "Remove selected asset to render"
 	bl_options = {'REGISTER', 'UNDO'}
 	bl_description = "Remove selected asset to render."
@@ -107,6 +107,42 @@ class LM_UI_RemoveAssetToRender(bpy.types.Operator):
 		H.remove_bpy_struct_item(context.scene.lm_render_queue, self.asset_name)
 
 		return {'FINISHED'}
+
+class LM_UI_DeleteRenderQueueAsset(bpy.types.Operator):
+	bl_idname = "scene.lm_delete_render_queue_asset"
+	bl_label = "Remove Selected asset from file"
+	bl_options = {'REGISTER', 'UNDO'}
+	bl_description = "Remove Selected asset from file."
+
+	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to remove')
+
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_import_list
+
+	def invoke(self, context, event):
+		wm = context.window_manager
+		return wm.invoke_confirm(self, event)
+
+	def execute(self, context):
+		assets = []
+
+		if len(self.asset_name):
+			if self.asset_name in context.scene.lm_asset_list:	
+				assets [self.asset_name]
+		else:
+			assets = [a.name for a in context.scene.lm_render_queue if a.checked]
+
+		for a in assets:
+			bpy.ops.scene.lm_remove_asset(asset_name = a)
+
+		return {'FINISHED'}
+
+	def draw(self, context):
+		layout = self.layout
+		col = layout.column()
+		col.label(text='This operation will DEFINITELY delete the asset from your file')
+
 
 class LM_UI_CheckAllRenderQueuedAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_check_all_render_queued_asset"

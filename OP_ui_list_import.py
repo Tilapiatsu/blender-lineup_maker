@@ -229,7 +229,7 @@ class LM_UI_RenameAssetFolder(bpy.types.Operator):
 
 			if current_asset.name in context.scene.lm_render_queue:
 				removed=True
-				bpy.ops.scene.lm_remove_asset_from_render(asset_name=self.asset_name)
+				bpy.ops.scene.lm_remove_asset_from_render_queue(asset_name=self.asset_name)
 
 			new_path = current_asset.asset_path.replace(self.asset_name, self.new_name)
 			
@@ -241,7 +241,7 @@ class LM_UI_RenameAssetFolder(bpy.types.Operator):
 			if removed:
 				bpy.ops.scene.lm_add_asset_to_render_queue(asset_name= self.new_name)
 
-			bpy.ops.scene.lm_refresh_import_list(asset_name=self.new_name)
+			# context.scene.lm_import_list[self.asset_name].name = self.new_name
 
 		return {'FINISHED'}
 

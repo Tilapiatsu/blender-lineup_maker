@@ -392,6 +392,12 @@ class LM_PT_AssetList(bpy.types.Panel):
 		col = layout.column(align=True)
 		b = col.box()
 		b.label(text='Import List  |  {} asset(s)'.format(len(scn.lm_import_list)))
+		if len(context.scene.lm_import_message):
+			b.label(text=context.scene.lm_import_message)
+		if len(context.scene.lm_import_progress):
+			b.label(text=context.scene.lm_import_progress)
+		if len(context.scene.lm_viewlayer_progress):
+			b.label(text=context.scene.lm_viewlayer_progress)
 
 		row = b.row()
 		rows = 20 if len(scn.lm_import_list) > 10 else len(scn.lm_import_list) * 2 + 1
@@ -399,6 +405,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 		row.template_list('LM_UL_import_list', '', scn, 'lm_import_list', scn, 'lm_import_list_idx', rows=rows)
 		c = row.column(align=True)
 		
+		c.operator('scene.lm_refresh_import_list', text='', icon='ADD').refresh_warnings = False
 		c.operator('scene.lm_refresh_import_list', text='', icon='FILE_REFRESH')
 		
 		c.separator()
@@ -427,7 +434,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 		
 		row.template_list('LM_UL_asset_list', '', scn, 'lm_asset_list', scn, 'lm_asset_list_idx', rows=rows)
 		c = row.column(align=True)
-		c.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').asset_name=''
+		c.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').mode='ALL'
 		c.operator('scene.lm_fix_view_layers', text='', icon='MODIFIER_DATA').asset_name=''
 
 
@@ -447,14 +454,17 @@ class LM_PT_AssetList(bpy.types.Panel):
 		rows = 11 if len(scn.lm_render_queue) > 10 else len(scn.lm_render_queue) + 1
 		row.template_list('LM_UL_asset_list_RenderQueue', '', scn, 'lm_render_queue', scn, 'lm_render_queue_idx', rows=rows)
 		c = row.column(align=True)
-		
+
 		c.operator('scene.lm_check_all_render_queued_asset', text='', icon='CHECKBOX_HLT')
 		c.operator('scene.lm_uncheck_all_render_queued_asset', text='', icon='CHECKBOX_DEHLT')
 		c.separator()
 		c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_UP').direction = "UP"
 		c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_DOWN').direction = "DOWN"
 		c.separator()
-		c.operator("scene.lm_clear_asset_to_render_queue_list", text="", icon='TRASH')
+		c.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').mode='QUEUE'
+		c.separator()
+		c.operator("scene.lm_delete_render_queue_asset", text="", icon='TRASH')
+		c.operator("scene.lm_clear_asset_from_render_queue_list", text="", icon='X')
 		c.separator()
 		c.operator("scene.lm_import_assets", text="", icon='IMPORT').mode = "QUEUE"
 		c.operator("scene.lm_export_assets", text="", icon='EXPORT').mode = "QUEUE"
