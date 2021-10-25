@@ -416,7 +416,8 @@ class LM_PT_AssetList(bpy.types.Panel):
 		c.operator("scene.lm_uncheck_all_import_list", text="", icon='CHECKBOX_DEHLT')
 
 		c.separator()
-		c.operator("scene.lm_clear_asset_folder", text="", icon='TRASH')
+		c.operator("scene.lm_clear_asset_folder", text="", icon='X')
+		c.operator("scene.lm_remove_asset_folder", text="", icon='TRASH').mode = 'IMPORT'
 
 		c.separator()
 		c.operator('scene.lm_import_assets', text='', icon='IMPORT').mode = 'IMPORT'

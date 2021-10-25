@@ -715,7 +715,7 @@ class LMAsset(object):
 
 	@property
 	def section(self):
-		section = "UINCATEGORIZED"
+		section = "UNCATEGORIZED"
 		if len(self.meshes):
 			try:
 				section = self.meshes[0].json.section
