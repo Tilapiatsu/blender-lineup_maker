@@ -390,7 +390,7 @@ class LM_OP_UpdateJson(bpy.types.Operator):
 	def update_json(self, context, asset):
 		a = A.LMAsset(context, asset)
 		for m in a.meshes:
-			a.update_json(m, context.scene.lm_asset_list[a.asset_name])
+			a.update_json_values(m, context.scene.lm_asset_list[a.asset_name])
 
 
 class LM_OP_RenderAssets(bpy.types.Operator):

@@ -158,9 +158,18 @@ class LM_UI_ShowAsset(bpy.types.Operator):
 	def execute(self, context):
 		
 		context.window.view_layer = context.scene.view_layers[self.asset_name]
+		camera_name = context.scene.lm_asset_list[self.asset_name].render_camera
+		self.set_local_camera(context, camera_name)
 
 		return {'FINISHED'}
 
+	def set_local_camera(self, context, camera_name):
+		for a in context.screen.areas:
+			if a.type == 'VIEW_3D':
+				for s in a.spaces:
+					if s.type =='VIEW_3D':
+						s.camera = bpy.data.objects[camera_name]
+						s.use_local_camera=True
 
 class LM_UI_PrintAssetData(bpy.types.Operator):
 	bl_idname = "scene.lm_print_asset_data"
