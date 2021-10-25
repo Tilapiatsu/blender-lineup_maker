@@ -1,9 +1,10 @@
-import bpy, shutil
+import bpy, shutil, json
 import os
 from os import path
 from . import helper as H
 from . import logger as L
 from . import naming_convention as N
+from bpy_extras.io_utils import ImportHelper
 
 
 def get_assets(context, name):
@@ -30,12 +31,24 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 	def poll(cls, context):
 		return len(context.scene.lm_asset_path) and path.isdir(context.scene.lm_asset_path)
 	
+	def add_asset(self, context, asset_name, path, update=False):
+		asset = context.scene.lm_import_list.add()
+		asset.name = asset_name
+		asset.asset_path = path
+		asset.asset_folder_exists = True
+
+		asset_naming_convention = N.NamingConvention(context, asset_name, context.scene.lm_asset_naming_convention)
+		asset.is_valid = asset_naming_convention.is_valid
+		
+		if update:
+			asset.need_update = True
+
 	def execute(self, context):
 		folder_src = context.scene.lm_asset_path
 
 		# If asset_name is not specified, processed all assets
 		if not len(self.asset_name):
-			asset_folders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f))]
+			asset_folders = [path.join(folder_src, f,) for f in os.listdir(folder_src) if path.isdir(os.path.join(folder_src, f)) and f == self.asset_name]
 			asset_folders_name = [path.basename(f) for f in asset_folders]
 			bpy.ops.scene.lm_refresh_asset_status()
 		# Else process only specified asset
@@ -51,31 +64,24 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 
 		for f in asset_folders:
 			asset_name = path.basename(f)
-			# If asset is not in the import list nor in the asset list
-			if asset_name not in context.scene.lm_import_list and asset_name not in context.scene.lm_asset_list:
-				asset = context.scene.lm_import_list.add()
-				asset.name = asset_name
-				asset.asset_path = f
-				asset.asset_folder_exists = True
+			if len(self.asset_name):
+				self.add_asset(context, self.asset_name, f)
+			else:
+				# If asset is not in the import list nor in the asset list
+				if asset_name not in context.scene.lm_import_list and asset_name not in context.scene.lm_asset_list:
+					self.add_asset(context, self.asset_name, f)
 
-				asset_naming_convention = N.NamingConvention(context, asset_name, context.scene.lm_asset_naming_convention)
-				asset.is_valid = asset_naming_convention.is_valid
+				# If asset is already imported and is not yet in Import List
+				elif asset_name in context.scene.lm_asset_list and asset_name not in context.scene.lm_import_list:
+					# Check if the asset need to be updated
+					asset = context.scene.lm_asset_list[asset_name]
+					if asset.need_update:
+						self.add_asset(context, self.asset_name, f, update=True)
 
-			# If asset is already imported and is not yet in Import List
-			elif asset_name in context.scene.lm_asset_list and asset_name not in context.scene.lm_import_list:
-				# Check if the asset need to be updated
-				asset = context.scene.lm_asset_list[asset_name]
-				if asset.need_update:
-					asset_import = context.scene.lm_import_list.add()
-					asset_import.name = asset.name
-					asset_import.asset_path = asset.asset_path
-					asset_import.asset_folder_exists = True
-					asset_import.is_valid = True
-					asset_import.need_update = True
-
-		for a in context.scene.lm_import_list:
-			if a.name not in asset_folders_name or ( a.name in context.scene.lm_asset_list and not context.scene.lm_import_list[a.name].need_update):
-				H.remove_bpy_struct_item(context.scene.lm_import_list, a.name)
+		if not len(self.asset_name):
+			for a in context.scene.lm_import_list:
+				if a.name not in asset_folders_name or ( a.name in context.scene.lm_asset_list and not context.scene.lm_import_list[a.name].need_update):
+					H.remove_bpy_struct_item(context.scene.lm_import_list, a.name)
 
 		return {'FINISHED'}
 
@@ -258,4 +264,27 @@ class LM_UI_PrintNamingConvention(bpy.types.Operator):
 		col.label(text='Is Valid = {}'.format(self.naming_convention.is_valid))
 		for k, v in zip(self.naming_convention.name_list, self.naming_convention.included_words):
 			col.label(text='{} = {}'.format(k, v))
-		
+
+class LM_UI_ImportAssetList(bpy.types.Operator, ImportHelper):
+	bl_idname = "scene.lm_import_list"
+	bl_label = "Import asset list"
+	bl_options = {'REGISTER'}
+	bl_description = "Import asset list"
+
+	filename_ext = ".json"
+	filter_glob: bpy.props.StringProperty(
+		default="*.json",
+		options={'HIDDEN'},
+		maxlen=255,  # Max internal buffer length, longer would be clamped.
+	)
+
+	def execute(self, context):
+		with open(self.filepath, 'r', encoding='utf-8-sig') as json_file:  
+			json_data = json.load(json_file)
+
+			for k in json_data.keys():
+				if k not in context.scene.lm_import_list:
+					bpy.ops.scene.lm_refresh_import_list(asset_name = k)
+
+
+		return {'FINISHED'}

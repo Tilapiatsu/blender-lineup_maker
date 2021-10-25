@@ -412,6 +412,9 @@ class LM_PT_AssetList(bpy.types.Panel):
 		c.operator('scene.lm_import_assets', text='', icon='IMPORT').mode = 'IMPORT'
 
 		c.separator()
+		c.operator('scene.lm_import_list', text='', icon='SORT_ASC')
+
+		c.separator()
 		c.separator()
 		b.label(text='Asset List')
 		row = b.row()
@@ -454,6 +457,8 @@ class LM_PT_AssetList(bpy.types.Panel):
 		c.separator()
 		c.operator("scene.lm_import_assets", text="", icon='IMPORT').mode = "QUEUE"
 		c.operator("scene.lm_export_assets", text="", icon='EXPORT').mode = "QUEUE"
+		c.separator()
+		c.operator('scene.lm_export_queue_list', text='', icon='SORT_DESC')
 		
 		# c.operator("scene.lm_remove_asset_from_render", text="", icon='X')
 
