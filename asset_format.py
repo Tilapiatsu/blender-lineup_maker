@@ -39,6 +39,15 @@ class LMAsset(object):
 		self.scn_asset = None
 		
 	# Decorators
+	def check_asset_folder_exist(func):
+		def func_wrapper(self, *args, **kwargs):
+			if path.exists(self.root_folder):
+				return func(self, *args, **kwargs)
+			else:
+				self.log.info('Asset folder doesn\'t exist')
+				return None
+		return func_wrapper
+
 	def check_asset_exist(func):
 		def func_wrapper(self, *args, **kwargs):
 			if self.asset_name in bpy.data.collections:
@@ -647,6 +656,7 @@ class LMAsset(object):
 		return self._valid
 
 	@property
+	@check_asset_folder_exist
 	def meshes(self):
 		if self._meshes is None:
 			self._meshes = [LMMeshFile(path.join(self.root_folder, f)) for f in listdir(self.root_folder) if path.isfile(path.join(self.root_folder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys()]

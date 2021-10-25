@@ -3,6 +3,7 @@ from os import path
 from . import helper as H
 from . import logger as L
 from . import naming_convention as N
+from . import properties as P
 
 def get_assets(context, name):
 	H.renumber_assets(context)
@@ -168,7 +169,47 @@ class LM_UI_PrintAssetData(bpy.types.Operator):
 	bl_description = "Print all asset data in the scene"
 
 	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to print')
+
+	render_date : bpy.props.FloatProperty(name="Last Render")
+	import_date : bpy.props.FloatProperty(name="Import Date")
+	mesh_list : bpy.props.StringProperty()
+	material_list : bpy.props.StringProperty()
+	texture_list : bpy.props.StringProperty()
+	view_layer : bpy.props.StringProperty(name="View Layer")
+	collection : bpy.props.StringProperty()
+	need_update : bpy.props.BoolProperty(default=False)
+	need_render : bpy.props.BoolProperty()
+	rendered : bpy.props.BoolProperty()
+	need_composite : bpy.props.BoolProperty()
+	composited : bpy.props.BoolProperty()
+	asset_path : bpy.props.StringProperty(subtype='DIR_PATH')
+	render_path : bpy.props.StringProperty(subtype='DIR_PATH')
+	render_camera : bpy.props.StringProperty(name="Render camera")
+	asset_folder_exists : bpy.props.BoolProperty()
+	
+	raw_composite_filepath : bpy.props.StringProperty(subtype='FILE_PATH')
+	final_composite_filepath : bpy.props.StringProperty(subtype='FILE_PATH')
+	render_list : bpy.props.StringProperty()
+
+	need_write_info : bpy.props.BoolProperty(default=False)
+	info_written : bpy.props.BoolProperty(default=False)
+
+	is_valid : bpy.props.BoolProperty(default=False)
+
+	hd_status : bpy.props.IntProperty(default=-1)
+	ld_status : bpy.props.IntProperty(default=-1)
+	baking_status : bpy.props.IntProperty(default=-1)
+	triangles : bpy.props.IntProperty()
+	vertices : bpy.props.IntProperty()
+	has_uv2 : bpy.props.BoolProperty(default=False)
+	section : bpy.props.StringProperty(name="Section")
+	from_file : bpy.props.StringProperty(name="From File")
+
+	checked : bpy.props.BoolProperty(default=True)
+
 	asset = None
+	list_properties = ['mesh_list', 'material_list', 'texture_list', 'render_list', 'collection']
+
 
 	@classmethod
 	def poll(cls, context):
@@ -180,10 +221,35 @@ class LM_UI_PrintAssetData(bpy.types.Operator):
 			self.asset = assets[self.asset_name]
 		except ValueError:
 			self.report({'ERROR'}, 'Lineup Maker : The asset "{}" is not valid'.format(self.asset_name))
+
+		self.registered_annotations = []
+		for k in self.__annotations__.keys():
+			print(k)
+			if k in ['asset_name']:
+				continue
+			
+			asset_value = getattr(self.asset, k, None)
+			if k in self.list_properties:
+				value = []
+				if not isinstance(asset_value, bpy.types.Collection):
+					for e in asset_value:
+						if 'name' in dir(e):
+							v = e.name
+						else:
+							v = e
+						value.append(v)
+				setattr(self, k, str(value).strip('[]'))
+			else:
+				setattr(self, k, asset_value)
+			self.registered_annotations.append(k)
+
 		wm = context.window_manager
 		return wm.invoke_props_dialog(self, width=800)
 
 	def execute(self, context):
+		for k in self.registered_annotations:
+			if not k in ['name'] + self.list_properties:
+				setattr(self.asset, k, getattr(self, k))
 		return {'FINISHED'}
 	
 	def draw(self, context):
@@ -193,36 +259,9 @@ class LM_UI_PrintAssetData(bpy.types.Operator):
 		col.separator()
 
 		if self.asset:
-			col.label(text='render_date = {}'.format(self.asset.render_date))
-			col.label(text='import_date = {}'.format(self.asset.import_date))
-			col.label(text='mesh_list = {}'.format([m.name for m in self.asset.mesh_list]))
-			col.label(text='material_list = {}'.format([m.name for m in self.asset.material_list]))
-			col.label(text='texture_list = {}'.format([t.name for t in self.asset.texture_list]))
-			col.label(text='view_layer = {}'.format(self.asset.view_layer))
-			col.label(text='collection = {}'.format(self.asset.collection.name))
-			col.label(text='need_render = {}'.format(self.asset.need_render))
-			col.label(text='rendered = {}'.format(self.asset.rendered))
-			col.label(text='need_composite = {}'.format(self.asset.need_composite))
-			col.label(text='composited = {}'.format(self.asset.composited))
-			col.label(text='asset_path = {}'.format(self.asset.asset_path))
-			col.label(text='render_path = {}'.format(self.asset.render_path))
-			col.label(text='render_camera = {}'.format(self.asset.render_camera))
-			col.label(text='asset_folder_exists = {}'.format(self.asset.asset_folder_exists))
-			col.label(text='raw_composite_filepath = {}'.format(self.asset.raw_composite_filepath))
-			col.label(text='final_composite_filepath = {}'.format(self.asset.final_composite_filepath))
-			col.label(text='render_list = {}'.format([r.render_filepath for r in self.asset.render_list]))
-			col.label(text='need_write_info = {}'.format(self.asset.need_write_info))
-			col.label(text='info_written = {}'.format(self.asset.info_written))
-			col.label(text='asset_number = {}'.format(self.asset.asset_number))
-			col.label(text='asset_index = {}'.format(self.asset.asset_index))
-			col.label(text='hd_status = {}'.format(self.asset.hd_status))
-			col.label(text='ld_status = {}'.format(self.asset.ld_status))
-			col.label(text='baking_status = {}'.format(self.asset.baking_status))
-			col.label(text='triangles = {}'.format(self.asset.triangles))
-			col.label(text='vertices = {}'.format(self.asset.vertices))
-			col.label(text='has_uv2 = {}'.format(self.asset.has_uv2))
-			col.label(text='section = {}'.format(self.asset.section))
-			col.label(text='from_file = {}'.format(self.asset.from_file))
+			for k in self.registered_annotations:
+				if not k in ['name']:
+					col.prop(self, k)
 
 		
 class LM_UI_RenameAsset(bpy.types.Operator):
@@ -261,11 +300,12 @@ class LM_UI_RenameAsset(bpy.types.Operator):
 		new_render_path = current_asset.render_path.replace(self.asset_name, self.new_name)
 		new_final_composite_filepath = current_asset.final_composite_filepath.replace(self.asset_name, self.new_name)
 		
-		
+		# renaming asset and rendering folder
 		os.rename(current_asset.asset_path, new_asset_path)
 		os.rename(current_asset.render_path, new_render_path)
 		os.rename(current_asset.final_composite_filepath, new_final_composite_filepath)
-			
+		
+		# update the assets Datas
 		current_asset.name = self.new_name
 		current_asset.asset_path = new_asset_path
 		current_asset.render_path = new_render_path
@@ -274,6 +314,7 @@ class LM_UI_RenameAsset(bpy.types.Operator):
 		current_asset.view_layer = current_asset.view_layer.replace(self.asset_name, self.new_name)
 		bpy.context.scene.view_layers[self.asset_name].name = self.new_name
 
+		# Rename the rendered files
 		if path.isdir(current_asset.render_path):
 			for f in os.listdir(current_asset.render_path):
 				filepath = path.join(current_asset.render_path, f)
