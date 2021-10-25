@@ -45,6 +45,7 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 		a = A.LMAsset(context, path)
 		self.new_assets.is_valid = a.is_valid
 		
+		self.new_assets.section = a.section
 		if update:
 			self.new_assets.need_update = True
 
@@ -95,6 +96,7 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 				context.scene.lm_import_list[a.name].warnings.clear()
 				asset = A.LMAsset(context, path.join(folder_src, a.name,))
 				context.scene.lm_import_list[a.name].is_valid = asset.is_valid
+				context.scene.lm_import_list[a.name].section = asset.section
 		
 		self.new_assets = []
 
