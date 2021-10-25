@@ -68,7 +68,6 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 					asset_import.asset_path = asset.asset_path
 					asset_import.asset_folder_exists = True
 					asset_import.is_valid = True
-				else
 
 		for a in context.scene.lm_import_list:
 			if a.name not in asset_folders_name or a.name in context.scene.lm_asset_list:

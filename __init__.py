@@ -12,25 +12,16 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
-#   - Export/ Import Queue
-#   - Rename Asset that rename the disk
-#   - Backup assets to avoid loss ?
 #   - Need to better sort Chapters by name
-#   - Compositing method
-#       - None
-#       - Solid --> Use lm_content_background_color
-#       - Lineup --> composite each frame on the same image
 #   - Create an operator to update/import render and export PDF in a row
 #   
 # 
 #   - Log and repport
-#       - Unified class to print message to Blender and to write a log file for the entire addon
 #       - Pop up message at the end to notify what is happening
-# 
-#   - Statistics
-#       - Number of asset
-#       - Number of need Render asset
-#       - Number of need Update asset
+#   - Need to update JSon Exporter to support
+#       - section
+#       - fromFile
+#   - Use Section to create chapters
 
 #   - The addon don't render the proper asset if updated if there is already renders existing in the folder ( check date )
 

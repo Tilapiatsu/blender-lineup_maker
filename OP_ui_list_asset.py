@@ -245,40 +245,43 @@ class LM_UI_RenameAsset(bpy.types.Operator):
 
 	def execute(self, context):
 		asset_naming_convention = N.NamingConvention(context, self.new_name, context.scene.lm_asset_naming_convention)
-		if not asset_naming_convention.is_valid:
-			self.report({'ERROR	'}, 'Lineup Maker : The new asset name "{}" is not valid'.format(self.new_name))
-			wm = context.window_manager
-			return wm.invoke_props_dialog(self)
+		# if not asset_naming_convention.is_valid:
+		# 	self.report({'ERROR'}, 'Lineup Maker : The new asset name "{}" is not valid'.format(self.new_name))
+		# 	wm = context.window_manager
+		# 	return wm.invoke_props_dialog(self)
 		# rename the asset in Blender File and in Disk
-		else:
-			_, _, current_asset = get_assets(context, self.asset_name)
-			removed = False
-			if current_asset.name in context.scene.lm_render_queue:
-				removed=True
-				bpy.ops.scene.lm_remove_asset_from_render(asset_name=self.asset_name)
+		# else:
+		_, _, current_asset = get_assets(context, self.asset_name)
+		removed = False
+		if current_asset.name in context.scene.lm_render_queue:
+			removed=True
+			bpy.ops.scene.lm_remove_asset_from_render(asset_name=self.asset_name)
 
-			new_asset_path = current_asset.asset_path.replace(self.asset_name, self.new_name)
-			new_render_path = current_asset.render_path.replace(self.asset_name, self.new_name)
-			new_final_composite_filepath = current_asset.final_composite_filepath.replace(self.asset_name, self.new_name)
+		new_asset_path = current_asset.asset_path.replace(self.asset_name, self.new_name)
+		new_render_path = current_asset.render_path.replace(self.asset_name, self.new_name)
+		new_final_composite_filepath = current_asset.final_composite_filepath.replace(self.asset_name, self.new_name)
+		
+		
+		os.rename(current_asset.asset_path, new_asset_path)
+		os.rename(current_asset.render_path, new_render_path)
+		os.rename(current_asset.final_composite_filepath, new_final_composite_filepath)
 			
-			
-			os.rename(current_asset.asset_path, new_asset_path)
-			os.rename(current_asset.render_path, new_render_path)
-			os.rename(current_asset.final_composite_filepath, new_final_composite_filepath)
-				
-			current_asset.name = self.new_name
-			current_asset.asset_path = new_asset_path
-			current_asset.render_path = new_render_path
-			current_asset.final_composite_filepath = new_final_composite_filepath
-			current_asset.collection.name = current_asset.collection.name.replace(self.asset_name, self.new_name)
-			current_asset.view_layer = current_asset.view_layer.replace(self.asset_name, self.new_name)
+		current_asset.name = self.new_name
+		current_asset.asset_path = new_asset_path
+		current_asset.render_path = new_render_path
+		current_asset.final_composite_filepath = new_final_composite_filepath
+		current_asset.collection.name = current_asset.collection.name.replace(self.asset_name, self.new_name)
+		current_asset.view_layer = current_asset.view_layer.replace(self.asset_name, self.new_name)
+		bpy.context.scene.view_layers[self.asset_name].name = self.new_name
 
+		if path.isdir(current_asset.render_path):
 			for f in os.listdir(current_asset.render_path):
 				filepath = path.join(current_asset.render_path, f)
-				os.rename(filepath, filepath.replace(self.asset_name, self.new_name))
-			
-			if removed:
-				bpy.ops.scene.lm_add_asset_to_render_queue(asset_name= self.new_name)
+				new_filepath = path.join(current_asset.render_path, f.replace(self.asset_name, self.new_name))
+				os.rename(filepath, new_filepath)
+		
+		if removed:
+			bpy.ops.scene.lm_add_asset_to_render_queue(asset_name= self.new_name)
 
 		return {'FINISHED'}
 
