@@ -245,10 +245,12 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
 		row.alignment = 'LEFT'
 		if context.window.view_layer.name == item.name:
 			eye_icon = 'HIDE_ON'
-			row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = context.scene.lm_initial_view_layer
+			layer = context.scene.lm_initial_view_layer
 		else:
 			eye_icon = 'HIDE_OFF'
-			row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
+			layer = item.name
+			
+		row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = layer
 		
 		row.label(text='{}'.format(item.name))
 		row = col.row(align=True)

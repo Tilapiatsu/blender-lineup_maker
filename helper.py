@@ -54,7 +54,7 @@ def slice(pattern, sep='_'):
 		if sep_in in s:
 			sliced_in = s.split(sep_in)
 			for ss in sliced_in:
-				if ss is not '':
+				if ss != '':
 					sliced_result.append(ss.lower()[:-1])
 		else:
 			sliced_result.append(s.lower())
@@ -91,10 +91,11 @@ def set_chapter(self, asset,  chapter_nc, asset_nc):
 	return new_chapter, new_section
 
 def remove_bpy_struct_item(bpy_struct, name):
-	for i,item in enumerate(bpy_struct):
-		if item.name == name:
-			bpy_struct.remove(i)
-			return i
+	if name in bpy_struct:
+		for i,item in enumerate(bpy_struct):
+			if item.name == name:
+				bpy_struct.remove(i)
+				return i
 
 def get_current_frame_range(context):
 	return context.scene.frame_end + 1 - context.scene.frame_start
@@ -513,6 +514,7 @@ def create_asset_view_layer(context, view_layer, default_view_layer_name):
 
 def update_view_layer(context, view_layer, updated_asset_list, view_layer_dict):
 	print('LineupMaker : Updating Viewlayer "{}"'.format(view_layer))
+	create_asset_view_layer(context, view_layer, context.scene.lm_initial_view_layer)
 
 	if view_layer in updated_asset_list:
 		# print('LineupMaker : Updating visibility "{}"'.format(view_layer))

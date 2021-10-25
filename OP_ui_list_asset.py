@@ -8,16 +8,16 @@ from . import properties as P
 def get_assets(context, name):
 	H.renumber_assets(context)
 	assets = context.scene.lm_asset_list
-	if name in context.scene.lm_asset_list:
+	if name in assets:
 		idx = context.scene.lm_asset_list[name].asset_index
-		active = context.scene.lm_asset_list[name]
+		asset = context.scene.lm_asset_list[name]
+		active = context.scene.lm_asset_list[idx]
 	else:
 		idx = context.scene.lm_asset_list_idx
+		asset = None
 		active = context.scene.lm_asset_list[idx]
 
-	active = assets[idx] if assets else None
-
-	return idx, assets, active
+	return asset, idx, assets, active
 
 class LM_UI_MoveAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_move_asset"
@@ -29,7 +29,7 @@ class LM_UI_MoveAsset(bpy.types.Operator):
 	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to move')
 
 	def execute(self, context):
-		idx, asset, _ = get_assets(context, self.asset_name)
+		_, idx, asset, _ = get_assets(context, self.asset_name)
 
 		if self.direction == "UP":
 			nextidx = max(idx - 1, 0)
@@ -71,10 +71,10 @@ class LM_UI_RemoveAsset(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context):
-		return context.scene.lm_asset_list
+		return len(context.scene.lm_asset_list)
 
 	def execute(self, context):
-		idx, _, asset = get_assets(context, self.asset_name)
+		asset, idx, _, _ = get_assets(context, self.asset_name)
 
 		H.remove_asset(context, asset.name)
 		context.scene.lm_asset_list_idx = idx - 1 if idx else 0
@@ -207,7 +207,7 @@ class LM_UI_PrintAssetData(bpy.types.Operator):
 		return context.scene.lm_asset_list
 
 	def invoke(self, context, event):
-		idx, assets, _ = get_assets(context, self.asset_name)
+		_, _, assets, _ = get_assets(context, self.asset_name)
 		try:
 			self.asset = assets[self.asset_name]
 		except ValueError:
@@ -275,7 +275,7 @@ class LM_UI_RenameAsset(bpy.types.Operator):
 	def execute(self, context):
 		asset_naming_convention = N.NamingConvention(context, self.new_name, context.scene.lm_asset_naming_convention)
 
-		_, _, current_asset = get_assets(context, self.asset_name)
+		_, _, _, current_asset = get_assets(context, self.asset_name)
 		removed = False
 		if current_asset.name in context.scene.lm_render_queue:
 			removed=True

@@ -62,14 +62,14 @@ class LM_UI_MoveAssetToRender(bpy.types.Operator):
 	direction: bpy.props.EnumProperty(items=[("UP", "Up", ""), ("DOWN", "Down", "")])
 
 	def execute(self, context):
-		idx, asset, _ = get_assets(context)
+		idx, assets, _ = get_assets(context)
 
 		if self.direction == "UP":
 			nextidx = max(idx - 1, 0)
 		elif self.direction == "DOWN":
-			nextidx = min(idx + 1, len(asset) - 1)
+			nextidx = min(idx + 1, len(assets) - 1)
 
-		asset.move(idx, nextidx)
+		assets.move(idx, nextidx)
 		context.scene.lm_asset_list_idx = nextidx
 
 		return {'FINISHED'}

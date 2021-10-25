@@ -11,14 +11,16 @@ from bpy_extras.io_utils import ImportHelper
 def get_assets(context, name):
 	H.renumber_assets(context, context.scene.lm_import_list)
 	assets = context.scene.lm_import_list
-	if name in context.scene.lm_import_list:
+	if name in assets:
 		idx = context.scene.lm_import_list[name].asset_number
+		asset = context.scene.lm_import_list[name]
+		active = assets[idx]
 	else:
-		idx = 0
+		idx = context.scene.lm_import_list_idx
+		asset = None
+		active = assets[idx]
 
-	active = assets[idx] if assets else None
-
-	return idx, assets, active
+	return asset, idx, assets, active
 
 class LM_IU_RefreshImportList(bpy.types.Operator):
 	bl_idname = "scene.lm_refresh_import_list"
@@ -109,29 +111,47 @@ class LM_UI_RemoveAsseFolder(bpy.types.Operator):
 	bl_description = "Remove selected Asset Folder."
 
 	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to remove')
+	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("IMPORT", "Import", "")], default='ASSET') 
+
+	remove_list = []
 
 	@classmethod
 	def poll(cls, context):
 		return context.scene.lm_import_list
 
 	def invoke(self, context, event):
+		if self.mode == 'ASSET':
+			asset, _, _, _ = get_assets(context, self.asset_name)
+			if asset is None:
+				self.report({'ERROR'}, 'Lineup Maker : Asset "{}" is not found'.format(self.asset_name))
+				return {'CANCELLED'}
+			else:
+				self.remove_list = [asset]
+
+		elif self.mode =='IMPORT':
+			self.remove_list = [a for a in context.scene.lm_import_list if a.checked]
+
 		wm = context.window_manager
 		return wm.invoke_confirm(self, event)
 
-	def execute(self, context):
-		idx, _, _ = get_assets(context, self.asset_name)
-		asset = context.scene.lm_import_list[self.asset_name]
-
+	def remove_asset(self, context, asset):
 		shutil.rmtree(asset.asset_path, ignore_errors=True)
-		context.scene.lm_import_list_idx = idx-1 if idx else 0
 		H.remove_bpy_struct_item(context.scene.lm_import_list, self.asset_name)
+
+	def execute(self, context):
+		for a in self.remove_list:
+			self.remove_asset(context, a)
 
 		return {'FINISHED'}
 
 	def draw(self, context):
 		layout = self.layout
 		col = layout.column()
+		
 		col.label(text='This operation will delete the folder DEFINITELY from your hard drive')
+		for a in self.remove_list:
+			col.label(text='{}'.formant(a.name))
+
 
 class LM_UI_RemoveAsseFromImportList(bpy.types.Operator):
 	bl_idname = "scene.lm_remove_asset_from_import_list"
