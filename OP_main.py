@@ -295,7 +295,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		for a in self.view_layer_list:
 			self.update_viewlayers(context, a)
 		# Set the global View_layer active
-		if len(self.asset_name):
+		if self.asset_name in context.scene.view_layers:
 			context.window.view_layer = context.scene.view_layers[self.asset_name]
 		else:	
 			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]

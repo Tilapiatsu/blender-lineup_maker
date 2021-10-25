@@ -162,6 +162,25 @@ class NamingConvention(object):
 
 			return True
 
+		def is_used_later(naming_convention, start_from, word):
+			if start_from is None or start_from == '' or start_from not in naming_convention['keywords']:
+				return None
+			if word in naming_convention['included']:
+				return None
+			
+			start_index = naming_convention['keywords'].index(start_from)
+			if start_index >= len(naming_convention['keywords']) - 1:
+				return None
+			next_keyword = naming_convention['keywords'][start_index + 1]
+
+			if next_keyword not in self.keywords.keys():
+				return None
+			else:
+				if word not in self.keywords[next_keyword]:
+					return is_used_later(naming_convention, next_keyword, word)
+				else:
+					return next_keyword
+
 		def assign_value(ckws, value, return_dict, word, optionnal, excluded, count):
 			assigned = False
 			if word in ckws.keys():
@@ -235,21 +254,29 @@ class NamingConvention(object):
 					else: # Optionnal
 						naming_convention['optionnal'].append(keyword.lower())
 						if len(self.keywords[keyword.lower()]): # If the Optionnal Keyword have a list or keyword values
-							if names[i] in self.keywords[keyword.lower()]: # if the name is in the keyword values
+							if hasNumbers(names[i]) :
+								naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
+							elif names[i] in self.keywords[keyword.lower()]: # if the name is in the keyword values
 								naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
 								remaining = remaining -1
-							elif hasNumbers(names[i]) :
-								naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
 							else:
-								assigned = False
+								used_later = is_used_later(naming_convention, keyword.lower(), names[i])
+								if used_later is None:
+									assigned = False
+								else:
+									assign_value(self.keywords, names[i], naming_convention, used_later, optionnal, excluded, i)
+									remaining = remaining -1
 
 						else: # If the Optionnal Keyword is undefined
 							if len(names) < len(optionnal_words): # the name is shorter than the keywords
 								if remaining > name_length - i + 1: # The name should be skipped
 									assigned = False
 								else:
-									if keyword.lower() not in self.get_other_ckws(self.keywords, keyword.lower()):
-										naming_convention, assigned = assign_value(self.keywords, names[i], naming_convention, keyword.lower(), optionnal, excluded, i)
+									used_later = is_used_later(naming_convention, keyword.lower(), names[i])
+									if used_later is None:
+										assigned = False
+									else:
+										assign_value(self.keywords, names[i], naming_convention, used_later, optionnal, excluded, i)
 										remaining = remaining -1
 
 				

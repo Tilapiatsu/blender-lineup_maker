@@ -575,6 +575,7 @@ class LMAsset(object):
 		return H.get_global_import_date(mesh_pathes)
 
 	@property
+	@check_length
 	def need_update(self):
 		curr_asset = self.param['lm_asset_list'][self.asset_name]
 		need_update = False

@@ -146,11 +146,14 @@ def select_asset(context, asset_name):
 		for o in bpy.data.collections[asset_name].objects:
 			o.select_set(True)
 
-def sort_asset_list(asset_name_list):
+def sort_asset_list(asset_name_list, asset_list=None):
+	if asset_list is None:
+		asset_list = bpy.context.scene.lm_asset_list
+
 	sorted_name_list = []
 	asset_dict = {}
 	for a in asset_name_list:
-		section = bpy.context.scene.lm_asset_list[a].section
+		section = asset_list[a].section
 		if section not in asset_dict.keys():
 			asset_dict[section] = [a,]
 		else:
@@ -171,7 +174,7 @@ def renumber_assets(context, asset_list=None):
 
 	asset_name_list = [a.name for a in asset_list]
 
-	asset_name_list = sort_asset_list(asset_name_list)
+	asset_name_list = sort_asset_list(asset_name_list, asset_list)
 
 	for number,name in enumerate(asset_name_list):
 		asset_list[name].asset_number = number + 1

@@ -96,9 +96,9 @@ class LM_UI_RemoveAsseFolder(bpy.types.Operator):
 		return wm.invoke_confirm(self, event)
 
 	def execute(self, context):
-		idx, assets, asset = get_assets(context, self.asset_name)
+		asset = context.scene.lm_import_list[self.asset_name]
 
-		shutil.rmtree(assets[idx].asset_path, ignore_errors=True)
+		shutil.rmtree(asset.asset_path, ignore_errors=True)
 		H.remove_bpy_struct_item(context.scene.lm_import_list, self.asset_name)
 		return {'FINISHED'}
 
@@ -173,7 +173,7 @@ class LM_UI_RenameAssetFolder(bpy.types.Operator):
 			return {'CANCELLED'}
 		# rename the asset in Blender File and in Disk
 		else:
-			_, _, current_asset = get_assets(context, self.asset_name)
+			current_asset = context.scene.lm_import_list[self.asset_name]
 			removed = False
 
 			if current_asset.name in context.scene.lm_render_queue:
