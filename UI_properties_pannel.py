@@ -399,6 +399,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 		if len(context.scene.lm_viewlayer_progress):
 			b.label(text=context.scene.lm_viewlayer_progress)
 
+		b.prop(scn, 'lm_import_autosave_step')
 		row = b.row()
 		rows = 20 if len(scn.lm_import_list) > 10 else len(scn.lm_import_list) * 2 + 1
 		

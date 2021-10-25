@@ -93,6 +93,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	total_assets = 0
 	updated_assets_number = 0
 	skipped_asset_number = 0
+	autosave_step = 1
 
 	@classmethod
 	def poll(cls, context):
@@ -159,7 +160,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		self.total_assets = len(self.import_list)
 
-		self.switch_shadingtype(context, 'SOLID')
+		H.switch_shadingtype(context, 'SOLID')
 
 		self._timer = bpy.context.window_manager.event_timer_add(0.01, window=bpy.context.window)
 		bpy.context.window_manager.modal_handler_add(self)
@@ -259,12 +260,14 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			self.asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
 			context.scene.lm_asset_list[curr_asset_view_layer.name].view_layer = curr_asset_view_layer.name
 
-			self.switch_current_viewlayer(context, curr_asset_view_layer.name)
+			# H.switch_current_viewlayer(context, curr_asset_view_layer.name)
 
 			# Refresh UI
 			bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
 			# Hide asset in Global View Layer
 			curr_asset_view_layer.hide_viewport = True
+
+			self.autosave(context)
 
 			return asset_name
 		
@@ -283,30 +286,28 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		if len(self.view_layer_list) == 0:
 			self.post(context, self.cancelling)
 
-	def switch_current_viewlayer(self, context, viewlayer_name):
-		if viewlayer_name in context.scene.view_layers:
-				context.window.view_layer = context.scene.view_layers[viewlayer_name]
-
-	def switch_shadingtype(self, context, shading_type):
-		for a in context.screen.areas:
-			if a.type == 'VIEW_3D':
-				for s in a.spaces:
-					if s.type =='VIEW_3D':
-						s.shading.type = shading_type
-
-	def set_local_camera(self, context, camera_name):
-		if not len(camera_name):
+	def autosave(self, context):
+		if context.scene.lm_import_autosave_step == 0:
 			return
-		for a in context.screen.areas:
-			if a.type == 'VIEW_3D':
-				for s in a.spaces:
-					if s.type =='VIEW_3D':
-						s.camera = bpy.data.objects[camera_name]
-						s.use_local_camera=True
+		
+		if self.autosave_step > context.scene.lm_import_autosave_step:
+			self.autosave_step = 1
+
+			if bpy.data.is_saved:
+				backup_filepath = path.join(path.dirname(bpy.data.filepath), path.basename(bpy.data.filepath).replace('.blend', '_bak.blend'))
+			else:
+				backup_filepath = path.join(bpy.app.tempdir, 'LM_autobak.blend')
+				
+			self.log.info('Autosaving {}'.format(backup_filepath))
+			bpy.ops.wm.save_as_mainfile('EXEC_DEFAULT',filepath=backup_filepath, copy=True )
+		else:
+			self.autosave_step += 1
+			self.log.info('Autosave after {} import(s)'.format(context.scene.lm_import_autosave_step - self.autosave_step + 1))
 
 	def post(self, context, cancelled=False):
 		for a in self.view_layer_list:
 			self.update_viewlayers(context, a)
+			
 		# Set the global View_layer active
 		if self.asset_name in context.scene.view_layers:
 			context.window.view_layer = context.scene.view_layers[self.asset_name]
