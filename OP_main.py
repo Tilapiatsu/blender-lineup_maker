@@ -860,6 +860,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	mode : bpy.props.EnumProperty(items=[("ALL", "All", ""), ("QUEUE", "Queue", ""), ("LAST_RENDERED", "Last Rendered", "")])
 
 	chapter = ''
+	section = ''
 	cancelling = False
 	stopped = False
 	generating_page = None
@@ -891,7 +892,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		elif self.mode == 'LAST_RENDERED':
 			self.asset_name_list = [a.name for a in context.scene.lm_last_render_list]
 
-		self.asset_name_list.sort()
+		self.asset_name_list = H.sort_asset_list(self.asset_name_list)
 
 		self.total_page_number = len(self.asset_name_list)
 
@@ -941,9 +942,14 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		chapter_naming_convention = N.NamingConvention(context, self.chapter, context.scene.lm_chapter_naming_convention)
 		asset_naming_convention = N.NamingConvention(context, asset.name, context.scene.lm_asset_naming_convention)
 
-		new_chapter = H.set_chapter(self, chapter_naming_convention, asset_naming_convention)
+		self.new_chapter, self.new_section = H.set_chapter(self, asset, chapter_naming_convention, asset_naming_convention)
 
-		if new_chapter:
+		if self.new_section:
+			self.pdf.add_page()
+			self.composite.curr_page += 1
+			self.composite.composite_pdf_chapter(self.pdf, self.section, is_section=True)
+
+		if self.new_chapter:
 			self.pdf.add_page()
 			self.composite.curr_page += 1
 			self.composite.composite_pdf_chapter(self.pdf, self.chapter)
@@ -1014,6 +1020,8 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 		self.toc_page_composited = False
 		self.pdf = None
 		self.composite = None
+		self.chapter = ''
+		self.section = ''
 		
 
 class LM_OP_RefreshAssetStatus(bpy.types.Operator):

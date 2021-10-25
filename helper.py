@@ -62,17 +62,21 @@ def slice(pattern, sep='_'):
 	return sliced_result
 
 
-def set_chapter(self, chapter_nc, asset_nc):
-	match = True
+def set_chapter(self, asset,  chapter_nc, asset_nc):
+	new_chapter = False
+	new_section = False
 	if len(chapter_nc.naming_convention['name']):
 		for word in chapter_nc.naming_convention['name']:
 			if word not in asset_nc.naming_convention['name']:
-				match = False
+				new_chapter = True
 				break
 	else:
-		match = False
+		new_chapter = True
 	
-	if not match:
+	if asset.section != self.section:
+		new_section = True
+
+	if  new_chapter:
 		self.chapter = ''
 		for i,word in enumerate(chapter_nc.word_list):
 			if word in asset_nc.naming_convention.keys():
@@ -80,10 +84,11 @@ def set_chapter(self, chapter_nc, asset_nc):
 					self.chapter += asset_nc.naming_convention[word].upper() + '_'
 				else:
 					self.chapter += asset_nc.naming_convention[word].upper()
-		
-		return True
-	else:
-		return False
+	
+	if new_section:
+		self.section = asset.section
+
+	return new_chapter, new_section
 
 def remove_bpy_struct_item(bpy_struct, name):
 	for i,item in enumerate(bpy_struct):
@@ -141,16 +146,32 @@ def select_asset(context, asset_name):
 		for o in bpy.data.collections[asset_name].objects:
 			o.select_set(True)
 
+def sort_asset_list(asset_name_list):
+	sorted_name_list = []
+	asset_dict = {}
+	for a in asset_name_list:
+		section = bpy.context.scene.lm_asset_list[a].section
+		if section not in asset_dict.keys():
+			asset_dict[section] = [a,]
+		else:
+			asset_dict[section] += [a,]
+	
+	sorted_sections = list(asset_dict.keys())
+	sorted_sections.sort()
+	for s in sorted_sections:
+		sorted_names = asset_dict[s]
+		sorted_names.sort()
+		sorted_name_list += sorted_names
+	
+	return sorted_name_list
+
 def renumber_assets(context, asset_list=None):
 	if asset_list is None:
 		asset_list = context.scene.lm_asset_list
 
 	asset_name_list = [a.name for a in asset_list]
 
-	for number,name in enumerate(asset_name_list):
-		asset_list[name].asset_index = number
-	
-	asset_name_list.sort()
+	asset_name_list = sort_asset_list(asset_name_list)
 
 	for number,name in enumerate(asset_name_list):
 		asset_list[name].asset_number = number + 1
