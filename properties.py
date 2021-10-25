@@ -44,6 +44,8 @@ def set_section(self, value):
 		value = V.LM_DEFAULT_SECTION
 	self['section'] = value
 
+class LM_AssetWarnings_List(bpy.types.PropertyGroup):
+	message : bpy.props.StringProperty(name="Warning Message", default='')
 
 class LM_Asset_List(bpy.types.PropertyGroup):
 	render_date : bpy.props.FloatProperty(name="Last Render")
@@ -71,6 +73,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
 	info_written : bpy.props.BoolProperty(default=False)
 
 	is_valid : bpy.props.BoolProperty(default=False)
+	warnings : bpy.props.CollectionProperty(type=LM_AssetWarnings_List)
 
 	asset_number : bpy.props.IntProperty()
 	asset_index : bpy.props.IntProperty()
@@ -199,7 +202,7 @@ class LM_UL_ImportList_UIList(bpy.types.UIList):
 		if scn.lm_import_list[item.name].is_valid:
 			row.label(text='', icon='CHECKMARK')
 		else:
-			self.separator_iter(row, 3)
+			row.operator('scene.lm_show_import_asset_warnings', text='', icon='ERROR').asset_name = item.name
 
 		need_update = scn.lm_import_list[item.name].need_update
 
@@ -220,7 +223,7 @@ class LM_UL_ImportList_UIList(bpy.types.UIList):
 		
 		row.separator()
 		row.operator('scene.lm_print_naming_convention', text='', icon='ALIGN_JUSTIFY').asset_name = item.name
-		row.operator('scene.lm_remove_asset_folder', text='', icon='X').asset_name = item.name
+		row.operator('scene.lm_remove_asset_folder', text='', icon='TRASH').asset_name = item.name
 		
 	def separator_iter(self, ui, iter) :
 		for i in range(iter):
@@ -255,6 +258,11 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
 		
 		row = col.row(align=True)
 		row.alignment = 'RIGHT'
+
+		if len(scn.lm_asset_list[item.name].warnings):
+			row.operator('scene.lm_show_asset_warnings', text='', icon='ERROR').asset_name = item.name
+		else:
+			self.separator_iter(row, 3)
 
 		if scn.lm_asset_list[item.name].rendered:
 			row.operator('scene.lm_open_render_folder', text='', icon='RENDER_RESULT').asset_name = item.name
@@ -318,6 +326,11 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
 
 		row = col.row(align=True)
 		row.alignment = 'RIGHT'
+
+		if len(scn.lm_asset_list[item.name].warnings):
+			row.operator('scene.lm_show_asset_warnings', text='', icon='ERROR').asset_name = item.name
+		else:
+			self.separator_iter(row, 3)
 
 		if scn.lm_asset_list[item.name].rendered:
 			row.operator('scene.lm_open_render_folder', text='', icon='RENDER_RESULT').asset_name = item.name

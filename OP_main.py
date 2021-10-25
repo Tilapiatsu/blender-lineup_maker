@@ -1056,11 +1056,14 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 			asset_path = path.join(context.scene.lm_asset_path, asset.name)
 			composite_path = path.join(context.scene.lm_render_path, V.LM_FINAL_COMPOSITE_FOLDER_NAME, '{}{}.jpg'.format(asset.name, V.LM_FINAL_COMPOSITE_SUFFIX))
 			asset_format = A.LMAsset(context, asset_path)
+			asset.warnings.clear()
 
 			if path.isdir(asset_path):
 				asset.asset_path = asset_path
 				asset.asset_folder_exists = True
+				asset_format.is_valid
 			else:
+				log.warning('No asset folder found', asset=asset)
 				asset.asset_folder_exists = False
 
 			asset.composited = path.isfile(composite_path)
@@ -1228,6 +1231,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 	def post(self, context):
 		self.json_data = []
 		self.exporting_asset = None
+		bpy.ops.scene.lm_refresh_asset_status(asset_name=self.asset_name)
 		if not len(self.export_list):
 			self.end()
 
@@ -1238,7 +1242,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 		self.export_list = []
 		self.json_data = []
 		self.total_assets = 0
-		self.percet = 0
+		self.percent = 0
 
 	def export_asset(self, context):
 		self.report({'INFO'}, 'Lineup Maker : Exporting {}'.format(self.asset_name))
@@ -1250,11 +1254,11 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 
 		H.delete_folder_if_exist(self.export_path)
 		H.create_folder_if_neeed(self.export_path)
-		new_tewture_list = {}
+		new_texture_list = {}
 		for mesh, _ in texture_list.items():
-			new_tewture_list[mesh] = [os.path.join(tmpdir, mesh, t) for t in os.listdir(os.path.join(tmpdir, mesh))]
+			new_texture_list[mesh] = [os.path.join(tmpdir, mesh, t) for t in os.listdir(os.path.join(tmpdir, mesh))]
 
-		self.copy_textures(context, new_tewture_list, self.export_path)
+		self.copy_textures(context, new_texture_list, self.export_path)
 
 		H.delete_folder_if_exist(tmpdir)
 

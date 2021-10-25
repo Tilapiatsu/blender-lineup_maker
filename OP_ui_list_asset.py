@@ -284,12 +284,7 @@ class LM_UI_RenameAsset(bpy.types.Operator):
 
 	def execute(self, context):
 		asset_naming_convention = N.NamingConvention(context, self.new_name, context.scene.lm_asset_naming_convention)
-		# if not asset_naming_convention.is_valid:
-		# 	self.report({'ERROR'}, 'Lineup Maker : The new asset name "{}" is not valid'.format(self.new_name))
-		# 	wm = context.window_manager
-		# 	return wm.invoke_props_dialog(self)
-		# rename the asset in Blender File and in Disk
-		# else:
+
 		_, _, current_asset = get_assets(context, self.asset_name)
 		removed = False
 		if current_asset.name in context.scene.lm_render_queue:
@@ -331,4 +326,31 @@ class LM_UI_RenameAsset(bpy.types.Operator):
 		col = layout.column()
 		col.label(text='From "{}" to :'.format(self.asset_name))
 		col.prop(self, 'new_name')
-		
+
+class LM_UI_ShowAssetWarning(bpy.types.Operator):
+	bl_idname = "scene.lm_show_asset_warnings"
+	bl_label = "Show Asset Warnings"
+	bl_options = {'REGISTER', 'UNDO'}
+	bl_description = "Show Asset Warnings"
+
+	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset to rename')
+
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_asset_list
+
+	def invoke(self, context, event):
+		wm = context.window_manager
+		return wm.invoke_props_dialog(self, width=1000)
+
+	def execute(self, context):
+		return {'FINISHED'}
+
+	def draw(self, context):
+		layout = self.layout
+		col = layout.column()
+		col.label(text='Warning for asset : "{}"'.format(self.asset_name))
+		col.separator()
+		col.separator()
+		for w in context.scene.lm_asset_list[self.asset_name].warnings:
+			col.label(text='{}'.format(w.message))
