@@ -26,8 +26,8 @@ def create_bsdf_material(asset, material, texture_set=None):
 	input_indices = {'Base Color':{'index':0},
 					'Metallic':{'index':4},
 					'Roughness':{'index':7},
-					'Alpha':{'index':18},
-					'Normal':{'index':19}}
+					'Alpha':{'index':19},
+					'Normal':{'index':20}}
 	
 	input_indices = feed_input_indices(context, input_indices)
 

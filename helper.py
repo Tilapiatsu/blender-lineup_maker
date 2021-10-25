@@ -438,3 +438,13 @@ def node_group_has_image(node_group_key, image_key):
 			break
 
 	return has_image
+
+def get_global_import_date(meshes):
+	global_import_date = 0.0
+	mesh_number = len(meshes)
+	if mesh_number:
+		for m in meshes:
+			global_import_date += os.path.getctime(m)
+		return global_import_date / mesh_number
+	else:
+		return 0.0

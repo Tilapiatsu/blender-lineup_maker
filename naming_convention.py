@@ -146,7 +146,7 @@ class NamingConvention(object):
 				keywords += keyword + '\n'
 				if keyword not in self.naming_convention.keys() and keyword not in self.optionnal_words:
 					self._valid = False
-					self.log.error('Invalid Keyword : {}'.format(keyword))
+					self.log.error('Invalid or missing Keyword "{}" in "{}"'.format(keyword, self.name))
 					return self._valid
 		
 		return self._valid

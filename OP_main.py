@@ -1030,7 +1030,16 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 		if self.asset_name == '':
 			need_update_list = [a for a in context.scene.lm_asset_list] + [ a for a in context.scene.lm_render_queue]
 		else:
-			need_update_list = [a for a in context.scene.lm_asset_list if a.name == self.asset_name] + [ a for a in context.scene.lm_render_queue if a.name == self.asset_name]
+			try:
+				need_update_list = [context.scene.lm_asset_list[self.asset_name]]
+			except KeyError:
+				need_update_list = []
+
+			try:
+				need_update_list += [context.scene.lm_render_queue[self.asset_name]]
+			except KeyError:
+				pass
+
 
 		for asset in need_update_list:
 			self.report({'INFO'}, 'Lineup Maker : Refresh asset status for : "{}"'.format(asset.name))
@@ -1038,6 +1047,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 			rendered_asset = path.join(context.scene.lm_render_path, asset.name)
 			asset_path = path.join(context.scene.lm_asset_path, asset.name)
 			composite_path = path.join(context.scene.lm_render_path, V.LM_FINAL_COMPOSITE_FOLDER_NAME, '{}{}.jpg'.format(asset.name, V.LM_FINAL_COMPOSITE_SUFFIX))
+			asset_format = A.LMAsset(context, asset_path)
 
 			if path.isdir(asset_path):
 				asset.asset_path = asset_path
@@ -1088,6 +1098,9 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 				asset.render_path = ''
 				asset.render_list.clear()
 			
+			if asset_format.need_update:
+				asset.need_update = True
+
 			# set rendering camera
 			cam = H.set_rendering_camera(context, asset)
 
@@ -1122,6 +1135,11 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 
 		self.report({'INFO'}, 'Lineup Maker : Exporting selected objects to asset folder')
 		self.json_data = []
+		if self.asset_name in context.scene.lm_asset_list:
+			self.scene_asset = context.scene.lm_asset_list[self.asset_name]
+		else:
+			self.scene_asset = None
+			
 
 		if self.mode =='SELECTED':
 			if not len(context.selected_objects):
@@ -1234,12 +1252,22 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 
 		selection = context.selected_objects
 
+		# Clear Mesh list
+		if self.scene_asset is not None:
+			self.scene_asset.mesh_list.clear()
+		
 		for o in selection:
 			bpy.ops.object.select_all(action='DESELECT')
 			bpy.data.objects[o.name].select_set(True)
 			context.view_layer.objects.active = o
 			export_filename = path.join(self.export_path, o.name + '.fbx')
+	
 			bpy.ops.export_scene.fbx(filepath=export_filename, use_selection=True, bake_anim=False, check_existing=False, embed_textures=False)
+
+			# Register Mesh List
+			if self.scene_asset is not None:
+				m = self.scene_asset.mesh_list.add()
+				m = A.LMMeshFile(export_filename)
 
 		self.write_json(context)
 

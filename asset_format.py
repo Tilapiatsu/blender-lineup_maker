@@ -168,10 +168,8 @@ class LMAsset(object):
 					curr_mesh_material_list.material = m.material
 
 		# Set scene import date
-		if len(self.meshes):
-			self.scn_asset.import_date = global_import_date / len(self.meshes)
-		else:
-			self.scn_asset.import_date = 0.0
+		self.scn_asset.import_date = self.global_import_date
+	
 
 		# Feed assets
 		self.asset = self.get_asset()
@@ -184,25 +182,7 @@ class LMAsset(object):
 		# _, created = H.create_asset_collection(self.context, self.asset_name)
 		H.set_active_collection(self.context, self.asset_name)
 
-		curr_asset = self.param['lm_asset_list'][self.asset_name]
-
-		need_update = False
-		for f in self.meshes:
-			file_name = path.splitext(path.basename(f.path))[0]
-			file_time = path.getmtime(f.path)
-			file_size = path.getsize(f.path)
-			try:
-				mesh_time = curr_asset.mesh_list[file_name].import_date
-				mesh_size = curr_asset.mesh_list[file_name].file_size
-			except KeyError:
-				# The mesh was not there so we need to update
-				need_update = True
-				break
-			if mesh_time + 20 < file_time and mesh_size != file_size:
-				need_update = True
-				break
-
-		if need_update:
+		if self.need_update:
 			self.log.info('Updating asset "{}"'.format(self.asset_name))
 
 			self.remove_asset()
@@ -580,6 +560,32 @@ class LMAsset(object):
 		return json_data
 
 	# Properties
+	@property
+	def global_import_date(self):
+		mesh_pathes = [m.path for m in self.meshes]
+		return H.get_global_import_date(mesh_pathes)
+
+	@property
+	def need_update(self):
+		curr_asset = self.param['lm_asset_list'][self.asset_name]
+		need_update = False
+		for f in self.meshes:
+			file_name = path.splitext(path.basename(f.path))[0]
+			file_time = path.getmtime(f.path)
+			file_size = path.getsize(f.path)
+			try:
+				mesh_time = curr_asset.mesh_list[file_name].import_date
+				mesh_size = curr_asset.mesh_list[file_name].file_size
+			except KeyError:
+				# The mesh was not there so we need to update
+				need_update = True
+				break
+			if mesh_time + 20 < file_time and mesh_size != file_size:
+				need_update = True
+				break
+		
+		return need_update
+
 	@property
 	def texture_channel_names(self):
 		if self._texture_channels is None:
