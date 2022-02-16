@@ -46,6 +46,7 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 
 		a = A.LMAsset(context, path)
 		self.new_assets.is_valid = a.is_valid
+		self.new_assets.is_imported = a.is_imported
 		
 		self.new_assets.section = a.section
 		if update:

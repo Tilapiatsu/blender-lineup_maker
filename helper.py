@@ -216,7 +216,7 @@ def remove_asset(context, asset_name, remove=True):
 		bpy.data.collections.remove(bpy.data.collections[asset_name])
 		set_active_collection(context, V.LM_ASSET_COLLECTION)
 
-	if asset_name in context.scene.view_layers:
+	if asset_name in context.scene.view_layers and asset_name in context.scene.lm_asset_list:
 		context.scene.view_layers.remove(context.scene.view_layers[context.scene.lm_asset_list[asset_name].view_layer])
 
 	if asset_name in context.scene.lm_asset_list:

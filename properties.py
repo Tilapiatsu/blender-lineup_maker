@@ -57,6 +57,7 @@ class LM_Asset_List(bpy.types.PropertyGroup):
 	collection : bpy.props.PointerProperty(type=bpy.types.Collection)
 	need_update : bpy.props.BoolProperty(default=False)
 	need_render : bpy.props.BoolProperty()
+	is_imported : bpy.props.BoolProperty()
 	rendered : bpy.props.BoolProperty()
 	need_composite : bpy.props.BoolProperty()
 	composited : bpy.props.BoolProperty()

@@ -159,7 +159,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in import_asset_name]
 		
 		elif self.mode == "IMPORT_NEW":
-			import_asset_name = [a.name for a in context.scene.lm_import_list if a.checked and not a.need_update]
+			import_asset_name = [a.name for a in context.scene.lm_import_list if a.checked and not a.is_imported]
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in import_asset_name]
 
 		self.total_assets = len(self.import_list)

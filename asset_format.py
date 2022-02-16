@@ -7,7 +7,7 @@ from . import material as M
 from . import logger as L
 from os import path, listdir
 import time
-import sys
+import sys, subprocess
 import re
 import json, codecs
 from functools import wraps
@@ -109,6 +109,9 @@ class LMAsset(object):
 			else:
 				scene_asset.section = mesh.json.section
 
+	def create_asset_blendfile(self):
+		subprocess.check_call([bpy.app.binary_path, '--python-text', 'print("Hello World")'])
+
 	@check_length
 	def import_mesh(self, update=False):
 		curr_asset_collection, _ = H.create_asset_collection(self.context, self.asset_name)
@@ -122,6 +125,8 @@ class LMAsset(object):
 		self.scn_asset.asset_root = path.dirname(self.meshes[0].path)
 
 		global_import_date = 0.0
+
+		self.create_asset_blendfile()
 
 		for m in self.meshes:
 			if not m.is_valid:
@@ -593,7 +598,11 @@ class LMAsset(object):
 	@property
 	@check_length
 	def need_update(self):
-		curr_asset = self.param['lm_asset_list'][self.asset_name]
+		if self.is_imported:
+			curr_asset = self.param['lm_asset_list'][self.asset_name]
+		else:
+			return True
+
 		need_update = False
 		for f in self.meshes:
 			file_name = path.splitext(path.basename(f.path))[0]
@@ -611,6 +620,10 @@ class LMAsset(object):
 				break
 		
 		return need_update
+
+	@property
+	def is_imported(self):
+		return self.asset_name in self.param['lm_asset_list']
 
 	@property
 	def texture_channel_names(self):
