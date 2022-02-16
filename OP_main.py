@@ -73,7 +73,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_label = "Lineup Maker: Import all assets from source folder"
 	bl_options = {'REGISTER', 'UNDO'}
 
-	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", ""), ("IMPORT", "Import", "")])
+	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", ""), ("IMPORT", "Import", ""), ("IMPORT_NEW", "Import New", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 
 	folder_src = ''
@@ -156,6 +156,10 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		
 		elif self.mode == "IMPORT":
 			import_asset_name = [a.name for a in context.scene.lm_import_list if a.checked]
+			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in import_asset_name]
+		
+		elif self.mode == "IMPORT_NEW":
+			import_asset_name = [a.name for a in context.scene.lm_import_list if a.checked and not a.need_update]
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in import_asset_name]
 
 		self.total_assets = len(self.import_list)
@@ -380,7 +384,7 @@ class LM_OP_UpdateJson(bpy.types.Operator):
 
 		# If asset_name has NOT been defined - scan all subfolders and import only the new necessary one
 		elif self.mode == "ALL":
-			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
+			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f in context.scene.lm_asset_list]
 		
 		elif self.mode == "QUEUE":
 			queue_asset_name = [a.name for a in context.scene.lm_render_queue if a.checked]
@@ -462,7 +466,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		bpy.context.window_manager.event_timer_remove(self._timer)
 
 	def execute(self, context):
-		bpy.ops.scene.lm_refresh_asset_status()
+		# bpy.ops.scene.lm_refresh_asset_status()
 
 		self.stop = False
 		self.rendering = False
@@ -496,10 +500,10 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 						if len(rendered_files) < frame_range:
 							asset.need_render = True
 						else:
-							for f in os.listdir(render_path):
-								if asset.render_date < asset.import_date:
-									asset.need_render = True
-									break
+							asset.need_render = True
+							# if asset.render_date < asset.import_date:
+							# 	asset.need_render = True
+							# 	break
 					else: # Asset has never been rendered
 						asset.need_render = True
 				else: # Asset already Rendered

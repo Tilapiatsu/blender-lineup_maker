@@ -41,10 +41,10 @@ class GetParam(object):
 
 class Status(Enum):
 	NOT_SET = -1
-	NOT_STARTED = 0
-	NOT_NEEDED = 1
-	WIP = 2
-	DONE = 3
+	NOT_STARTED = 1
+	NOT_NEEDED = 2
+	WIP = 3
+	DONE = 4
 
 STATUS_DICT = {str(Status.NOT_SET.value):('NOT_SET', 'Not Set', '', 'NOT_STARNOT_SETTED', Status.NOT_SET.value),
 				str(Status.NOT_STARTED.value):('NOT_STARTED', 'Not Started', '', 'NOT_STARTED', Status.NOT_STARTED.value),

@@ -169,13 +169,16 @@ class LM_UL_Cameras_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_cameras"
 
 	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-		row = layout.split(factor=0.7)
+		row = layout.column_flow(columns=2, align=True)
 		text = ''
 		for i,keyword in enumerate(item.keywords):
 			text += '"{}" = "{}"'.format(keyword.keyword, keyword.keyword_value)
 			if i < len(item.keywords) - 1:
 				text += ' and '
 		row.label(text='"{}" : {}'.format(item.camera.name, text))
+		# row = row.row(align=True)
+		# row.alignment = 'RIGHT'
+		# row.operator('scene.lm_edit_camera_keywords', text='', icon='ALIGN_JUSTIFY').index = index
 
 class LM_UL_ImportList_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_import_list"

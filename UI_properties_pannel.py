@@ -329,14 +329,14 @@ class LM_PT_Cameras(bpy.types.Panel):
 		
 		row = b.row()
 		
-		rows = len(scn.lm_keywords) if len(scn.lm_keywords) > 2 else 2
+		rows = 20 if len(scn.lm_keywords) > 20 else len(scn.lm_keywords) + 1
 		row.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
 
 		b = col.box()
 		b.prop(scn, 'lm_default_camera', text='Default Camera')
 		b.label(text='Cameras')
 		row = b.row()
-		rows = len(scn.lm_cameras) if len(scn.lm_cameras) > 2 else 2
+		rows = 20 if len(scn.lm_cameras) > 20 else len(scn.lm_cameras) + 1
 		
 		row.template_list('LM_UL_cameras', '', scn, 'lm_cameras', scn, 'lm_camera_idx', rows=rows)
 		c = row.column(align=True)
@@ -368,7 +368,7 @@ class LM_PT_Chapter(bpy.types.Panel):
 		
 		row = b.row()
 		
-		rows = len(scn.lm_keywords) if len(scn.lm_keywords) > 2 else 2
+		rows = 20 if len(scn.lm_keywords) > 10 else len(scn.lm_keywords) * 2 + 1
 		row.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
 
 		b.operator('scene.lm_add_chapter_keyword', text='Add selected keyword in chapter')
@@ -421,6 +421,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 
 		c.separator()
 		c.operator('scene.lm_import_assets', text='', icon='IMPORT').mode = 'IMPORT'
+		c.operator('scene.lm_import_assets', text='', icon='IMPORT').mode = 'IMPORT_NEW'
 
 		c.separator()
 		c.operator('scene.lm_import_list', text='', icon='SORT_ASC')

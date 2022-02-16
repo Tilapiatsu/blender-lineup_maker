@@ -237,6 +237,9 @@ def get_valid_camera(context, asset):
 				if naming_convention.naming_convention[keyword.keyword] != keyword.keyword_value.lower():
 					match = False
 					break
+			else:
+				match = False
+				break
 		
 		if match:		
 			cam = camera_keyword.camera

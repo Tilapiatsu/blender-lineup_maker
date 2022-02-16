@@ -143,6 +143,7 @@ classes = (
     LM_UI_MoveCameraKeyword,
     LM_UI_ClearCameraKeyword,
     LM_UI_RemoveCameraKeyword,
+    LM_UI_EditCameraKeywords,
     LM_UI_MoveKeyword,
     LM_UI_RenameKeyword,
     LM_UI_ClearKeyword,
