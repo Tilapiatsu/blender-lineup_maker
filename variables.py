@@ -1,10 +1,11 @@
-import bpy
+import bpy, os
 from . import preferences as P
 from enum import Enum
 
+LM_CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 LM_ASSET_COLLECTION = "Assets_Collection"
-LM_COMPATIBLE_MESH_FORMAT = {".fbx":(bpy.ops.import_scene.fbx, {'filter_glob':'*.fbx;', 'axis_forward':'-Z', 'axis_up':'Y'}),
-								".obj":(bpy.ops.import_scene.obj, {'filter_glob':'*.obj;*.mtl', 'axis_forward':'-Z', 'axis_up':'Y'})}
+LM_COMPATIBLE_MESH_FORMAT = {".fbx":(bpy.ops.import_scene.fbx, {'filter_glob':'*.fbx;', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.import_scene.fbx"),
+								".obj":(bpy.ops.import_scene.obj, {'filter_glob':'*.obj;*.mtl', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.import_scene.obj")}
 LM_COMPATIBLE_EXPORT_FORMAT = ['MESH']
 LM_COMPATIBLE_TEXTURE_FORMAT = {".png":(),
 								".tga":(),
@@ -29,6 +30,8 @@ LM_FINAL_COMPOSITE_FOLDER_NAME = '00_Final_Composite'
 LM_FINAL_COMPOSITE_SUFFIX = '_final_composite'
 
 LM_DEFAULT_SECTION = 'UNCATEGORIZED'
+
+LM_CATALOG_PATH = os.path.join(LM_CURRENT_DIR, 'StartupCatalog', "StartupCatalog.blend")
 
 class GetParam(object):
 	def  __init__(self, scn):

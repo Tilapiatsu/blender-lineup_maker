@@ -222,7 +222,7 @@ class LM_UL_ImportList_UIList(bpy.types.UIList):
 		else:
 			self.separator_iter(row, 3)
 		
-		op = row.operator('scene.lm_import_assets', text='', icon='IMPORT')
+		op = row.operator('scene.lm_create_blend_catalog_file', text='', icon='IMPORT')
 		op.asset_name = item.name
 		op.mode = "ASSET"
 		row.operator('scene.lm_rename_asset_folder', text='', icon='SMALL_CAPS').asset_name = item.name
@@ -286,7 +286,7 @@ class LM_UL_AssetList_UIList(bpy.types.UIList):
 		export.asset_name = item.name
 		export.mode = 'ASSET'
 
-		op = row.operator('scene.lm_import_assets', text='', icon='IMPORT')
+		op = row.operator('scene.lm_create_blend_catalog_file', text='', icon='IMPORT')
 		op.asset_name = item.name
 		op.mode = "ASSET"
 		row.operator('scene.lm_rename_asset', text='', icon='SMALL_CAPS').asset_name = item.name
@@ -357,7 +357,7 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
 		export.asset_name = item.name
 		export.mode = 'ASSET'
 		
-		op = row.operator('scene.lm_import_assets', text='', icon='IMPORT')
+		op = row.operator('scene.lm_create_blend_catalog_file', text='', icon='IMPORT')
 		op.asset_name = item.name
 		op.mode = "ASSET"
 		row.operator('scene.lm_rename_asset', text='', icon='SMALL_CAPS').asset_name = item.name

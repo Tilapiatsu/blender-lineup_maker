@@ -108,6 +108,24 @@ class LM_UI_RemoveAssetFromRenderQueue(bpy.types.Operator):
 
 		return {'FINISHED'}
 
+class LM_UI_RemoveAlreadyRenderedAssetFromRenderQueue(bpy.types.Operator):
+	bl_idname = "scene.lm_remove_already_rendered_asset_from_render_queue"
+	bl_label = "Remove already rendered asset from render queue"
+	bl_options = {'REGISTER', 'UNDO'}
+	bl_description = "Remove already rendered asset from render queue."
+
+
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_render_queue
+
+	def execute(self, context):
+		already_rendered = [a.name for a in context.scene.lm_asset_list if a.name in context.scene.lm_render_queue and a.rendered]
+		for a in already_rendered:
+			H.remove_bpy_struct_item(context.scene.lm_render_queue, a)
+
+		return {'FINISHED'}
+
 class LM_UI_DeleteRenderQueueAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_delete_render_queue_asset"
 	bl_label = "Remove Selected asset from file"

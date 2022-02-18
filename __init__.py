@@ -32,6 +32,7 @@
 
 import bpy
 
+
 try:
     from .OP_main import *
 except (ModuleNotFoundError, ImportError) as e:
@@ -43,6 +44,7 @@ from .OP_files import *
 from .UI_properties_pannel import *
 from .preferences import *
 from .properties import *
+from .OP_preset import *
 from .OP_ui_list_import import *
 from .OP_ui_list_asset import *
 from .OP_ui_list_render_queue import *
@@ -70,6 +72,7 @@ classes = (
     LM_Preferences,
     LM_PT_ExportAsset,
     LM_OP_UpdateLineup,
+    LM_OP_CreateBlendCatalogFile,
     LM_OP_ImportAssets,
     LM_OP_RenderAssets,
     LM_OP_OpenFolder,
@@ -78,6 +81,9 @@ classes = (
     LM_OP_RefreshAssetStatus,
     LM_OP_ExportAsset,
     LM_OP_UpdateJson,
+    LM_OP_SavePreset,
+    LM_OP_OpenPreset,
+    LM_PT_Preset,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,
     LM_PT_Cameras,
@@ -124,6 +130,7 @@ classes = (
     LM_UI_MoveAssetToRender,
     LM_UI_ClearAssetFromRenderQueueList,
     LM_UI_RemoveAssetFromRenderQueue,
+    LM_UI_RemoveAlreadyRenderedAssetFromRenderQueue,
     LM_UI_DeleteRenderQueueAsset,
     LM_UI_CheckAllRenderQueuedAsset,
     LM_UI_UncheckAllRenderQueuedAsset,
@@ -348,6 +355,13 @@ def register():
                                     update = None,
                                     description = 'Path to the folder containing the rendered assets'      
                                     )
+    bpy.types.Scene.lm_blend_catalog_path = bpy.props.StringProperty(
+                                    name="BlenderCatalog Path",
+                                    subtype='DIR_PATH',
+                                    default="",
+                                    update = None,
+                                    description = 'Path to the folder containing the blender catalogs'      
+                                    )
     bpy.types.Scene.lm_render_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_asset_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_default_camera = bpy.props.PointerProperty(type=bpy.types.Camera)
@@ -438,6 +452,9 @@ def register():
     bpy.types.Scene.lm_render_message = bpy.props.StringProperty(name="Render Message")
     bpy.types.Scene.lm_render_progress = bpy.props.StringProperty(name="Render Progress")
 
+    bpy.types.Scene.lm_is_catalog_scene = bpy.props.BoolProperty(name="Is Catalog Scene")
+    bpy.types.Scene.lm_is_catalog_updated = bpy.props.BoolProperty(name="Is Catalog updated")
+
     for cls in classes:
         bpy.utils.register_class(cls)
     
@@ -493,7 +510,8 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
-
+    del bpy.types.Scene.lm_is_catalog_updated
+    del bpy.types.Scene.lm_is_catalog_scene
     del bpy.types.Scene.lm_render_message 
     del bpy.types.Scene.lm_render_progress
     del bpy.types.Scene.lm_queue_message
@@ -547,6 +565,7 @@ def unregister():
     del bpy.types.Scene.lm_chapter_naming_convention
     del bpy.types.Scene.lm_asset_collection
     del bpy.types.Scene.lm_render_collection
+    del bpy.types.Scene.lm_blend_catalog_path
     del bpy.types.Scene.lm_asset_path
     del bpy.types.Scene.lm_render_path
       

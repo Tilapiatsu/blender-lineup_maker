@@ -20,6 +20,7 @@ class LM_PT_main(bpy.types.Panel):
 		else:
 			icon = "BLANK1"
 		b.prop(scn, 'lm_asset_path', text='Asset Path', icon=icon)
+		b.prop(scn, 'lm_blend_catalog_path', text='BlenderCatalog Path', icon="FILE_BLEND")
 		
 		row = b.row(align=True)
 		if path.isdir(render_path):
@@ -43,7 +44,7 @@ class LM_PT_main(bpy.types.Panel):
 		else:
 			text = 'Update modified assets'
 			imported = True
-		b.operator("scene.lm_import_assets", icon='IMPORT', text=text).mode = "ALL"
+		b.operator("scene.lm_create_blend_catalog_file", icon='IMPORT', text=text).mode = "ALL"
 		if len(context.scene.lm_import_message):
 			b.label(text=context.scene.lm_import_message)
 		if len(context.scene.lm_import_progress):
@@ -377,6 +378,24 @@ class LM_PT_Chapter(bpy.types.Panel):
 		row.operator('scene.lm_remove_chapter_keyword', icon='X', text="")
 
 
+class LM_PT_Preset(bpy.types.Panel):
+	bl_label = "Preset"
+	bl_space_type = "VIEW_3D"
+	bl_region_type = "UI"
+	bl_category = 'Lineup Maker'
+	bl_options = {"DEFAULT_CLOSED"}
+
+	
+	def draw(self, context):
+		scn = context.scene
+		layout = self.layout
+
+		col = layout.column(align=True)
+		b = col.box()
+
+		b.operator('scene.lm_save_preset', text='Save Preset', icon='OPTIONS')
+		b.operator('scene.lm_load_preset', text='Load Preset', icon='OPTIONS')
+
 class LM_PT_AssetList(bpy.types.Panel):          
 	bl_label = "Asset List"
 	bl_space_type = "VIEW_3D"
@@ -398,7 +417,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 			b.label(text=context.scene.lm_import_progress)
 		if len(context.scene.lm_viewlayer_progress):
 			b.label(text=context.scene.lm_viewlayer_progress)
-
+		
 		b.label(text='Import List  |  {} asset(s)'.format(len(scn.lm_import_list)))
 		
 		b.prop(scn, 'lm_import_autosave_step')
@@ -420,8 +439,8 @@ class LM_PT_AssetList(bpy.types.Panel):
 		c.operator("scene.lm_remove_asset_folder", text="", icon='TRASH').mode = 'IMPORT'
 
 		c.separator()
-		c.operator('scene.lm_import_assets', text='', icon='IMPORT').mode = 'IMPORT'
-		c.operator('scene.lm_import_assets', text='', icon='IMPORT').mode = 'IMPORT_NEW'
+		c.operator('scene.lm_create_blend_catalog_file', text='', icon='IMPORT').mode = 'IMPORT'
+		c.operator('scene.lm_create_blend_catalog_file', text='', icon='IMPORT').mode = 'IMPORT_NEW'
 
 		c.separator()
 		c.operator('scene.lm_import_list', text='', icon='SORT_ASC')
@@ -470,8 +489,10 @@ class LM_PT_AssetList(bpy.types.Panel):
 		c.separator()
 		c.operator("scene.lm_delete_render_queue_asset", text="", icon='TRASH')
 		c.operator("scene.lm_clear_asset_from_render_queue_list", text="", icon='X')
+		c.operator("scene.lm_remove_already_rendered_asset_from_render_queue", text="", icon='RENDER_RESULT')
+		
 		c.separator()
-		c.operator("scene.lm_import_assets", text="", icon='IMPORT').mode = "QUEUE"
+		c.operator("scene.lm_create_blend_catalog_file", text="", icon='IMPORT').mode = "QUEUE"
 		c.operator("scene.lm_export_assets", text="", icon='EXPORT').mode = "QUEUE"
 		c.separator()
 		c.operator('scene.lm_export_queue_list', text='', icon='SORT_DESC')
@@ -525,6 +546,7 @@ class LM_PT_ExportAsset(bpy.types.Panel):
 			icon = "BLANK1"
 			
 		b.prop(scn, 'lm_asset_path', text='Asset Path', icon=icon)
+		
 		b.prop(scn, 'lm_exported_asset_name', text='Export Name')
 		b.prop(scn, 'lm_exported_hd_status', text='HD Status')
 		b.prop(scn, 'lm_exported_ld_status', text='LD Status')

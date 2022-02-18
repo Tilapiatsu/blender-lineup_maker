@@ -109,8 +109,21 @@ class LMAsset(object):
 			else:
 				scene_asset.section = mesh.json.section
 
-	def create_asset_blendfile(self):
-		subprocess.check_call([bpy.app.binary_path, '--python-text', 'print("Hello World")'])
+# 	def create_asset_blendfile(self):
+# 		current_dir = path.dirname(path.realpath(__file__))
+# 		startup_catalog = path.join(current_dir, 'StartupCatalog', "StartupCatalog.blend")
+
+# 		for m in self.meshes:
+# 			command = '''import bpy
+
+# {}({})
+# bpy.ops.object.move_to_collection(collection_index=0, is_new=True, new_collection_name="{}")
+# bpy.ops.wm.save_as_mainfile(filepath = "{}")
+# bpy.ops.wm.quit_blender()
+# '''.format(m.import_command[2], m.import_command[3], self.asset_name, path.join(self.param['lm_blend_catalog_path'], self.asset_name + '.blend'))
+# 			print(command)
+
+# 			subprocess.check_call([bpy.app.binary_path, startup_catalog, '--python-expr', command])
 
 	@check_length
 	def import_mesh(self, update=False):
@@ -126,7 +139,7 @@ class LMAsset(object):
 
 		global_import_date = 0.0
 
-		self.create_asset_blendfile()
+		# self.create_asset_blendfile()
 
 		for m in self.meshes:
 			if not m.is_valid:
@@ -973,6 +986,12 @@ class LMMeshFile(LMFile):
 		return self._materials
 
 	def import_mesh(self):
+		command = self.import_command
+		# run import command
+		command[0](**command[1])
+
+	@property
+	def import_command(self):
 		if not self.is_valid:
 			self.log.warning('Mesh is not valid')
 			return
@@ -980,9 +999,11 @@ class LMMeshFile(LMFile):
 		kwargs = {}
 		kwargs.update({'filepath':self.path})
 		kwargs.update(self.compatible_format[1])
+
+
 		
 		# run Import Command
-		self.compatible_format[0](**kwargs)
+		return self.compatible_format[0], kwargs, self.compatible_format[2], H.kwarg_to_string(kwargs)
 
 
 class LMJson(LMFile):

@@ -540,3 +540,9 @@ def get_view_layer_dict(context):
 	for a in context.scene.lm_asset_list:
 			d[a.view_layer] = get_layer_collection(context.view_layer.layer_collection, a.name)
 	return d
+
+def kwarg_to_string(kwarg):
+	string = ''
+	for k,v in kwarg.items():
+		string += k + "= '" + v + "' ,"
+	return string
