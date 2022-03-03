@@ -394,7 +394,7 @@ class LM_PT_Preset(bpy.types.Panel):
 		b = col.box()
 
 		b.operator('scene.lm_save_preset', text='Save Preset', icon='OPTIONS')
-		b.operator('scene.lm_load_preset', text='Load Preset', icon='OPTIONS')
+		b.operator('scene.lm_open_preset', text='Load Preset', icon='OPTIONS')
 
 class LM_PT_AssetList(bpy.types.Panel):          
 	bl_label = "Asset List"

@@ -109,21 +109,22 @@ class LMAsset(object):
 			else:
 				scene_asset.section = mesh.json.section
 
-# 	def create_asset_blendfile(self):
-# 		current_dir = path.dirname(path.realpath(__file__))
-# 		startup_catalog = path.join(current_dir, 'StartupCatalog', "StartupCatalog.blend")
+	def create_asset_blendfile(self):
+		current_dir = path.dirname(path.realpath(__file__))
+		startup_catalog = path.join(current_dir, 'StartupCatalog', "StartupCatalog.blend")
 
-# 		for m in self.meshes:
-# 			command = '''import bpy
+		for m in self.meshes:
+			command = '''import bpy
 
-# {}({})
-# bpy.ops.object.move_to_collection(collection_index=0, is_new=True, new_collection_name="{}")
-# bpy.ops.wm.save_as_mainfile(filepath = "{}")
-# bpy.ops.wm.quit_blender()
-# '''.format(m.import_command[2], m.import_command[3], self.asset_name, path.join(self.param['lm_blend_catalog_path'], self.asset_name + '.blend'))
-# 			print(command)
 
-# 			subprocess.check_call([bpy.app.binary_path, startup_catalog, '--python-expr', command])
+{}({})
+bpy.ops.object.move_to_collection(collection_index=0, is_new=True, new_collection_name="{}")
+bpy.ops.wm.save_as_mainfile(filepath = "{}")
+bpy.ops.wm.quit_blender()
+'''.format(m.import_command[2], m.import_command[3], self.asset_name, path.join(self.param['lm_blend_catalog_path'], self.asset_name + '.blend'))
+			print(command)
+
+			subprocess.check_call([bpy.app.binary_path, startup_catalog, '--python-expr', command])
 
 	@check_length
 	def import_mesh(self, update=False):
