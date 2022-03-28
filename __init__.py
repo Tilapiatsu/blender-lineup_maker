@@ -82,7 +82,7 @@ classes = (
     LM_OP_ExportAsset,
     LM_OP_UpdateJson,
     LM_OP_SavePreset,
-    LM_OP_OpenPreset,
+    LM_OP_LoadPreset,
     LM_PT_Preset,
     LM_PT_NamingConvention,
     LM_PT_TextureSetSettings,

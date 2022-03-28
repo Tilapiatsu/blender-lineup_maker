@@ -6,6 +6,35 @@ from mathutils import Color
 from bpy_extras.io_utils import ImportHelper
 from . import properties as P
 
+INCLUDE = ['lm_asset_path',
+			'lm_render_path',
+			'lm_separator',
+			'lm_asset_naming_convention',
+			'lm_mesh_naming_convention',
+			'lm_texture_naming_convention',
+			'lm_chapter_naming_convention',
+			'lm_default_camera',
+			'lm_override_material_color',
+			'lm_default_material_color',
+			'lm_override_material_roughness',
+			'lm_default_material_roughness',
+			'lm_override_material_specular',
+			'lm_default_material_specular',
+			'lm_texture_channels',
+			'lm_channels',
+			'lm_shaders',
+			'lm_keywords',
+			'lm_keyword_values',
+			# 'lm_cameras',
+			'lm_content_background_color',
+			'lm_text_background_color',
+			'lm_font_color',
+			'lm_blend_catalog_path',
+			'lm_precomposite_frames',
+			'lm_override_frames',
+			'lm_force_render',
+			'lm_pdf_export_last_rendered'
+			]
 class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 	bl_idname = "scene.lm_save_preset"
 	bl_label = "Save Preset"
@@ -19,35 +48,12 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 	files : bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
 	path : bpy.props.StringProperty(name="Save Path", subtype='DIR_PATH',default="", description='Path to the preset destination')
 
-	include = ['lm_asset_path',
-				'lm_render_path',
-				'lm_separator',
-				'lm_asset_naming_convention',
-				'lm_mesh_naming_convention',
-				'lm_texture_naming_convention',
-				'lm_chapter_naming_convention',
-				'lm_default_camera',
-				'lm_override_material_color',
-				'lm_default_material_color',
-				'lm_override_material_roughness',
-				'lm_default_material_roughness',
-				'lm_override_material_specular',
-				'lm_default_material_specular',
-				'lm_texture_channels',
-				'lm_channels',
-				'lm_shaders',
-				'lm_keywords',
-				'lm_keyword_values',
-				'lm_cameras'
-				]
+	
 	@property
 	def prop(self):
 		return [getattr(P, p) for p in dir(P)]
 
 	def execute(self, context):
-		# self.filepath = bpy.path.abspath(self.filepath)
-
-		print(os.path.splitext(self.filepath)[1].lower())
 		if os.path.splitext(self.filepath)[1].lower() != '.json':
 			print('Filepath is not a .json')
 			return {'CANCELLED'}
@@ -58,24 +64,12 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 		print(self.json_data)
 		self.write_json(context)
 		
-
-		# for f in self.files:
-		#     print(f)
-		#     print(dir(f))
-		#     print(self.filepath)
-
-		#     if os.path.isdir(f):
-		#         print('Saving preset in : {}'.format(f))
-		#         subprocess.Popen(r'explorer /open,"{}"'.format(f))
-		#     else:
-		#         print('Lineup Maker : The folder path "{}" is not valid'.format(f))
-
 		return {'FINISHED'}
 
 	def get_scene_dict(self, context):
 		scene_dict={}
 		for p in dir(context.scene):
-			if not p.startswith('lm_') or p not in self.include:
+			if not p.startswith('lm_') or p not in INCLUDE:
 				continue
 
 			scene_dict[p] = getattr(context.scene, p)
@@ -84,7 +78,6 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 		
 
 	def get_property_group_dict(self, parent_dict):
-		print('get_property_group_dict')
 		property_dict = {}
 
 		for p in dir(parent_dict):
@@ -96,13 +89,16 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 		return property_dict
 
 	def parse_dict(self, parent_dict, property_dict):
+		i=0
 		for k,v in parent_dict.items():
+			if k == "":
+				k = i
 			property_dict[k] = self.parse_property(param=v, property_name=k, property_dict=property_dict, parent_dict=parent_dict)
+			i += 1
 		
 		return property_dict
 
 	def parse_property(self, param, property_name, property_dict, parent_dict):
-		print(type(param))
 		if isinstance(param, (bpy.types.bpy_prop_collection, bpy.types.PropertyGroup, bpy.types.CollectionProperty, bpy.types.Struct)):
 			sub_dict = {}
 			sub_dict = self.lm_properties(parent_dict=param)
@@ -110,16 +106,13 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 		elif type(param) in self.prop:
 			return self.get_property_group_dict(param)
 		elif isinstance(param, (bpy.types.StringProperty, bpy.types.FloatProperty, bpy.types.IntProperty, bpy.types.BoolProperty)):
-			# print(param)
-			# print(dir(param))
-			# print(param.default)
 			return param.default
 		elif isinstance(param, bpy.types.PointerProperty):
 			return {'type' : 'bpy.types.PointerProperty','value' : param.name}
 		elif isinstance(param, bpy.types.Image):
 			return {'type' : 'bpy.types.Image','value' : param.name}
 		elif isinstance(param, Color):
-			return {'type' : 'mathutils.Color','value' : [param.r, param.g, param.b]}
+			return {'type' : 'Color','value' : [param.r, param.g, param.b]}
 		elif isinstance(param, bpy.types.Camera):
 			return {'type': 'bpy.types.Camera', 'value': param.name}
 		elif isinstance(param, bpy.types.Collection):
@@ -131,14 +124,11 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 		else:
 			return param
 		
-
 	def lm_properties(self, parent_dict=None):
 		property_dict = {}
 
 		if parent_dict is None:	
 			return property_dict
-
-		print(type(parent_dict))
 
 		# parent_dict is a Lineup Maker property_group --> parse the property group
 		if type(parent_dict) in self.prop:
@@ -161,22 +151,93 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 			with open(self.filepath, 'w', encoding='utf-8') as outfile:
 				json.dump(self.json_data, outfile, ensure_ascii=False, indent=4)
 
-class LM_OP_OpenPreset(bpy.types.Operator, ImportHelper):
-	bl_idname = "scene.lm_open_preset"
-	bl_label = "Lineup Maker: Open Preset"
+class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
+	bl_idname = "scene.lm_load_preset"
+	bl_label = "Lineup Maker: Load Preset"
 	bl_options = {'REGISTER', 'UNDO'}
+	filter_glob: bpy.props.StringProperty(
+	default='*.json',
+	options={'HIDDEN'}
+	)
 
 	# selected file Destination
 	files : bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
-	path : bpy.props.StringProperty(name="Path", subtype='DIR_PATH',default="", description='Path to the folder to open')
 	
 	def execute(self, context):
-		self.path = bpy.path.abspath(self.path)
 		
-		if os.path.isdir(self.path):
-			print('Opening folder {}'.format(self.path))
-			subprocess.Popen(r'explorer /open,"{}"'.format(self.path))
-		else:
-			print('Lineup Maker : The folder path "{}" is not valid'.format(self.path))
+		json_data = self.get_json_data()
+
+		self.load_json_data(json_data, json_data, "bpy.context.scene")
 
 		return {'FINISHED'}
+
+	def join_scene_path(self, scene_path, subpath, is_list=False):
+		if is_list:
+			return scene_path + '["' + subpath + '"]'
+		else:
+			return scene_path + '.' + subpath
+
+	def get_json_data(self):
+		json_data = {}
+		if not os.path.isfile(self.filepath):
+			print('Lineup Maker : The folder path "{}" is not valid'.format(self.filepath))
+			return{'CANCELLED'}
+		
+		print('loading preset {}'.format(self.filepath))
+		with open(self.filepath, 'r', encoding='utf-8-sig') as json_file:  
+			data = json.load(json_file)
+			json_data = data
+
+		return json_data
+
+	
+	def load_json_data(self, json_data={}, parent=None, scene_path=None):
+		if 'type' in json_data.keys():
+			value = scene_path.split('.')[-1]
+			self.set_property_value(value, eval(json_data['type']), parent, scene_path)
+			return
+		for k,v in json_data.items():
+			curr_scene_path = self.join_scene_path(scene_path, k)
+			if k in INCLUDE:
+				self.set_property_value(k, v, parent, curr_scene_path)
+			elif k == 'type':
+				self.set_property_value(k, v, parent, curr_scene_path)
+			elif isinstance(v, dict):
+				if "type" in v.keys():
+					self.set_property_value(k, v, parent, curr_scene_path)
+				else:
+					self.load_json_data(v, json_data, parent, curr_scene_path)
+			else:
+				self.set_property_value(k, v, parent, curr_scene_path)
+
+
+	def set_property_value(self, prop_name, value, parent=None, scene_path=None):
+		if isinstance(eval(scene_path), (bpy.types.bpy_prop_collection, bpy.types.PropertyGroup, bpy.types.CollectionProperty, bpy.types.Struct)):
+			for sub_prop, sub_value in value.items():
+				if sub_prop not in dir(eval(scene_path)):
+					new_prop = eval(scene_path).add()
+					new_prop.name = sub_prop
+					self.set_property_value(new_prop.name, sub_value, eval(scene_path), self.join_scene_path(scene_path, new_prop.name, is_list=True))
+				else:
+					self.set_property_value(sub_prop, sub_value, eval(scene_path), self.join_scene_path(scene_path, sub_prop))
+		elif isinstance(value, dict):
+			self.load_json_data(value, parent, scene_path)
+		elif value in [bpy.types.StringProperty, bpy.types.FloatProperty, bpy.types.IntProperty, bpy.types.BoolProperty]:
+			exec('{} = {}'.format(scene_path, value))
+		elif value == Color:
+			eval(scene_path).r = parent[prop_name]['value'][0]
+			eval(scene_path).g = parent[prop_name]['value'][1]
+			eval(scene_path).b = parent[prop_name]['value'][2]
+		elif value == bpy.types.Object:
+			ob = parent[prop_name]['value']
+			if ob in bpy.data.objects:
+				setattr(parent, prop_name, bpy.data.objects[ob])
+		elif value == bpy.types.Camera:
+			cam = parent[prop_name]['value']
+			if cam in bpy.data.cameras:
+				setattr(parent, prop_name, bpy.data.cameras[cam])
+		else:
+			if type(value) == str:
+				exec("{} = {}".format(scene_path, repr(value)))
+			else:
+				exec('{} = {}'.format(scene_path, value))
