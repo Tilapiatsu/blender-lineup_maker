@@ -101,6 +101,9 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 
 	def execute(self, context):
 		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
+		self.tmpdir = tempfile.mkdtemp()
+		self.preset_path = os.path.join(self.tmpdir, "temp_preset.json")
+		bpy.ops.save_preset('INVOKE_DEFAULT', filepath=self.preset_path)
 
 		# Init the scene and store the right variables
 		self.folder_src = bpy.path.abspath(context.scene.lm_asset_path)

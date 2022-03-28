@@ -231,11 +231,11 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 		elif value == bpy.types.Object:
 			ob = parent[prop_name]['value']
 			if ob in bpy.data.objects:
-				setattr(parent, prop_name, bpy.data.objects[ob])
+				parent[prop_name] = bpy.data.objects[ob]
 		elif value == bpy.types.Camera:
 			cam = parent[prop_name]['value']
 			if cam in bpy.data.cameras:
-				setattr(parent, prop_name, bpy.data.cameras[cam])
+				parent[prop_name] = bpy.data.cameras[cam]
 		else:
 			if type(value) == str:
 				exec("{} = {}".format(scene_path, repr(value)))
