@@ -225,7 +225,7 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 	def importing(self, context, asset):
 		self.asset_name = path.basename(asset)
 		self.asset_path = asset
-		updated = self.create_asset_blendfile()
+		updated = self.create_asset_blendfile(context)
 		# updated = self.import_asset(context, asset)
 
 		self.percent = round(100 - (len(self.import_list) * 100 / self.total_assets), 2)
@@ -370,7 +370,7 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 		self.updating_viewlayers = False
 		self.cancelling = False
 
-	def create_asset_blendfile(self):
+	def create_asset_blendfile(self, context):
 		# current_dir = path.dirname(path.realpath(__file__))
 		# startup_catalog = path.join(current_dir, 'StartupCatalog', "StartupCatalog.blend")
 
@@ -384,13 +384,13 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 
 		command = '''import bpy
 bpy.ops.scene.lm_load_preset('EXEC_DEFAULT', filepath=r"{}")
-bpy.ops.scene.lm_import_assets("INVOKE_DEFAULT", mode = "ASSET", asset_name = "{}", asset_path = "{}")
+bpy.ops.scene.lm_import_assets("EXEC_DEFAULT", mode = "ASSET", asset_name = "{}", asset_path = "{}")
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.move_to_collection(collection_index=0, is_new=True, new_collection_name="{}")
 bpy.context.scene.lm_is_catalog_scene = True
 bpy.ops.wm.save_as_mainfile(filepath = "{}")
 bpy.ops.wm.quit_blender()
-'''.format(self.preset_path, self.asset_name, self.asset_path, self.asset_name, path.join(bpy.context.scene.lm_blend_catalog_path, self.asset_name + '.blend'))
+'''.format(self.preset_path, self.asset_name, context.scene.lm_asset_path, self.asset_name, path.join(bpy.context.scene.lm_blend_catalog_path, self.asset_name + '.blend'))
 		print(command)
 
 		subprocess.check_call([bpy.app.binary_path, V.LM_CATALOG_PATH, '--python-expr', command])
