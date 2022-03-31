@@ -3,6 +3,7 @@ import bpy
 import os, subprocess, json
 from . import logger as L
 from mathutils import Color
+from math import radians, degrees
 from bpy_extras.io_utils import ImportHelper
 from . import properties as P
 
@@ -43,11 +44,6 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 	default='*.json',
 	options={'HIDDEN'}
 	)
-
-	# selected file Destination
-	files : bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
-	path : bpy.props.StringProperty(name="Save Path", subtype='DIR_PATH',default="", description='Path to the preset destination')
-
 	
 	@property
 	def prop(self):
@@ -108,13 +104,26 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 		elif isinstance(param, (bpy.types.StringProperty, bpy.types.FloatProperty, bpy.types.IntProperty, bpy.types.BoolProperty)):
 			return param.default
 		elif isinstance(param, bpy.types.PointerProperty):
-			return {'type' : 'bpy.types.PointerProperty','value' : param.name}
+			return {'datatype' : 'bpy.types.PointerProperty','value' : param.name}
 		elif isinstance(param, bpy.types.Image):
-			return {'type' : 'bpy.types.Image','value' : param.name}
+			return {'datatype' : 'bpy.types.Image','value' : param.name}
 		elif isinstance(param, Color):
-			return {'type' : 'Color','value' : [param.r, param.g, param.b]}
+			return {'datatype' : 'Color','value' : [param.r, param.g, param.b]}
 		elif isinstance(param, bpy.types.Camera):
-			return {'type': 'bpy.types.Camera', 'value': param.name}
+			cam = {'datatype': 'bpy.types.Camera', 'value': param.name}
+			if param.name in bpy.data.objects:
+				scene_cam = bpy.data.objects[param.name]
+				cam['type'] = scene_cam.data.type
+				cam['lens'] = scene_cam.data.lens
+				cam['lens_unit'] = scene_cam.data.lens_unit
+				cam['shift_x'] = scene_cam.data.shift_x
+				cam['shift_y'] = scene_cam.data.shift_y
+				cam['clip_start'] = scene_cam.data.clip_start
+				cam['clip_end'] = scene_cam.data.clip_end
+				cam['location'] = [scene_cam.location[0], scene_cam.location[1], scene_cam.location[2]]
+				cam['rotation_euler'] = [scene_cam.rotation_euler[0], scene_cam.rotation_euler[1], scene_cam.rotation_euler[2], scene_cam.rotation_euler.order]
+				cam['scale'] = [scene_cam.scale[0], scene_cam.scale[1], scene_cam.scale[2]]
+			return cam
 		elif isinstance(param, bpy.types.Collection):
 			return {'type': 'bpy.types.Collection', 'value': param.name}
 		elif isinstance(param, bpy.types.Material):
@@ -159,9 +168,6 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 	default='*.json',
 	options={'HIDDEN'}
 	)
-
-	# selected file Destination
-	files : bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
 	
 	def execute(self, context):
 		
@@ -192,18 +198,18 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 
 	
 	def load_json_data(self, json_data={}, parent=None, scene_path=None):
-		if 'type' in json_data.keys():
+		if 'datatype' in json_data.keys():
 			value = scene_path.split('.')[-1]
-			self.set_property_value(value, eval(json_data['type']), parent, scene_path)
+			self.set_property_value(value, eval(json_data['datatype']), parent, scene_path)
 			return
 		for k,v in json_data.items():
 			curr_scene_path = self.join_scene_path(scene_path, k)
 			if k in INCLUDE:
 				self.set_property_value(k, v, parent, curr_scene_path)
-			elif k == 'type':
+			elif k == 'datatype':
 				self.set_property_value(k, v, parent, curr_scene_path)
 			elif isinstance(v, dict):
-				if "type" in v.keys():
+				if 'datatype' in v.keys():
 					self.set_property_value(k, v, parent, curr_scene_path)
 				else:
 					self.load_json_data(v, json_data, parent, curr_scene_path)
@@ -234,8 +240,30 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 				parent[prop_name] = bpy.data.objects[ob]
 		elif value == bpy.types.Camera:
 			cam = parent[prop_name]['value']
-			if cam in bpy.data.cameras:
-				parent[prop_name] = bpy.data.cameras[cam]
+			if cam in bpy.data.objects:
+				if cam in bpy.data.cameras:
+					parent[prop_name] = bpy.data.cameras[cam]
+			else:
+				bpy.ops.object.camera_add('INVOKE_DEFAULT')
+				new_cam = bpy.context.active_object
+				new_cam.name = cam
+				new_cam.data.type = parent[prop_name]['type']
+				new_cam.data.lens = parent[prop_name]['lens'] 
+				new_cam.data.lens_unit = parent[prop_name]['lens_unit']
+				new_cam.data.shift_x = parent[prop_name]['shift_x']
+				new_cam.data.shift_y = parent[prop_name]['shift_y']
+				new_cam.data.clip_start = parent[prop_name]['clip_start']
+				new_cam.data.clip_end = parent[prop_name]['clip_end']
+				new_cam.location[0] = parent[prop_name]['location'][0]
+				new_cam.location[1] = parent[prop_name]['location'][1]
+				new_cam.location[2] = parent[prop_name]['location'][2]
+				new_cam.rotation_euler.order = parent[prop_name]['rotation_euler'][3]
+				new_cam.rotation_euler[0] = parent[prop_name]['rotation_euler'][0]
+				new_cam.rotation_euler[1] = parent[prop_name]['rotation_euler'][1]
+				new_cam.rotation_euler[2] = parent[prop_name]['rotation_euler'][2]
+				new_cam.scale[0] = parent[prop_name]['scale'][0]
+				new_cam.scale[1] = parent[prop_name]['scale'][1]
+				new_cam.scale[2] = parent[prop_name]['scale'][2]
 		else:
 			if type(value) == str:
 				exec("{} = {}".format(scene_path, repr(value)))
