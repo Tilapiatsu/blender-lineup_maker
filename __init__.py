@@ -31,15 +31,18 @@
 #      https://www.blog.pythonlibrary.org/2018/06/05/creating-pdfs-with-pyfpdf-and-python/
 
 import bpy
-
+from os import path
+from . import variables as V
+from importlib.machinery import SourceFileLoader
 
 try:
-    from .OP_main import *
+    fpdf = SourceFileLoader(V.LM_DEPENDENCIES_FOLDER_NAME, path.join(V.LM_DEPENDENCIES_PATH, 'fpdf', '__init__.py')).load_module()
+    PIL = SourceFileLoader(V.LM_DEPENDENCIES_FOLDER_NAME, path.join(V.LM_DEPENDENCIES_PATH, 'PIL', '__init__.py')).load_module()
 except (ModuleNotFoundError, ImportError) as e:
     from . import setup
     setup.install_dependencies()
-    from .OP_main import *
 
+from .OP_main import *
 from .OP_files import *
 from .UI_properties_pannel import *
 from .preferences import *
@@ -72,6 +75,7 @@ classes = (
     LM_Preferences,
     LM_PT_ExportAsset,
     LM_OP_UpdateLineup,
+    LM_OP_InitLineupScene,
     LM_OP_CreateBlendCatalogFile,
     LM_OP_ImportAssets,
     LM_OP_RenderAssets,

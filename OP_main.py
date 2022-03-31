@@ -1,7 +1,6 @@
 import bpy
-import os, time, math, subprocess, json, tempfile, re
+import os, time, math, subprocess, json, tempfile, re, importlib
 from datetime import date
-from fpdf import FPDF
 from os import path
 from . import variables as V
 from . import properties as P
@@ -12,6 +11,7 @@ from . import compositing as C
 from . import stats as S
 from . import logger as L
 
+importlib.import_module('.fpdf', '{}.{}.{}'.format('lineup_maker', V.LM_DEPENDENCIES_FOLDER_NAME, 'fpdf'))
 
 class LM_OP_UpdateLineup(bpy.types.Operator):
 	bl_idname = "scene.lm_update_lineup"
@@ -30,7 +30,6 @@ class LM_OP_UpdateLineup(bpy.types.Operator):
 	def unregister_render_handler(self):
 		bpy.context.window_manager.event_timer_remove(self._timer)
 	
-
 	def execute(self, context):
 		self.imported = False
 		self.rendered = False
@@ -67,6 +66,20 @@ class LM_OP_UpdateLineup(bpy.types.Operator):
 
 		return {"PASS_THROUGH"}
 
+class LM_OP_InitLineupScene(bpy.types.Operator):
+	bl_idname = "scene.lm_init_scene"
+	bl_label = "Lineup Maker: Init lineup scene"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	def execute(self, context):
+		if os.path.isdir(self.folder_path):
+			print('Opening folder {}'.format(self.folder_path))
+			subprocess.Popen(r'explorer /open,"{}"'.format(self.folder_path))
+		else:
+			print('Lineup Maker : The folder path "{}" is not valid'.format(self.folder_path))
+
+		return {'FINISHED'}
+
 class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 	bl_idname = "scene.lm_create_blend_catalog_file"
 	bl_label = "Lineup Maker: Create Blend Catalog File"
@@ -97,13 +110,14 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context):
-		return context.scene.lm_render_collection and path.isdir(context.scene.lm_asset_path)
+		return path.isdir(context.scene.lm_asset_path)
 
 	def execute(self, context):
 		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
 		self.tmpdir = tempfile.mkdtemp()
 		self.preset_path = os.path.join(self.tmpdir, "temp_preset.json")
-		bpy.ops.save_preset('INVOKE_DEFAULT', filepath=self.preset_path)
+		# self.preset_path = repr(self.preset_path)
+		bpy.ops.scene.lm_save_preset('EXEC_DEFAULT', filepath=self.preset_path)
 
 		# Init the scene and store the right variables
 		self.folder_src = bpy.path.abspath(context.scene.lm_asset_path)
@@ -369,14 +383,14 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 # '''.format(m.import_command[2], m.import_command[3], self.asset_name, path.join(self.param['lm_blend_catalog_path'], self.asset_name + '.blend'))
 
 		command = '''import bpy
-
+bpy.ops.scene.lm_load_preset('EXEC_DEFAULT', filepath=r"{}")
 bpy.ops.scene.lm_import_assets("INVOKE_DEFAULT", mode = "ASSET", asset_name = "{}", asset_path = "{}")
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.move_to_collection(collection_index=0, is_new=True, new_collection_name="{}")
 bpy.context.scene.lm_is_catalog_scene = True
 bpy.ops.wm.save_as_mainfile(filepath = "{}")
 bpy.ops.wm.quit_blender()
-'''.format(self.asset_name, self.asset_path, self.asset_name, path.join(bpy.context.scene.lm_blend_catalog_path, self.asset_name + '.blend'))
+'''.format(self.preset_path, self.asset_name, self.asset_path, self.asset_name, path.join(bpy.context.scene.lm_blend_catalog_path, self.asset_name + '.blend'))
 		print(command)
 
 		subprocess.check_call([bpy.app.binary_path, V.LM_CATALOG_PATH, '--python-expr', command])

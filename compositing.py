@@ -1,10 +1,13 @@
 import bpy
-import os, math, time
+import os, math, time, importlib
 from os import path
 from . import variables as V
 from . import naming_convention as N
 from . import helper as H
-from PIL import Image, ImageDraw, ImageFont
+
+importlib.import_module('.Image', '{}.{}.{}'.format('lineup_maker', V.LM_DEPENDENCIES_FOLDER_NAME, 'PIL'))
+importlib.import_module('.ImageDraw', '{}.{}.{}'.format('lineup_maker', V.LM_DEPENDENCIES_FOLDER_NAME, 'PIL'))
+importlib.import_module('.ImageFont', '{}.{}.{}'.format('lineup_maker', V.LM_DEPENDENCIES_FOLDER_NAME, 'PIL'))
 
 class LM_Composite(object):
 	def __init__(self, context):

@@ -2,12 +2,8 @@ import subprocess
 import sys
 
 from os import path
-
-dependencies = ['Pillow', 'fpdf']
+from . import variable as V
 
 def install_dependencies():
-    current_dir = path.dirname(path.realpath(__file__))
-    LineupMaker_dependencies_path = path.join(current_dir, 'LineupMakerDependencies')
-    if LineupMaker_dependencies_path not in sys.path: sys.path.append(LineupMaker_dependencies_path)
-
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-U', *dependencies, '--target', LineupMaker_dependencies_path])
+    if V.LM_DEPENDENCIES_PATH not in sys.path: sys.path.append(V.LM_DEPENDENCIES_PATH)
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-U', *V.LM_DEPENDENCIES, '--target', V.LM_DEPENDENCIES_PATH])
