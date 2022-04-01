@@ -167,6 +167,9 @@ class LM_UI_RemoveAsseFromImportList(bpy.types.Operator):
 		return context.scene.lm_import_list
 
 	def execute(self, context):
+		if not context.scene.lm_import_list:
+			self.report({'ERROR'}, 'Lineup Maker : No Item in Import List')
+			return {'CANCELLED'}
 		if not len(self.asset_name) :
 			self.report({'ERROR'}, 'Lineup Maker : Asset "{}" is not defined'.format(self.asset_name))
 			return {'CANCELLED'}

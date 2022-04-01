@@ -383,14 +383,11 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 # '''.format(m.import_command[2], m.import_command[3], self.asset_name, path.join(self.param['lm_blend_catalog_path'], self.asset_name + '.blend'))
 
 		command = '''import bpy
-bpy.ops.scene.lm_load_preset('EXEC_DEFAULT', filepath=r"{}")
-bpy.ops.scene.lm_import_assets("EXEC_DEFAULT", mode = "ASSET", asset_name = "{}", asset_path = "{}")
-bpy.ops.object.select_all(action='SELECT')
-bpy.ops.object.move_to_collection(collection_index=0, is_new=True, new_collection_name="{}")
-bpy.context.scene.lm_is_catalog_scene = True
-bpy.ops.wm.save_as_mainfile(filepath = "{}")
-bpy.ops.wm.quit_blender()
-'''.format(self.preset_path, self.asset_name, context.scene.lm_asset_path, self.asset_name, path.join(bpy.context.scene.lm_blend_catalog_path, self.asset_name + '.blend'))
+bpy.ops.scene.lm_load_preset("EXEC_DEFAULT", filepath=r"{}")
+bpy.ops.scene.lm_import_assets("EXEC_DEFAULT", mode="ASSET", asset_name="{}", asset_path="{}", save_after_import=True, close_after_import=True, save_filepath="{}")
+# bpy.ops.object.select_all(action='SELECT')
+# bpy.ops.object.move_to_collection(collection_index=0, is_new=True, new_collection_name="{}")
+'''.format(self.preset_path, self.asset_name, context.scene.lm_asset_path, path.join(bpy.context.scene.lm_blend_catalog_path, self.asset_name + '.blend'), self.asset_name,)
 		print(command)
 
 		subprocess.check_call([bpy.app.binary_path, V.LM_CATALOG_PATH, '--python-expr', command])
@@ -405,6 +402,9 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", ""), ("IMPORT", "Import", ""), ("IMPORT_NEW", "Import New", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 	asset_path : bpy.props.StringProperty(name="Asset Path", default='', description='Asset path.')
+	save_after_import : bpy.props.BoolProperty(name = "Save file after import", default = False)
+	close_after_import : bpy.props.BoolProperty(name = "close file after import", default = False)
+	save_filepath : bpy.props.StringProperty(name="Save Path", default='', description='Save File path .')
 	
 	folder_src = ''
 	asset_collection = ''
@@ -433,6 +433,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
 		# context.scene.lm_render_collection = self.render_collection
 		context.scene.lm_asset_path = self.asset_path
+		context.scene.lm_is_catalog_scene = True
 
 		# Init the scene and store the right variables
 		self.folder_src = bpy.path.abspath(context.scene.lm_asset_path)
@@ -657,7 +658,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		for a in self.updated_assets:
 			bpy.ops.scene.lm_refresh_asset_status(mode= 'ASSET', asset_name = a)
-			bpy.ops.scene.lm_remove_asset_from_import_list(asset_name = a)
+			# bpy.ops.scene.lm_remove_asset_from_import_list(asset_name = a)
 
 		self.end()
 
@@ -680,6 +681,10 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		self.stopped = True
 		self.updating_viewlayers = False
 		self.cancelling = False
+		if self.save_after_import and path.exists(path.dirname(self.save_filepath)):
+			bpy.ops.wm.save_as_mainfile(filepath = self.save_filepath)
+		if self.close_after_import:
+			bpy.ops.wm.quit_blender()
 
 
 class LM_OP_UpdateJson(bpy.types.Operator):
