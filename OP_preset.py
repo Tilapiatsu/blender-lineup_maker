@@ -242,11 +242,12 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 			cam = parent[prop_name]['value']
 			if cam in bpy.data.objects:
 				if cam in bpy.data.cameras:
-					parent[prop_name] = bpy.data.cameras[cam]
+					exec('{} = bpy.data.cameras["{}"]'.format(scene_path, cam))
 			else:
 				bpy.ops.object.camera_add('INVOKE_DEFAULT')
 				new_cam = bpy.context.active_object
 				new_cam.name = cam
+				new_cam.data.name = cam
 				new_cam.data.type = parent[prop_name]['type']
 				new_cam.data.lens = parent[prop_name]['lens'] 
 				new_cam.data.lens_unit = parent[prop_name]['lens_unit']
@@ -264,6 +265,7 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 				new_cam.scale[0] = parent[prop_name]['scale'][0]
 				new_cam.scale[1] = parent[prop_name]['scale'][1]
 				new_cam.scale[2] = parent[prop_name]['scale'][2]
+				exec('{} = bpy.data.cameras["{}"]'.format(scene_path, new_cam.name))
 		else:
 			if type(value) == str:
 				exec("{} = {}".format(scene_path, repr(value)))
