@@ -180,6 +180,7 @@ def renumber_assets(context, asset_list=None):
 	for number,name in enumerate(asset_name_list):
 		asset_list[name].asset_number = number + 1
 
+# Decrepited
 def remove_asset(context, asset_name, remove=True):
 	if asset_name in bpy.data.collections:
 		# Get data from collection
@@ -221,10 +222,12 @@ def remove_asset(context, asset_name, remove=True):
 
 	if asset_name in context.scene.lm_asset_list:
 		if remove:
-			remove_bpy_struct_item(context.scene.lm_asset_list, asset_name)
-			remove_bpy_struct_item(context.scene.lm_render_queue, asset_name)
-			remove_bpy_struct_item(context.scene.lm_last_render_list, asset_name)
+			remove_asset_in_library(context, asset_name)
 
+def remove_asset_in_library(context, asset_name):
+	remove_bpy_struct_item(context.scene.lm_asset_list, asset_name)
+	remove_bpy_struct_item(context.scene.lm_render_queue, asset_name)
+	remove_bpy_struct_item(context.scene.lm_last_render_list, asset_name)
 
 def get_valid_camera(context, asset):
 	cam = context.scene.lm_default_camera
@@ -247,10 +250,11 @@ def get_valid_camera(context, asset):
 	
 	return cam
 
-def set_rendering_camera(context, asset):
+def set_rendering_camera(context, asset, set_scene_camera=True):
 		cam = get_valid_camera(context, asset)
-		context.scene.camera = bpy.data.objects[cam.name]
 		asset.render_camera = cam.name
+		if set_scene_camera:
+			context.scene.camera = bpy.data.objects[cam.name]
 		
 def image_all(image_key):
 	# returns a list of keys of every data-block that uses this image

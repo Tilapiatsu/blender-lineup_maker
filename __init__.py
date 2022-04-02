@@ -80,6 +80,7 @@ classes = (
     LM_OP_ImportAssets,
     LM_OP_RenderAssets,
     LM_OP_OpenFolder,
+    LM_UI_OpenAssetCatalog,
     LM_OP_CompositeRenders,
     LM_OP_ExportPDF,
     LM_OP_RefreshAssetStatus,
@@ -394,6 +395,7 @@ def register():
     bpy.types.Scene.lm_avoid_update = bpy.props.BoolProperty()
 
     bpy.types.Scene.lm_separator = bpy.props.StringProperty(name="Separator")
+    bpy.types.Scene.lm_asset_in_preview = bpy.props.StringProperty(name="Separator")
     bpy.types.Scene.lm_optionnal_asset_keyword = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.lm_optionnal_mesh_keyword = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.lm_optionnal_texture_keyword = bpy.props.BoolProperty(default=False)
@@ -535,6 +537,7 @@ def unregister():
     del bpy.types.Scene.lm_override_material_roughness
     del bpy.types.Scene.lm_override_material_color
     del bpy.types.Scene.lm_avoid_update
+    del bpy.types.Scene.lm_asset_in_preview
     del bpy.types.Scene.lm_separator
     del bpy.types.Scene.lm_optionnal_asset_keyword
     del bpy.types.Scene.lm_optionnal_mesh_keyword

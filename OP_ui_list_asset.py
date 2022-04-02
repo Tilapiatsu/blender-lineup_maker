@@ -1,9 +1,10 @@
-import bpy, os
+import bpy, os, subprocess
 from os import path
 from . import helper as H
 from . import logger as L
 from . import naming_convention as N
 from . import properties as P
+from . import variables as V
 
 def get_assets(context, name):
 	H.renumber_assets(context)
@@ -54,7 +55,7 @@ class LM_UI_ClearAssetList(bpy.types.Operator):
 
 	def execute(self, context):
 		for i,asset in enumerate(context.scene.lm_asset_list):
-			remove_asset(self, context, asset, 0, remove=False)
+			H.remove_asset_in_library(context, asset.name)
 		
 		context.scene.lm_asset_list.clear()
 
@@ -117,6 +118,29 @@ class LM_UI_OpenAssetFolder(bpy.types.Operator):
 
 		return {'FINISHED'}
 
+class LM_UI_OpenAssetCatalog(bpy.types.Operator):
+	bl_idname = "scene.lm_open_asset_catalog"
+	bl_label = "Open Asset Catalog"
+	bl_options = {'REGISTER', 'UNDO'}
+	bl_description = "Open Asset Catalog"
+
+	asset_name : bpy.props.StringProperty(name="Asset Name", default="", description='Name of the asset folder to Open')
+
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_asset_list
+
+	def execute(self, context):
+		asset_path = path.join(bpy.context.scene.lm_blend_catalog_path, self.asset_name + '.blend')
+
+		command = '''import bpy
+bpy.ops.wm.open_mainfile("EXEC_DEFAULT", filepath=r"{}")
+'''.format(asset_path)
+
+		subprocess.check_call([bpy.app.binary_path, V.LM_CATALOG_PATH, '--python-expr', command])
+
+		return {'FINISHED'}
+
 
 class LM_UI_ShowAsset(bpy.types.Operator):
 	bl_idname = "scene.lm_show_asset"
@@ -131,16 +155,38 @@ class LM_UI_ShowAsset(bpy.types.Operator):
 		return context.scene.lm_asset_list
 
 	def execute(self, context):
-		
-		context.window.view_layer = context.scene.view_layers[self.asset_name]
 		if self.asset_name in context.scene.lm_asset_list:
-			camera_name = context.scene.lm_asset_list[self.asset_name].render_camera
-			self.set_local_camera(context, camera_name)
-		else:
-			camera_name = context.scene.lm_default_camera.name
-			self.set_local_camera(context, camera_name)
+			if V.LM_PREVIEW_COLLECTION in bpy.data.collections:
+				bpy.data.collections.remove(bpy.data.collections[V.LM_PREVIEW_COLLECTION])
 
-		return {'FINISHED'}
+			H.create_asset_collection(context, V.LM_PREVIEW_COLLECTION)
+			H.set_active_collection(context, V.LM_PREVIEW_COLLECTION)
+
+			asset_filepath = context.scene.lm_asset_list[self.asset_name].catalog_path
+			datablock_dir = '\\Collection\\'
+
+			filepath = asset_filepath + datablock_dir + self.asset_name
+			directory = asset_filepath + datablock_dir
+			bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = self.asset_name, link = True)
+			
+			if self.asset_name in context.scene.lm_asset_list:
+				camera_name = context.scene.lm_asset_list[self.asset_name].render_camera
+				self.set_local_camera(context, camera_name)
+			else:
+				camera_name = context.scene.lm_default_camera.name
+				self.set_local_camera(context, camera_name)
+
+			context.scene.lm_asset_in_preview = self.asset_name
+			return {'FINISHED'}
+		
+		elif self.asset_name == '':
+			bpy.data.collections.remove(bpy.data.collections[V.LM_PREVIEW_COLLECTION])
+			bpy.data.batch_remove(ids=(bpy.data.libraries[context.scene.lm_asset_in_preview + '.blend'],))
+			context.scene.lm_asset_in_preview = ''
+			return {'FINISHED'}
+		else:
+			self.report({'ERROR'}, 'Lineup Maker : The asset {} doesn\'t exists'.format(self.asset_name))
+			return {'CANCELLED'}
 
 	def set_local_camera(self, context, camera_name):
 		camera_list = [o.name for o in context.scene.objects if o.type == 'CAMERA']
@@ -174,6 +220,7 @@ class LM_UI_PrintAssetData(bpy.types.Operator):
 	need_composite : bpy.props.BoolProperty()
 	composited : bpy.props.BoolProperty()
 	asset_path : bpy.props.StringProperty(subtype='DIR_PATH')
+	catalog_path : bpy.props.StringProperty(subtype='DIR_PATH')
 	render_path : bpy.props.StringProperty(subtype='DIR_PATH')
 	render_camera : bpy.props.StringProperty(name="Render camera")
 	asset_folder_exists : bpy.props.BoolProperty()
@@ -219,6 +266,8 @@ class LM_UI_PrintAssetData(bpy.types.Operator):
 				continue
 			
 			asset_value = getattr(self.asset, k, None)
+			if asset_value is None:
+				continue
 			if k in self.list_properties:
 				value = []
 				if not isinstance(asset_value, bpy.types.Collection):
@@ -320,6 +369,7 @@ class LM_UI_RenameAsset(bpy.types.Operator):
 		col = layout.column()
 		col.label(text='From "{}" to :'.format(self.asset_name))
 		col.prop(self, 'new_name')
+
 
 class LM_UI_ShowAssetWarning(bpy.types.Operator):
 	bl_idname = "scene.lm_show_asset_warnings"

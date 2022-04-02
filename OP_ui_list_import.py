@@ -39,13 +39,14 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 		return len(context.scene.lm_asset_path) and path.isdir(context.scene.lm_asset_path)
 	
 	def add_asset(self, context, asset_name, path, update=False):
+		self.report({'INFO'}, 'Lineup Maker : Add new asset "{}"'.format(asset_name))
 		self.new_assets = context.scene.lm_import_list.add()
 		self.new_assets.name = asset_name
 		self.new_assets.asset_path = path
 		self.new_assets.asset_folder_exists = True
 
 		a = A.LMAsset(context, path)
-		self.new_assets.is_valid = a.is_valid
+		# self.new_assets.is_valid = a.is_valid
 		self.new_assets.is_imported = a.is_imported
 		
 		self.new_assets.section = a.section
@@ -93,9 +94,10 @@ class LM_IU_RefreshImportList(bpy.types.Operator):
 
 			# if the asset is not in the drive, or asset is in the asset list and doesn't need update, then remove from the import_list
 			if a.name not in asset_folders_name or (a.name in context.scene.lm_asset_list and not self.force_import) or (a.name in context.scene.lm_asset_list and not context.scene.lm_import_list[a.name].need_update):
-				self.report({'INFO'}, 'Lineup Maker : remove asset from import list "{}"'.format(a.name))
+				self.report({'INFO'}, 'Lineup Maker : Remove asset from import list "{}"'.format(a.name))
 				H.remove_bpy_struct_item(context.scene.lm_import_list, a.name)
 			elif a.name not in self.new_assets and self.refresh_warnings:
+				self.report({'INFO'}, 'Lineup Maker : Refresh warnings "{}"'.format(a.name))
 				context.scene.lm_import_list[a.name].warnings.clear()
 				asset = A.LMAsset(context, path.join(folder_src, a.name,))
 				context.scene.lm_import_list[a.name].is_valid = asset.is_valid

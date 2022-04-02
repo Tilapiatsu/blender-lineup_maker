@@ -147,7 +147,7 @@ class LM_UI_DeleteRenderQueueAsset(bpy.types.Operator):
 
 		if len(self.asset_name):
 			if self.asset_name in context.scene.lm_asset_list:	
-				assets [self.asset_name]
+				assets = [self.asset_name]
 		else:
 			assets = [a.name for a in context.scene.lm_render_queue if a.checked]
 

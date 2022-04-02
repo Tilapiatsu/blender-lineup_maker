@@ -1,3 +1,4 @@
+from struct import pack_into
 import bpy
 import os, time, math, subprocess, json, tempfile, re, importlib
 from datetime import date
@@ -114,9 +115,10 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 
 	def execute(self, context):
 		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
+		
+		# Save Preset in temporary folder
 		self.tmpdir = tempfile.mkdtemp()
 		self.preset_path = os.path.join(self.tmpdir, "temp_preset.json")
-		# self.preset_path = repr(self.preset_path)
 		bpy.ops.scene.lm_save_preset('EXEC_DEFAULT', filepath=self.preset_path)
 
 		# Init the scene and store the right variables
@@ -143,10 +145,6 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 
 		# Disable the Global View Layer
 		context.scene.view_layers[context.scene.lm_initial_view_layer].use = False
-
-		# feed asset view layer with existing one
-		for a in context.scene.lm_asset_list:
-			self.asset_view_layers[a.view_layer] = H.get_layer_collection(context.view_layer.layer_collection, a.name)
 
 		# if asset_name has been defined - Import one specific asset
 		if self.mode == "ASSET":
@@ -216,17 +214,13 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 					self.updated_assets_number = 0
 				else:
 					self.post(context, self.cancelling)
-			# elif self.updating_viewlayers is None and len(self.view_layer_list):
-			# 	self.updating_viewlayers = self.view_layer_list.pop()
-			# 	self.update_viewlayers(context, self.updating_viewlayers)
 
 		return{'PASS_THROUGH'}
 
 	def importing(self, context, asset):
 		self.asset_name = path.basename(asset)
 		self.asset_path = asset
-		updated = self.create_asset_blendfile(context)
-		# updated = self.import_asset(context, asset)
+		updated = self.import_asset(context, asset)
 
 		self.percent = round(100 - (len(self.import_list) * 100 / self.total_assets), 2)
 		context.scene.lm_import_progress = '{} %  -  {} / {}  -  {} asset(s) updated  -  {} assets(s) skipped'.format(self.percent, self.total_assets - len(self.import_list), self.total_assets, self.updated_assets_number, self.skipped_asset_number)
@@ -247,70 +241,45 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 			self.log.warning('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
 			self.log.store_failure('Asset "{}" is not valid.\n		Skipping file'.format(asset_name))
 			self.skipped_asset_number += 1
-			return
+			return None
 
-		# Import new asset
-		if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
-			# self.create_asset_blendfile()
-			updated, success, failure = curr_asset.import_asset()
-			H.set_active_collection(context, self.asset_collection.name)
-
-			self.log.success += success
-			self.log.failure += failure
-			context.scene.lm_import_message = 'Importing Asset  :  {}'.format(asset_name)
-			self.report({'INFO'}, 'Asset {} have been imported'.format(asset_name))
-			self.updated_assets_number += 1
-
-		# Update Existing asset
-		else:
-			updated, success, failure = curr_asset.update_asset()
-			H.set_active_collection(context, self.asset_collection.name)
-
-			self.log.success += success
-			self.log.failure += failure
-			if updated:
-				context.scene.lm_import_message = 'Update Asset  :  {}'.format(asset_name)
-				self.report({'INFO'}, 'Asset {} have been updated'.format(asset_name))
-				self.updated_assets_number += 1
-			else:
-				context.scene.lm_import_message = 'Skipping Asset  :  Asset {} is already Up to date'.format(asset_name)
-				self.report({'INFO'}, 'Asset {} have been skipped / is already up to date'.format(asset_name))
-				self.skipped_asset_number += 1
-			
-
-		curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
-		
-		if updated:
-			# Store asset collection view layer
-			self.asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
-			context.scene.lm_asset_list[curr_asset_view_layer.name].view_layer = curr_asset_view_layer.name
-
-			# H.switch_current_viewlayer(context, curr_asset_view_layer.name)
-
-			# Refresh UI
-			bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
-			# Hide asset in Global View Layer
-			curr_asset_view_layer.hide_viewport = True
-
-			self.autosave(context)
-
-			return asset_name
-		
-		return None
-	
-	# Not Needed anymore ?
-	def update_viewlayers(self, context, view_layer):
-		H.update_view_layer(context, view_layer, self.updated_assets, self.asset_view_layers)
-
+		self.create_asset_blendfile(context, curr_asset)
 		self.updated_assets_number += 1
-		self.percent = round((self.updated_assets_number * 100 / self.total_assets), 2)
-		context.scene.lm_import_message = 'Updating ViewLayers : {}'.format(view_layer)
-		context.scene.lm_viewlayer_progress = '{} %  -  {}/{} layer(s) updated'.format(self.percent, self.updated_assets_number, self.total_assets)
-		self.log.info(context.scene.lm_import_message)
-		self.updating_viewlayers = None
+		self.log.success += '{} Asset have been Updated/Imported'.format(asset_name)
+		H.remove_bpy_struct_item(context.scene.lm_import_list, asset_name)
 		
-		if len(self.view_layer_list) == 0:
-			self.post(context, self.cancelling)
+		bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
+
+		self.autosave(context)
+
+		return asset_name
+
+	def create_asset_blendfile(self, context, curr_asset):
+		asset_path = path.join(bpy.context.scene.lm_blend_catalog_path, curr_asset.asset_name + '.blend')
+
+		command = '''import bpy
+bpy.ops.scene.lm_load_preset("EXEC_DEFAULT", filepath=r"{}")
+bpy.ops.scene.lm_import_assets("EXEC_DEFAULT", mode="ASSET", asset_name="{}", asset_path="{}", save_after_import=True, close_after_import=True, save_filepath="{}", pack_data=True)
+
+'''.format(self.preset_path, curr_asset.asset_name, context.scene.lm_asset_path, asset_path)
+
+		subprocess.check_call([bpy.app.binary_path, V.LM_CATALOG_PATH, '--addons', 'lineup_maker',  '--factory-startup', '--python-expr', command])
+
+		if curr_asset.asset_name not in context.scene.lm_asset_list:
+			# register the mesh in scene variable
+			scn_asset = context.scene.lm_asset_list.add()
+			scn_asset.name = curr_asset.asset_name
+			scn_asset.asset_path = path.dirname(asset_path)
+			scn_asset.catalog_path = asset_path
+			scn_asset.import_date = path.getmtime(curr_asset.meshes[0].path)
+			scn_asset.is_imported = True
+			scn_asset.asset_folder_exists = True
+			scn_asset.need_render = True
+			scn_asset.need_update = False
+			
+			curr_asset.update_json_values(curr_asset.meshes[0], scn_asset)
+			
+			bpy.ops.scene.lm_add_asset_to_render_queue(asset_name = curr_asset.asset_name)
 
 	def autosave(self, context):
 		if context.scene.lm_import_autosave_step == 0:
@@ -331,15 +300,6 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 			self.log.info('Autosave after {} import(s)'.format(context.scene.lm_import_autosave_step - self.autosave_step + 1))
 
 	def post(self, context, cancelled=False):
-		# for a in self.view_layer_list:
-		# 	self.update_viewlayers(context, a)
-			
-		# # Set the global View_layer active
-		# if self.asset_name in context.scene.view_layers:
-		# 	context.window.view_layer = context.scene.view_layers[self.asset_name]
-		# else:	
-		# 	context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
-
 		H.renumber_assets(context)
 
 		self.log.complete_progress_asset()
@@ -370,30 +330,6 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 		self.updating_viewlayers = False
 		self.cancelling = False
 
-	def create_asset_blendfile(self, context):
-		# current_dir = path.dirname(path.realpath(__file__))
-		# startup_catalog = path.join(current_dir, 'StartupCatalog', "StartupCatalog.blend")
-
-		# command = '''import bpy
-
-# {}({})
-# bpy.ops.object.move_to_collection(collection_index=0, is_new=True, new_collection_name="{}")
-# bpy.ops.wm.save_as_mainfile(filepath = "{}")
-# bpy.ops.wm.quit_blender()
-# '''.format(m.import_command[2], m.import_command[3], self.asset_name, path.join(self.param['lm_blend_catalog_path'], self.asset_name + '.blend'))
-
-		command = '''import bpy
-bpy.ops.scene.lm_load_preset("EXEC_DEFAULT", filepath=r"{}")
-bpy.ops.scene.lm_import_assets("EXEC_DEFAULT", mode="ASSET", asset_name="{}", asset_path="{}", save_after_import=True, close_after_import=True, save_filepath="{}")
-# bpy.ops.object.select_all(action='SELECT')
-# bpy.ops.object.move_to_collection(collection_index=0, is_new=True, new_collection_name="{}")
-'''.format(self.preset_path, self.asset_name, context.scene.lm_asset_path, path.join(bpy.context.scene.lm_blend_catalog_path, self.asset_name + '.blend'), self.asset_name,)
-		print(command)
-
-		subprocess.check_call([bpy.app.binary_path, V.LM_CATALOG_PATH, '--python-expr', command])
-
-		return True
-
 class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_import_assets"
 	bl_label = "Lineup Maker: Import all assets from source folder"
@@ -403,8 +339,9 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 	asset_path : bpy.props.StringProperty(name="Asset Path", default='', description='Asset path.')
 	save_after_import : bpy.props.BoolProperty(name = "Save file after import", default = False)
-	close_after_import : bpy.props.BoolProperty(name = "close file after import", default = False)
+	close_after_import : bpy.props.BoolProperty(name = "Close file after import", default = False)
 	save_filepath : bpy.props.StringProperty(name="Save Path", default='', description='Save File path .')
+	pack_data : bpy.props.BoolProperty(name = "Pack all data in File", default = False)
 	
 	folder_src = ''
 	asset_collection = ''
@@ -424,10 +361,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	updated_assets_number = 0
 	skipped_asset_number = 0
 	autosave_step = 1
-
-	# @classmethod
-	# def poll(cls, context):
-	# 	return context.scene.lm_render_collection and path.isdir(context.scene.lm_asset_path)
 
 	def execute(self, context):
 		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
@@ -681,6 +614,11 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		self.stopped = True
 		self.updating_viewlayers = False
 		self.cancelling = False
+		if self.pack_data:
+			try:
+				bpy.ops.file.pack_all()
+			except RuntimeError as e:
+				self.log.error('Cannot pack data or data doesn\'t exist on drive : \n{} '.format(e))
 		if self.save_after_import and path.exists(path.dirname(self.save_filepath)):
 			bpy.ops.wm.save_as_mainfile(filepath = self.save_filepath)
 		if self.close_after_import:
@@ -786,7 +724,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	def end(self):
 		self.rendered_assets = []
 		self.need_render_asset = []
-
 
 	def cancelled(self, d1, d2):
 		self.stop = True
@@ -1383,7 +1320,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 
 class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 	bl_idname = "scene.lm_refresh_asset_status"
-	bl_label = "Lineup Maker: Refresh asset status"
+	bl_label = "Lineup Maker: Add missing blend catalog and refresh asset status"
 	bl_options = {'REGISTER', 'UNDO'}
 
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
@@ -1393,6 +1330,27 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 		log = L.Logger(context='EXPORT_ASSETS')
 		context.scene.lm_render_path
 
+		# Start by scanning blend_catalog_path to regreate missing assets
+		for f in os.listdir(context.scene.lm_blend_catalog_path):
+			asset_name = path.splitext(path.basename(f))[0]
+			if asset_name not in context.scene.lm_asset_list:
+				curr_asset = A.LMAsset(context, path.join(context.scene.lm_asset_path, asset_name))
+
+				scn_asset = context.scene.lm_asset_list.add()
+				scn_asset.name = curr_asset.asset_name
+				scn_asset.asset_path = path.dirname(f)
+				scn_asset.catalog_path = path.join(context.scene.lm_blend_catalog_path, f)
+				scn_asset.import_date = path.getmtime(curr_asset.meshes[0].path)
+				scn_asset.is_imported = True
+				scn_asset.asset_folder_exists = True
+				scn_asset.need_render = True
+				scn_asset.need_update = False
+				
+				curr_asset.update_json_values(curr_asset.meshes[0], scn_asset)
+				
+				bpy.ops.scene.lm_add_asset_to_render_queue(asset_name = curr_asset.asset_name)
+
+		# Then update status
 		if self.mode == 'ALL':
 			need_update_list = [a for a in context.scene.lm_asset_list] + [ a for a in context.scene.lm_render_queue]
 		elif self.mode == 'QUEUE':
@@ -1475,7 +1433,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 				asset.need_update = True
 
 			# set rendering camera
-			H.set_rendering_camera(context, asset)
+			H.set_rendering_camera(context, asset, set_scene_camera=False)
 
 		return {'FINISHED'}
 
