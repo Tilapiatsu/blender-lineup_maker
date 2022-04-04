@@ -77,6 +77,7 @@ classes = (
     LM_OP_UpdateLineup,
     LM_OP_InitLineupScene,
     LM_OP_CreateBlendCatalogFile,
+    LM_OP_InitRenderParameters,
     LM_OP_ImportAssets,
     LM_OP_RenderAssets,
     LM_OP_OpenFolder,
@@ -367,8 +368,9 @@ def register():
                                     update = None,
                                     description = 'Path to the folder containing the blender catalogs'      
                                     )
-    bpy.types.Scene.lm_render_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
+    bpy.types.Scene.lm_lighting_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_asset_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
+    bpy.types.Scene.lm_camera_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_default_camera = bpy.props.PointerProperty(type=bpy.types.Camera)
     bpy.types.Scene.lm_force_render = bpy.props.BoolProperty(name='Force Rendering of all assets')
     bpy.types.Scene.lm_force_composite = bpy.props.BoolProperty(name='Force Composite of all assets')
@@ -416,6 +418,7 @@ def register():
     bpy.types.Scene.lm_render_queue_idx = bpy.props.IntProperty()
 
     bpy.types.Scene.lm_import_autosave_step = bpy.props.IntProperty(name='Number of import before autosave', default=10)
+    bpy.types.Scene.lm_simultaneous_render_count = bpy.props.IntProperty(name='Number of asset to render simultaneously', default=4)
     
     bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_texture_channel_name)
     bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
@@ -458,8 +461,9 @@ def register():
     bpy.types.Scene.lm_render_message = bpy.props.StringProperty(name="Render Message")
     bpy.types.Scene.lm_render_progress = bpy.props.StringProperty(name="Render Progress")
 
-    bpy.types.Scene.lm_is_catalog_scene = bpy.props.BoolProperty(name="Is Catalog Scene")
-    bpy.types.Scene.lm_is_catalog_updated = bpy.props.BoolProperty(name="Is Catalog updated")
+    bpy.types.Scene.lm_is_catalog_scene = bpy.props.BoolProperty(name="Is Catalog Scene", default=False)
+    bpy.types.Scene.lm_is_lineup_scene = bpy.props.BoolProperty(name="Is Lineup Scene", default=False)
+    bpy.types.Scene.lm_is_catalog_updated = bpy.props.BoolProperty(name="Is Catalog updated", default=False)
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -516,6 +520,7 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
+    del bpy.types.Scene.lm_is_lineup_scene
     del bpy.types.Scene.lm_is_catalog_updated
     del bpy.types.Scene.lm_is_catalog_scene
     del bpy.types.Scene.lm_render_message 
@@ -553,6 +558,7 @@ def unregister():
     del bpy.types.Scene.lm_shader_name
     del bpy.types.Scene.lm_shader_idx
     del bpy.types.Scene.lm_asset_list_idx
+    del bpy.types.Scene.lm_simultaneous_render_count
     del bpy.types.Scene.lm_import_autosave_step
     del bpy.types.Scene.lm_render_queue_idx
     del bpy.types.Scene.lm_import_list_idx
@@ -570,8 +576,9 @@ def unregister():
     del bpy.types.Scene.lm_default_camera
     del bpy.types.Scene.lm_camera_keyword_name
     del bpy.types.Scene.lm_chapter_naming_convention
+    del bpy.types.Scene.lm_camera_collection
     del bpy.types.Scene.lm_asset_collection
-    del bpy.types.Scene.lm_render_collection
+    del bpy.types.Scene.lm_lighting_collection
     del bpy.types.Scene.lm_blend_catalog_path
     del bpy.types.Scene.lm_asset_path
     del bpy.types.Scene.lm_render_path

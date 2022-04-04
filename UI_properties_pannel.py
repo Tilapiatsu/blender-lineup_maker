@@ -34,7 +34,8 @@ class LM_PT_main(bpy.types.Panel):
 
 			row.operator("scene.lm_openfolder", icon='WINDOW', text='Open Folder').folder_path = render_path
 			
-		b.prop(scn, 'lm_render_collection', text='Render Collection', icon='LIGHT')
+		b.prop(scn, 'lm_lighting_collection', text='Lighting Collection', icon='LIGHT')
+		b.prop(scn, 'lm_camera_collection', text='Camera Collection', icon='CAMERA_DATA')
 		
 		b = layout.box()
 		
@@ -505,6 +506,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 			b.prop(scn, 'lm_override_frames')
 			b.prop(scn, 'lm_force_render', text='Force')
 			b.prop(scn, 'lm_pdf_export_last_rendered', text='Export Last rendered asset to pdf')
+			b.prop(scn, 'lm_simultaneous_render_count', text='Simultaneous render count')
 			b.operator('scene.lm_update_json', icon='IMPORT', text='Update Queued Json Data').mode = 'QUEUE'
 			b.operator('scene.lm_render_assets', text='Render queued list', icon='OUTPUT').render_list = 'QUEUED'
 			b.operator("scene.lm_render_assets", icon='OUTPUT', text='Re-Render last rendered assets').render_list = 'LAST_RENDERED'

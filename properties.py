@@ -314,13 +314,15 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
 
 		row = col.row(align=True)
 		row.alignment = 'LEFT'
-		if context.window.view_layer.name == item.name:
+		if context.scene.lm_asset_in_preview == item.name:
 			eye_icon = 'HIDE_ON'
-			row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = context.scene.lm_initial_view_layer
+			asset = ''
 		else:
 			eye_icon = 'HIDE_OFF'
-			row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = item.name
-		
+			asset = item.name
+			
+		row.operator('scene.lm_show_asset', text='', icon=eye_icon).asset_name = asset
+
 		c = col.row(align=True)
 		c.alignment='LEFT'
 
@@ -350,7 +352,8 @@ class LM_UL_AssetListRQ_UIList(bpy.types.UIList):
 			row.operator('scene.lm_open_asset_folder', text='', icon='SNAP_VOLUME').asset_name = item.name
 		else:
 			self.separator_iter(row, 3)
-
+		
+		row.operator('scene.lm_open_asset_catalog', text='', icon='FILE_BLEND').asset_name = item.name
 		
 		op = row.operator('scene.lm_create_blend_catalog_file', text='', icon='IMPORT')
 		op.asset_name = item.name

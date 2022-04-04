@@ -550,3 +550,17 @@ def kwarg_to_string(kwarg):
 	for k,v in kwarg.items():
 		string += k + "= '" + v + "' ,"
 	return string
+
+
+def link_blend_file(file_path, datablock_dir, data_name):
+	filepath = file_path + datablock_dir + data_name
+	directory = file_path + datablock_dir
+	bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = data_name, link = True)
+
+
+def folder_containt_x_files(path, number_of_files):
+	if os.path.exists(path):
+		files = [f for f in os.listdir(path)]
+		return len(files) == number_of_files
+	else:
+		return False

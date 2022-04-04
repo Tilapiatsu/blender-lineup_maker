@@ -165,10 +165,8 @@ class LM_UI_ShowAsset(bpy.types.Operator):
 			asset_filepath = context.scene.lm_asset_list[self.asset_name].catalog_path
 			datablock_dir = '\\Collection\\'
 
-			filepath = asset_filepath + datablock_dir + self.asset_name
-			directory = asset_filepath + datablock_dir
-			bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = self.asset_name, link = True)
-			
+			H.link_blend_file(asset_filepath, datablock_dir, self.asset_name)
+
 			if self.asset_name in context.scene.lm_asset_list:
 				camera_name = context.scene.lm_asset_list[self.asset_name].render_camera
 				self.set_local_camera(context, camera_name)

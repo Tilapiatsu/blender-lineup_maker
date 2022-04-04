@@ -12,7 +12,7 @@ from . import compositing as C
 from . import stats as S
 from . import logger as L
 
-importlib.import_module('.fpdf', '{}.{}.{}'.format('lineup_maker', V.LM_DEPENDENCIES_FOLDER_NAME, 'fpdf'))
+FPDF = importlib.import_module('.fpdf', '{}.{}.{}'.format('lineup_maker', V.LM_DEPENDENCIES_FOLDER_NAME, 'fpdf'))
 
 class LM_OP_UpdateLineup(bpy.types.Operator):
 	bl_idname = "scene.lm_update_lineup"
@@ -86,7 +86,6 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 	bl_label = "Lineup Maker: Create Blend Catalog File"
 	bl_options = {'REGISTER'}
 
-	
 	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", ""), ("IMPORT", "Import", ""), ("IMPORT_NEW", "Import New", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 
@@ -257,13 +256,22 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 	def create_asset_blendfile(self, context, curr_asset):
 		asset_path = path.join(bpy.context.scene.lm_blend_catalog_path, curr_asset.asset_name + '.blend')
 
-		command = '''import bpy
-bpy.ops.scene.lm_load_preset("EXEC_DEFAULT", filepath=r"{}")
-bpy.ops.scene.lm_import_assets("EXEC_DEFAULT", mode="ASSET", asset_name="{}", asset_path="{}", save_after_import=True, close_after_import=True, save_filepath="{}", pack_data=True)
-
-'''.format(self.preset_path, curr_asset.asset_name, context.scene.lm_asset_path, asset_path)
-
+		command = f'''import bpy
+file_path = "{bpy.data.filepath}"
+datablock_dir = r"\\Collection"
+data_name = "{context.scene.lm_camera_collection.name}"
+print(file_path, datablock_dir, data_name)
+filepath = file_path + datablock_dir + data_name
+directory = file_path + datablock_dir
+bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = data_name, link=True)
+data_name = "{context.scene.lm_lighting_collection.name}"
+filepath = file_path + datablock_dir + data_name
+bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = data_name, link=True)
+bpy.ops.scene.lm_load_preset("EXEC_DEFAULT", filepath=r"{self.preset_path}")
+bpy.ops.scene.lm_import_assets("EXEC_DEFAULT", mode="ASSET", asset_name="{curr_asset.asset_name}", asset_path="{context.scene.lm_asset_path}", save_after_import=True, close_after_import=True, save_filepath="{asset_path}", pack_data=True)
+'''
 		subprocess.check_call([bpy.app.binary_path, V.LM_CATALOG_PATH, '--addons', 'lineup_maker',  '--factory-startup', '--python-expr', command])
+
 
 		if curr_asset.asset_name not in context.scene.lm_asset_list:
 			# register the mesh in scene variable
@@ -364,7 +372,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 	def execute(self, context):
 		self.log = L.LoggerProgress(context='IMPORT_ASSETS')
-		# context.scene.lm_render_collection = self.render_collection
 		context.scene.lm_asset_path = self.asset_path
 		context.scene.lm_is_catalog_scene = True
 
@@ -382,20 +389,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		else:
 			self.asset_collection = context.scene.lm_asset_collection
 		H.set_active_collection(context, self.asset_collection.name)
-		
-		
-		# Store the Global View_Layer
-		if context.scene.lm_initial_view_layer  == '':
-			context.scene.lm_initial_view_layer = context.window.view_layer.name
-		else:
-			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
-
-		# Disable the Global View Layer
-		context.scene.view_layers[context.scene.lm_initial_view_layer].use = False
-
-		# feed asset view layer with existing one
-		for a in context.scene.lm_asset_list:
-			self.asset_view_layers[a.view_layer] = H.get_layer_collection(context.view_layer.layer_collection, a.name)
 
 		# if asset_name has been defined - Import one specific asset
 		if self.mode == "ASSET":
@@ -465,9 +458,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 					self.updated_assets_number = 0
 				else:
 					self.post(context, self.cancelling)
-			# elif self.updating_viewlayers is None and len(self.view_layer_list):
-			# 	self.updating_viewlayers = self.view_layer_list.pop()
-			# 	self.update_viewlayers(context, self.updating_viewlayers)
+
 
 		return{'PASS_THROUGH'}
 
@@ -497,7 +488,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 
 		# Import new asset
 		if asset_name not in bpy.data.collections and asset_name not in context.scene.lm_asset_list:
-			# self.create_asset_blendfile()
 			updated, success, failure = curr_asset.import_asset()
 			H.set_active_collection(context, self.asset_collection.name)
 
@@ -522,21 +512,10 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 				context.scene.lm_import_message = 'Skipping Asset  :  Asset {} is already Up to date'.format(asset_name)
 				self.report({'INFO'}, 'Asset {} have been skipped / is already up to date'.format(asset_name))
 				self.skipped_asset_number += 1
-			
 
-		curr_asset_view_layer = H.get_layer_collection(context.view_layer.layer_collection, curr_asset.asset_name)
-		
 		if updated:
-			# Store asset collection view layer
-			self.asset_view_layers[curr_asset_view_layer.name] = curr_asset_view_layer
-			context.scene.lm_asset_list[curr_asset_view_layer.name].view_layer = curr_asset_view_layer.name
-
-			# H.switch_current_viewlayer(context, curr_asset_view_layer.name)
-
 			# Refresh UI
 			bpy.ops.wm.redraw_timer(type='DRAW', iterations=1)
-			# Hide asset in Global View Layer
-			curr_asset_view_layer.hide_viewport = True
 
 			self.autosave(context)
 
@@ -544,19 +523,6 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		
 		return None
 	
-	def update_viewlayers(self, context, view_layer):
-		H.update_view_layer(context, view_layer, self.updated_assets, self.asset_view_layers)
-
-		self.updated_assets_number += 1
-		self.percent = round((self.updated_assets_number * 100 / self.total_assets), 2)
-		context.scene.lm_import_message = 'Updating ViewLayers : {}'.format(view_layer)
-		context.scene.lm_viewlayer_progress = '{} %  -  {}/{} layer(s) updated'.format(self.percent, self.updated_assets_number, self.total_assets)
-		self.log.info(context.scene.lm_import_message)
-		self.updating_viewlayers = None
-		
-		if len(self.view_layer_list) == 0:
-			self.post(context, self.cancelling)
-
 	def autosave(self, context):
 		if context.scene.lm_import_autosave_step == 0:
 			return
@@ -576,22 +542,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 			self.log.info('Autosave after {} import(s)'.format(context.scene.lm_import_autosave_step - self.autosave_step + 1))
 
 	def post(self, context, cancelled=False):
-		for a in self.view_layer_list:
-			self.update_viewlayers(context, a)
-			
-		# Set the global View_layer active
-		if self.asset_name in context.scene.view_layers:
-			context.window.view_layer = context.scene.view_layers[self.asset_name]
-		else:	
-			context.window.view_layer = context.scene.view_layers[context.scene.lm_initial_view_layer]
-
-		H.renumber_assets(context)
-
 		self.log.complete_progress_asset()
-
-		for a in self.updated_assets:
-			bpy.ops.scene.lm_refresh_asset_status(mode= 'ASSET', asset_name = a)
-			# bpy.ops.scene.lm_remove_asset_from_import_list(asset_name = a)
 
 		self.end()
 
@@ -677,6 +628,56 @@ class LM_OP_UpdateJson(bpy.types.Operator):
 			a.update_json_values(m, context.scene.lm_asset_list[a.asset_name])
 
 
+class LM_OP_InitRenderParameters(bpy.types.Operator):
+	bl_idname = "scene.lm_init_render_parameters"
+	bl_label = "Lineup Maker: Init render parameters"
+	bl_options = {'REGISTER', 'UNDO'}
+	
+	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to render')
+	view_layer : bpy.props.StringProperty(name="View Layer", default='', description='Name of the View Layer to render')
+	lineup_blend_path : bpy.props.StringProperty(name="Lineup Blend File", default='', description='Path to lineup blend file')
+	render_camera : bpy.props.StringProperty(name="Render Camera", default='', description='Name of the camera to render with')
+	render_path : bpy.props.StringProperty(name="Render Path", default='', description='Path to save renders')
+	frame_start : bpy.props.IntProperty(name="Frame Start", default=1, description='First frame range to render')
+	frame_end : bpy.props.IntProperty(name="Frame End", default=1, description='Last frame range to render')
+
+	def execute(self, context):
+		context.scene.camera = bpy.data.objects[self.render_camera]
+		context.scene.use_nodes = True
+		context.scene.render.film_transparent = True
+		context.scene.frame_start = self.frame_start
+		context.scene.frame_end = self.frame_end
+		# self.build_output_nodegraph(context, self.asset_name, self.view_layer, self.render_path)
+		return {"FINISHED"} 
+	
+	def build_output_nodegraph(self, context, asset_name, view_layer, render_path):
+		tree = context.scene.node_tree
+		nodes = tree.nodes
+
+		location = (0, 0)
+		incr = 300
+
+		rl = nodes.new('CompositorNodeRLayers')
+		rl.location = location
+		rl.layer = view_layer
+		out = nodes.new('CompositorNodeOutputFile')
+
+		sub_location = (location[0] + incr, location[1])
+		
+		out.location = sub_location
+
+		out.base_path = render_path
+		out.file_slots[0].path = asset_name + '_' + context.scene.camera.name + '_'
+
+		tree.links.new(rl.outputs[0], out.inputs[0])
+
+		location = (location[0], location[1] - incr)
+			
+		print('Lineup Maker : Output Node graph built')
+
+		return out
+
+
 class LM_OP_RenderAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_render_assets"
 	bl_label = "Lineup Maker: Render all assets in the scene"
@@ -707,19 +708,16 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	def pre(self, d1, d2):
 		self.rendering = True
 		
-	def post(self, d1, d2):
-		if self.remaining_frames <= 1:
-			asset = self.need_render_asset[0]
-			asset.need_render = False
-			asset.rendered = True
-			
-			asset.render_list.clear()
-			for file in os.listdir(self.render_path):
-				render = asset.render_list.add()
-				render.render_filepath = os.path.join(self.render_path, file)
+	def post(self):
+		self.rendering = False
+		self.need_render_asset[0].need_render = False
+		self.need_render_asset[0].rendered = True
+		
+		self.need_render_asset[0].render_list.clear()
+		for file in os.listdir(self.render_path):
+			render = self.need_render_asset[0].render_list.add()
+			render.render_filepath = os.path.join(self.render_path, file)
 
-		else:
-			self.remaining_frames -= 1
 
 	def end(self):
 		self.rendered_assets = []
@@ -729,26 +727,22 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.stop = True
 
 	def register_render_handler(self):
-		bpy.app.handlers.render_pre.append(self.pre)
-		bpy.app.handlers.render_post.append(self.post)
-		bpy.app.handlers.render_cancel.append(self.cancelled)
+		# bpy.app.handlers.render_pre.append(self.pre)
+		# bpy.app.handlers.render_post.append(self.post)
+		# bpy.app.handlers.render_cancel.append(self.cancelled)
 		self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
 
 	def unregister_render_handler(self):
-		bpy.app.handlers.render_pre.remove(self.pre)
-		bpy.app.handlers.render_post.remove(self.post)
-		bpy.app.handlers.render_cancel.remove(self.cancelled)
+		# bpy.app.handlers.render_pre.remove(self.pre)
+		# bpy.app.handlers.render_post.remove(self.post)
+		# bpy.app.handlers.render_cancel.remove(self.cancelled)
 		bpy.context.window_manager.event_timer_remove(self._timer)
 
 	def execute(self, context):
-		# bpy.ops.scene.lm_refresh_asset_status()
-
 		self.stop = False
 		self.rendering = False
 		scene = bpy.context.scene
 		wm = bpy.context.window_manager
-
-		# self.shots = [ o.name+'' for o in scene.lm_render_collection.all_objects.values() if o.type=='CAMERA' and o.visible_get() == True ]
 
 		if not context.scene.lm_default_camera:
 			self.report({"WARNING"}, 'No Default cameras defined')
@@ -776,9 +770,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 							asset.need_render = True
 						else:
 							asset.need_render = True
-							# if asset.render_date < asset.import_date:
-							# 	asset.need_render = True
-							# 	break
 					else: # Asset has never been rendered
 						asset.need_render = True
 				else: # Asset already Rendered
@@ -786,12 +777,12 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 			else: # Force Render is True
 				H.delete_folder_if_exist(path.join(context.scene.lm_render_path, asset.name))
 				asset.rendered = False
-				asset.render_path = ''
+				asset.render_path = render_path
 				asset.render_list.clear()
 				asset.need_render = True
 		
 		self.rendered_assets = []
-		self.need_render_asset = [a for a in scene.lm_asset_list if a.need_render]
+		self.need_render_asset = [a for a in queued_list if a.need_render]
 		self.remaining_assets = len(self.need_render_asset)
 		self.asset_number = 1
 		self.total_assets = len(self.need_render_asset)
@@ -800,13 +791,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.frame_range = H.get_current_frame_range(context)
 		self.remaining_frames = self.frame_range
 		
-		self.clear_composite_tree(context)
 		self.context = context
-
-		bpy.context.scene.render.use_overwrite = context.scene.lm_override_frames
-		bpy.context.scene.render.filepath = bpy.path.abspath(r"c:\\tmp\\")
-		
-		# context.scene.render.film_transparent = True
 
 		self.register_render_handler()
 		
@@ -816,6 +801,10 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 	
 	def modal(self, context, event):
 		if event.type == 'TIMER':
+			
+			# current asset finished to render
+			if self.rendering and H.folder_containt_x_files(self.need_render_asset[0].render_path, H.get_current_frame_range(context)):
+				self.post()
 
 			if True in (not self.need_render_asset, self.stop is True):
 
@@ -846,8 +835,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 				self.end()
 				return {"FINISHED"} 
 
-
-			elif self.rendering  and self.need_render_asset[0].need_render is False and self.need_render_asset[0].rendered is True:
+			elif not self.rendering and self.need_render_asset[0].need_render is False and self.need_render_asset[0].rendered is True:
 				asset = self.need_render_asset[0]
 				if context.scene.lm_precomposite_frames:
 					self.unregister_render_handler()
@@ -865,12 +853,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 				self.remaining_assets -= 1
 				self.asset_number += 1
-
-				self.rendering = False
 				
-
 			elif self.rendering is False:
-				H.clear_composite_tree(context)
+				# H.clear_composite_tree(context)
 				self.percent = round(self.asset_number * 100 / self.total_assets, 2)
 				context.scene.lm_render_message = 'Rendering {}'.format(self.need_render_asset[0].name)
 				context.scene.lm_render_progress = '{} %  - Asset n° {} / {}'.format(self.percent, self.asset_number, self.total_assets)
@@ -887,25 +872,41 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 		self.report({'INFO'}, "Lineup Maker : Rendering '{}'".format(self.render_filename + (str(bpy.context.scene.frame_current).zfill(4)+'.png')))
 
-		# # Try to Skip Existing Files
-		# render_files = [f for f in os.listdir(self.render_path) if path.splitext(f)[1] == H.get_curr_render_extension(context) and ]
-
-		# for files in render_files:
-		# 	pass
-
 		asset.need_render = True
 		asset.render_path = self.render_path
 
+		self.render_asset_blendfile(context, asset)
+
 		# switch to the proper view_layer
-		context.window.view_layer = scn.view_layers[asset.name]
+		# context.window.view_layer = scn.view_layers[asset.name]
 		
-		H.set_rendering_camera(context, asset)
+		# H.set_rendering_camera(context, asset)
 
-		self.output_node = self.build_output_nodegraph(context, self.asset_number, asset)
-		# bpy.context.scene.render.filepath = self.render_filename + context.scene.camera.name + '_'
-		# self.output_node.mute = True
+		# self.output_node = self.build_output_nodegraph(context, self.asset_number, asset)
 
-		bpy.ops.render.render("INVOKE_DEFAULT", animation=True, write_still=False, layer=asset.view_layer)
+		# bpy.ops.render.render("INVOKE_DEFAULT", animation=True, write_still=False, layer=asset.view_layer)
+
+	def render_asset_blendfile(self, context, curr_asset):
+		self.rendering = True
+
+		command = f'''import bpy
+bpy.ops.scene.lm_init_render_parameters("EXEC_DEFAULT", asset_name = "{curr_asset.name}", render_camera="{curr_asset.render_camera}", lineup_blend_path="{bpy.data.filepath}", view_layer="View Layer", render_path="{curr_asset.render_path}", frame_start={context.scene.frame_start}, frame_end={context.scene.frame_end})
+# bpy.ops.render.render("INVOKE_DEFAULT", animation=True, write_still=False, layer="{curr_asset.view_layer}")
+# bpy.ops.wm.quit_blender()
+'''
+		subprocess.check_call([bpy.app.binary_path,
+		'--background',
+		curr_asset.catalog_path,
+		'--factory-startup',
+		'--addons', 'lineup_maker',
+		'--python-expr', command,
+		'--render-format', 'PNG',
+		'--use-extension', '1',
+		'--frame-start', f'{context.scene.frame_start}',
+		'--frame-end', f'{context.scene.frame_end}',
+		'--render-output', path.join(curr_asset.render_path, curr_asset.name + '_' + context.scene.camera.name + '_' + '####'),
+		'--render-anim'
+		])
 
 	def print_render_log(self):
 		self.report({'INFO'}, "Lineup Maker : {} assets rendered".format(len(self.rendered_assets)))
@@ -1017,7 +1018,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 		bpy.context.window_manager.event_timer_remove(self._timer)
 
 	def execute(self, context):
-		bpy.ops.scene.lm_refresh_asset_status()
+		# bpy.ops.scene.lm_refresh_asset_status()
 
 		self.stop = False
 		self.compositing = False
@@ -1171,12 +1172,12 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	updated_page_number = 0
 
 	def execute(self, context):
-		bpy.ops.scene.lm_refresh_asset_status()
+		# bpy.ops.scene.lm_refresh_asset_status()
 
 		self.composite = C.LM_Composite_Image(context)
 		res = self.composite.composite_res
 		orientation = 'P' if res[1] < res[0] else 'L'
-		self.pdf = FPDF(orientation, 'pt', (res[0], res[1]))
+		self.pdf = FPDF.FPDF(orientation, 'pt', (res[0], res[1]))
 		self.generated_pages = []
 
 		if self.mode == 'ALL':
