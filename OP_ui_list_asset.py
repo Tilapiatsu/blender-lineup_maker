@@ -155,10 +155,12 @@ class LM_UI_ShowAsset(bpy.types.Operator):
 		return context.scene.lm_asset_list
 
 	def execute(self, context):
-		if self.asset_name in context.scene.lm_asset_list:
+		if self.asset_name in context.scene.lm_asset_list and path.exists(context.scene.lm_asset_list[self.asset_name].catalog_path):
 			if V.LM_PREVIEW_COLLECTION in bpy.data.collections:
 				bpy.data.collections.remove(bpy.data.collections[V.LM_PREVIEW_COLLECTION])
-
+				bpy.data.batch_remove(ids=(bpy.data.libraries[context.scene.lm_asset_in_preview + '.blend'],))
+				bpy.data.batch_remove(ids=(bpy.data.objects[context.scene.lm_asset_in_preview],))
+					
 			H.create_asset_collection(context, V.LM_PREVIEW_COLLECTION)
 			H.set_active_collection(context, V.LM_PREVIEW_COLLECTION)
 
@@ -180,6 +182,7 @@ class LM_UI_ShowAsset(bpy.types.Operator):
 		elif self.asset_name == '':
 			bpy.data.collections.remove(bpy.data.collections[V.LM_PREVIEW_COLLECTION])
 			bpy.data.batch_remove(ids=(bpy.data.libraries[context.scene.lm_asset_in_preview + '.blend'],))
+			bpy.data.batch_remove(ids=(bpy.data.objects[context.scene.lm_asset_in_preview],))
 			context.scene.lm_asset_in_preview = ''
 			return {'FINISHED'}
 		else:
