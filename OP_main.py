@@ -727,15 +727,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.stop = True
 
 	def register_render_handler(self):
-		# bpy.app.handlers.render_pre.append(self.pre)
-		# bpy.app.handlers.render_post.append(self.post)
-		# bpy.app.handlers.render_cancel.append(self.cancelled)
 		self._timer = bpy.context.window_manager.event_timer_add(0.1, window=bpy.context.window)
 
 	def unregister_render_handler(self):
-		# bpy.app.handlers.render_pre.remove(self.pre)
-		# bpy.app.handlers.render_post.remove(self.post)
-		# bpy.app.handlers.render_cancel.remove(self.cancelled)
 		bpy.context.window_manager.event_timer_remove(self._timer)
 
 	def execute(self, context):

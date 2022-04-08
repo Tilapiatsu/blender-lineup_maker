@@ -130,3 +130,63 @@ class LM_UI_EditCameraKeywords(bpy.types.Operator):
 			col.label(text=k + ' = ')
 			col.prop(self, k)
 
+class LM_UI_AddCamera(bpy.types.Operator):
+	bl_idname = "scene.lm_add_camera_keywords"
+	bl_label = "Add Camera"
+	bl_options = {'REGISTER', 'UNDO'}
+	bl_description = "Edit Camera Keyword"
+
+	new_camera_name : bpy.props.StringProperty(name="New Camera Name", default="", description='New Camera Name')
+
+	camera = None
+	registered_annotations = []
+
+	# unregister fails
+	def unregister_annotations(self):
+		for a in self.registered_annotations:
+			del self.__class__.__annotations__[a.name]
+		self.registered_annotations = []
+
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_keywords
+
+	def create_keyword_annotations(self, context):
+		for k in context.scene.lm_keywords:
+			self.__class__.__annotations__[k.name] = bpy.props.StringProperty(name=k.name, default='')
+			self.registered_annotations.append(k)
+
+	def populate_property(self, property_name, property_value):
+		self.__class__.__annotations__[property_name] = property_value
+
+	def invoke(self, context, event):
+		self.create_keyword_annotations(context)
+
+		bpy.utils.unregister_class(LM_UI_AddCamera)
+		bpy.utils.register_class(LM_UI_AddCamera)
+
+		wm = context.window_manager
+		return wm.invoke_props_dialog(self, width=800)
+
+	def execute(self, context):
+		self.camera = context.scene.lm_cameras.add()
+		self.camera.camera = context.object if context.object.type == "CAMERA" else None
+
+		for k in context.scene.lm_keywords:
+			# If keyword is not set, skip
+			if getattr(self, k.name) == '':
+				continue
+			
+			curr_camera_keyword = self.camera.keywords.add()
+			curr_camera_keyword.keyword = k.name
+			curr_camera_keyword.keyword_value = getattr(self, k.name)
+
+		self.unregister_annotations()
+		return {'FINISHED'}
+
+	def draw(self, context):
+		layout = self.layout
+		col = layout.column()
+		for k in self.__class__.__annotations__.keys():
+			if k not in ['name', 'new_camera_name', 'index']:
+				col.prop(self, k)
