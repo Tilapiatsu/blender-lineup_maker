@@ -178,9 +178,16 @@ class LM_UL_Cameras_UIList(bpy.types.UIList):
 			if i < len(item.keywords) - 1:
 				text += ' and '
 		row.label(text='"{}" : {}'.format(item.camera.name, text))
-		# row = row.row(align=True)
-		# row.alignment = 'RIGHT'
-		# row.operator('scene.lm_edit_camera_keywords', text='', icon='ALIGN_JUSTIFY').index = index
+		row = row.row(align=True)
+		row.alignment = 'RIGHT'
+		e=row.operator('scene.lm_edit_camera_keywords', text='', icon='SMALL_CAPS')
+		e.index = index
+
+def filter_camera_object(self, object):
+	return object.type == 'CAMERA'
+
+class LM_SelectCameraObject(bpy.types.PropertyGroup):
+	camera: bpy.props.PointerProperty(name="Camera", type=bpy.types.Object, poll=filter_camera_object)
 
 class LM_UL_ImportList_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_import_list"

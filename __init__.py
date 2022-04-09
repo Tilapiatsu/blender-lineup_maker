@@ -156,6 +156,7 @@ classes = (
     LM_UI_MoveCameraKeyword,
     LM_UI_ClearCameraKeyword,
     LM_UI_RemoveCameraKeyword,
+    LM_SelectCameraObject,
     LM_UI_AddCamera,
     LM_UI_EditCameraKeywords,
     LM_UI_MoveKeyword,
@@ -469,6 +470,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     
+    bpy.types.Scene.lm_select_camera_object = bpy.props.PointerProperty(type=LM_SelectCameraObject)
     bpy.types.Scene.lm_import_list = bpy.props.CollectionProperty(type=LM_Asset_List)
     bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
     bpy.types.Scene.lm_render_queue = bpy.props.CollectionProperty(type=LM_Asset_List)
@@ -517,6 +519,7 @@ def unregister():
     del bpy.types.Scene.lm_import_list
     del bpy.types.Scene.lm_render_queue
     del bpy.types.Scene.lm_last_render_list
+    del bpy.types.Scene.lm_select_camera_object
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

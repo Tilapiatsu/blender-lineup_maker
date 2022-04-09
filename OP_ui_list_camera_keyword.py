@@ -83,25 +83,38 @@ class LM_UI_RemoveCameraKeyword(bpy.types.Operator):
 
 class LM_UI_EditCameraKeywords(bpy.types.Operator):
 	bl_idname = "scene.lm_edit_camera_keywords"
-	bl_label = "Edit Camera Keyword"
+	bl_label = "Edit Camera Keywords"
 	bl_options = {'REGISTER', 'UNDO'}
 	bl_description = "Edit Camera Keyword"
 
-	index : bpy.props.IntProperty(name="Camera Name", default=0, description='Index of the item')
-	new_camera : bpy.props.StringProperty(name="New Camera Name", default="", description='New Camera Name')
+	index : bpy.props.IntProperty(name="Camera Name", default=-1, description='Index of the item')
 
 	camera = None
+	protected = ['camera', 'index', 'new_camera']
+
+	def populate_property(self, property_name, property_value):
+		setattr(self, property_name, property_value)
 
 	def create_keyword_annotations(self, context):
 		for k in context.scene.lm_keywords:
+			if k in self.__class__.__annotations__.keys():
+				continue
 			self.__class__.__annotations__[k.name] = bpy.props.StringProperty(name=k.name, default='')
+		key_to_delete=[]
+		for k in self.__class__.__annotations__.keys():
+			if k not in context.scene.lm_keywords and k not in self.protected and k not in ['protected']:
+				key_to_delete.append(k)
 
-	def populate_property(self, property_name, property_value):
-		self.__class__.__annotations__[property_name] = property_value
+		for k in key_to_delete:
+			del self.__class__.__annotations__[k]
 
 	def invoke(self, context, event):
+		if self.index == -1:
+			self.report({'ERROR'}, 'Lineup Maker : index is not valid')
+			return {'CANCELLED'}
+
 		self.camera = context.scene.lm_cameras[self.index]
-		self.new_camera_name = self.camera.camera.name
+		context.scene.lm_select_camera_object.camera = self.camera.camera
 		self.create_keyword_annotations(context)
 
 		for k in self.__class__.__annotations__:
@@ -117,17 +130,36 @@ class LM_UI_EditCameraKeywords(bpy.types.Operator):
 		return wm.invoke_props_dialog(self, width=800)
 
 	def execute(self, context):
+		self.camera.camera = context.scene.lm_select_camera_object.camera
+		camera_keywords = [kk.keyword for kk in self.camera.keywords]
+
 		for k in context.scene.lm_keywords:
-			if k in context.scene.lm_cameras.keys():
-				context.scene.lm_cameras[k] = getattr(self, k)
+			curr_keyword_value = getattr(self, k.name)
+			if k.name in camera_keywords:
+				if curr_keyword_value == '':
+					for i, kk in enumerate(self.camera.keywords):
+						if kk.keyword == k.name:
+							self.camera.keywords.remove(i)
+							break
+				for kk in self.camera.keywords:
+					if kk.keyword == k.name:
+						kk.keyword_value = curr_keyword_value
+			else:
+				if curr_keyword_value == '':
+					continue
+				curr_camera_keyword = self.camera.keywords.add()
+				curr_camera_keyword.keyword = k.name
+				curr_camera_keyword.keyword_value = getattr(self, k.name)
+				
 		return {'FINISHED'}
 
 	def draw(self, context):
 		layout = self.layout
 		col = layout.column()
-		col.prop(self, 'new_camera_name')
-		for k in context.scene.lm_keywords.keys():
-			col.label(text=k + ' = ')
+		col.prop(context.scene.lm_select_camera_object, 'camera')
+		for k in self.__class__.__annotations__.keys():
+			if k in ['index', 'camera']:
+				continue
 			col.prop(self, k)
 
 class LM_UI_AddCamera(bpy.types.Operator):
@@ -139,13 +171,7 @@ class LM_UI_AddCamera(bpy.types.Operator):
 	new_camera_name : bpy.props.StringProperty(name="New Camera Name", default="", description='New Camera Name')
 
 	camera = None
-	registered_annotations = []
-
-	# unregister fails
-	def unregister_annotations(self):
-		for a in self.registered_annotations:
-			del self.__class__.__annotations__[a.name]
-		self.registered_annotations = []
+	protected = ['new_camera_name', 'camera']
 
 	@classmethod
 	def poll(cls, context):
@@ -153,14 +179,27 @@ class LM_UI_AddCamera(bpy.types.Operator):
 
 	def create_keyword_annotations(self, context):
 		for k in context.scene.lm_keywords:
+			if k in self.__class__.__annotations__.keys():
+				continue
 			self.__class__.__annotations__[k.name] = bpy.props.StringProperty(name=k.name, default='')
-			self.registered_annotations.append(k)
+		key_to_delete=[]
+		for k in self.__class__.__annotations__.keys():
+			if k not in context.scene.lm_keywords and k not in self.protected and k not in ['protected']:
+				key_to_delete.append(k)
+
+		for k in key_to_delete:
+			del self.__class__.__annotations__[k]
+
 
 	def populate_property(self, property_name, property_value):
 		self.__class__.__annotations__[property_name] = property_value
 
 	def invoke(self, context, event):
 		self.create_keyword_annotations(context)
+		if context.object is not None and context.object.type == 'CAMERA':
+			context.scene.lm_select_camera_object.camera = context.object
+		else:
+			context.scene.lm_select_camera_object.camera = None
 
 		bpy.utils.unregister_class(LM_UI_AddCamera)
 		bpy.utils.register_class(LM_UI_AddCamera)
@@ -169,8 +208,12 @@ class LM_UI_AddCamera(bpy.types.Operator):
 		return wm.invoke_props_dialog(self, width=800)
 
 	def execute(self, context):
+		if context.scene.lm_select_camera_object.camera is None:
+			self.report({'ERROR'}, 'Lineup Maker : Please Select a Valid Camera')
+			return {'CANCELLED'}
+
 		self.camera = context.scene.lm_cameras.add()
-		self.camera.camera = context.object if context.object.type == "CAMERA" else None
+		self.camera.camera = context.scene.lm_select_camera_object.camera
 
 		for k in context.scene.lm_keywords:
 			# If keyword is not set, skip
@@ -181,12 +224,12 @@ class LM_UI_AddCamera(bpy.types.Operator):
 			curr_camera_keyword.keyword = k.name
 			curr_camera_keyword.keyword_value = getattr(self, k.name)
 
-		self.unregister_annotations()
 		return {'FINISHED'}
 
 	def draw(self, context):
 		layout = self.layout
 		col = layout.column()
+		col.prop(context.scene.lm_select_camera_object, 'camera')
 		for k in self.__class__.__annotations__.keys():
-			if k not in ['name', 'new_camera_name', 'index']:
+			if k not in self.protected:
 				col.prop(self, k)

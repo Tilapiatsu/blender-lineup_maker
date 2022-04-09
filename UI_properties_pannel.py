@@ -327,14 +327,6 @@ class LM_PT_Cameras(bpy.types.Panel):
 
 		col = layout.column(align=True)
 		b = col.box()
-		b.label(text='Keywords')
-		
-		row = b.row()
-		
-		rows = 20 if len(scn.lm_keywords) > 20 else len(scn.lm_keywords) + 1
-		row.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
-
-		b = col.box()
 		b.prop(scn, 'lm_default_camera', text='Default Camera')
 		b.label(text='Cameras')
 		row = b.row()
@@ -342,14 +334,15 @@ class LM_PT_Cameras(bpy.types.Panel):
 		
 		row.template_list('LM_UL_cameras', '', scn, 'lm_cameras', scn, 'lm_camera_idx', rows=rows)
 		c = row.column(align=True)
+		
+		c.operator("scene.lm_add_camera_keywords", text="", icon='ADD')
 		c.operator("scene.lm_move_camera_keyword", text="", icon='TRIA_UP').direction = "UP"
 		c.operator("scene.lm_move_camera_keyword", text="", icon='TRIA_DOWN').direction = "DOWN"
 
 		c.separator()
 		c.operator("scene.lm_clear_camera_keywords", text="", icon='TRASH')
 		c.operator("scene.lm_remove_camera_keyword", text="", icon='X')
-		c.separator()
-		b.prop(scn, 'lm_camera_keyword_name', text='Camera Keyword')
+
 
 
 class LM_PT_Chapter(bpy.types.Panel):          
@@ -370,7 +363,7 @@ class LM_PT_Chapter(bpy.types.Panel):
 		
 		row = b.row()
 		
-		rows = 20 if len(scn.lm_keywords) > 10 else len(scn.lm_keywords) * 2 + 1
+		rows = 20 if len(scn.lm_keywords) > 20 else len(scn.lm_keywords) + 1
 		row.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
 
 		b.operator('scene.lm_add_chapter_keyword', text='Add selected keyword in chapter')
