@@ -51,11 +51,6 @@ class LM_UI_RenameTexture(bpy.types.Operator):
         layout = self.layout
 
         column = layout.column()
-
-        # row = column.split(percentage=0.31)
-        # row.label("Old Name")
-        # row.label(self.active.name)
-
         column.prop(self, "newmatname")
 
     def invoke(self, context, event):

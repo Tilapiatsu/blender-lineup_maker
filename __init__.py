@@ -59,6 +59,7 @@ from .OP_ui_list_camera_keyword import *
 from .OP_ui_list_chapter import *
 from .OP_ui_list_keyword_value import *
 from .OP_ui_naming_convention import *
+from .OP_ui_scene_setup import *
 
 bl_info = {
     "name" : "Lineup Maker",
@@ -73,7 +74,6 @@ bl_info = {
 
 classes = (
     LM_Preferences,
-    LM_PT_ExportAsset,
     LM_OP_UpdateLineup,
     LM_OP_InitLineupScene,
     LM_OP_CreateBlendCatalogFile,
@@ -89,14 +89,11 @@ classes = (
     LM_OP_UpdateJson,
     LM_OP_SavePreset,
     LM_OP_LoadPreset,
+    LM_PT_LineupSetupPanel,
+    LM_PT_SceneStatus,
+    LM_PT_SceneSetup,
+    LM_PT_ExportAsset,
     LM_PT_Preset,
-    LM_PT_NamingConvention,
-    LM_PT_TextureSetSettings,
-    LM_PT_Cameras,
-    LM_PT_Chapter,
-    LM_PT_CompositLayout,
-    LM_PT_main,
-    LM_PT_AssetList,
     LM_Render_List,
     LM_Texture_List,
     LM_Material_List,
@@ -184,7 +181,9 @@ classes = (
     LM_UI_AddTextureKeyword,
     LM_UI_RemoveAssetKeyword,
     LM_UI_RemoveMeshKeyword,
-    LM_UI_RemoveTextureKeyword
+    LM_UI_RemoveTextureKeyword,
+    LM_UI_SetLineupScene,
+    LM_UI_SetCatalogScene
 )
 
 def update_texture_channel_name(self, context):
@@ -347,13 +346,35 @@ def update_camera_keyword_name(self, context):
         scn.lm_avoid_update = True
         scn.lm_camera_keyword_name = ""
 
+def update_is_lineup_scene(self, context):
+    cl = (LM_PT_NamingConvention,
+          LM_PT_TextureSetSettings,
+          LM_PT_Cameras,
+          LM_PT_CompositeLayout,
+          LM_PT_Chapter,
+          LM_PT_AssetList)
+    if self.lm_is_lineup_scene:
+        for c in cl:
+            bpy.utils.register_class(c)
+        self.lm_is_catalog_scene = False
+    else:
+        for c in cl:
+            bpy.utils.unregister_class(c)
+    return
+
+def update_is_catalog_scene(self, context):
+    if self.lm_is_catalog_scene:
+        if self.lm_is_lineup_scene:
+            self.lm_is_lineup_scene = False
+    return
+
 def register():
     bpy.types.Scene.lm_asset_path = bpy.props.StringProperty(
-                                    name="Assets Path",
+                                    name="Assets Import Path",
                                     subtype='DIR_PATH',
                                     default="",
                                     update = None,
-                                    description = 'Path to the folder containing the assets'      
+                                    description = 'Path to the folder containing the assets that will be imported'      
                                     )
     
     bpy.types.Scene.lm_render_path = bpy.props.StringProperty(
@@ -361,19 +382,19 @@ def register():
                                     subtype='DIR_PATH',
                                     default="",
                                     update = None,
-                                    description = 'Path to the folder containing the rendered assets'      
+                                    description = 'Destination Path to the folder for the Rendered Images'      
                                     )
     bpy.types.Scene.lm_blend_catalog_path = bpy.props.StringProperty(
                                     name="BlenderCatalog Path",
                                     subtype='DIR_PATH',
                                     default="",
                                     update = None,
-                                    description = 'Path to the folder containing the blender catalogs'      
+                                    description = 'Path to the folder containing the blender catalogs that will be rendered from'      
                                     )
-    bpy.types.Scene.lm_lighting_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
+    bpy.types.Scene.lm_lighting_collection = bpy.props.PointerProperty(type=bpy.types.Collection, description = 'Collection containing the lights that will be used for rendering')
     bpy.types.Scene.lm_asset_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
-    bpy.types.Scene.lm_camera_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
-    bpy.types.Scene.lm_default_camera = bpy.props.PointerProperty(type=bpy.types.Camera)
+    bpy.types.Scene.lm_camera_collection = bpy.props.PointerProperty(type=bpy.types.Collection, description = 'Collection containing the cameras that will be used for rendering')
+    bpy.types.Scene.lm_default_camera = bpy.props.PointerProperty(type=bpy.types.Camera, description = 'Default Camera used for rendering if no other suitable one found')
     bpy.types.Scene.lm_force_render = bpy.props.BoolProperty(name='Force Rendering of all assets')
     bpy.types.Scene.lm_force_composite = bpy.props.BoolProperty(name='Force Composite of all assets')
     bpy.types.Scene.lm_asset_naming_convention = bpy.props.StringProperty(
@@ -463,8 +484,8 @@ def register():
     bpy.types.Scene.lm_render_message = bpy.props.StringProperty(name="Render Message")
     bpy.types.Scene.lm_render_progress = bpy.props.StringProperty(name="Render Progress")
 
-    bpy.types.Scene.lm_is_catalog_scene = bpy.props.BoolProperty(name="Is Catalog Scene", default=False)
-    bpy.types.Scene.lm_is_lineup_scene = bpy.props.BoolProperty(name="Is Lineup Scene", default=False)
+    bpy.types.WindowManager.lm_is_catalog_scene = bpy.props.BoolProperty(name="Is Catalog Scene", default=False, update=update_is_catalog_scene)
+    bpy.types.WindowManager.lm_is_lineup_scene = bpy.props.BoolProperty(name="Is Lineup Scene", default=False, update=update_is_lineup_scene)
     bpy.types.Scene.lm_is_catalog_updated = bpy.props.BoolProperty(name="Is Catalog updated", default=False)
 
     for cls in classes:

@@ -1,11 +1,41 @@
 import bpy
 from os import path
 
-class LM_PT_main(bpy.types.Panel):          
-	bl_label = "Make Lineup"
+not_a_lineup = 'The current scene should be set as a Lineup to acces to this part'
+not_a_catalog = 'The current scene should be set as a Catalog to acces to this part'
+class LM_PT_LineupSetup:          
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = 'Lineup Maker'
+	bl_options = {"DEFAULT_CLOSED"}
+
+class LM_PT_LineupSetupPanel(LM_PT_LineupSetup, bpy.types.Panel): 
+	bl_label = "Lineup Setup"
+	bl_idname = 'lineup_setup'         
+
+	def draw(self, context):
+		layout = self.layout
+		layout.label(text='This is where you can configure the lineup. You should start here bofore using it')
+
+
+class LM_PT_SceneStatus(LM_PT_LineupSetup, bpy.types.Panel):          
+	bl_label = "1- Scene status"
+	bl_parent_id = 'lineup_setup'
+
+
+	def draw(self, context):
+		layout = self.layout
+		b = layout.box()
+		text = 'Unset as Lineup Scene' if context.window_manager.lm_is_lineup_scene else 'Set as Lineup Scene'
+		b.prop(context.window_manager, "lm_is_lineup_scene", text=text, toggle=True)
+
+		text = 'Unset as Catalog Scene' if context.window_manager.lm_is_catalog_scene else 'Set as Catalog Scene'
+		b.prop(context.window_manager, "lm_is_catalog_scene", text=text, toggle=True)
+
+
+class LM_PT_SceneSetup(LM_PT_LineupSetup, bpy.types.Panel): 
+	bl_label = "2- Scene Setup"         
+	bl_parent_id = 'lineup_setup'
 
 	
 	def draw(self, context):
@@ -31,87 +61,69 @@ class LM_PT_main(bpy.types.Panel):
 		row.prop(scn, 'lm_render_path', text='Render Path', icon=icon)
 		
 		if path.isdir(render_path):
-
 			row.operator("scene.lm_openfolder", icon='WINDOW', text='Open Folder').folder_path = render_path
-			
-		b.prop(scn, 'lm_lighting_collection', text='Lighting Collection', icon='LIGHT')
+		
+		b.prop(scn, 'lm_default_camera', text='Default Camera', icon='CAMERA_DATA')
 		b.prop(scn, 'lm_camera_collection', text='Camera Collection', icon='CAMERA_DATA')
+		b.prop(scn, 'lm_lighting_collection', text='Lighting Collection', icon='LIGHT')
 		
-		b = layout.box()
 		
-		if len(scn.lm_asset_list) == 0:
-			text = 'Import all assets'
-			imported = False
-		else:
-			text = 'Update modified assets'
-			imported = True
-		b.operator("scene.lm_create_blend_catalog_file", icon='IMPORT', text=text).mode = "ALL"
-		if len(context.scene.lm_import_message):
-			b.label(text=context.scene.lm_import_message)
-		if len(context.scene.lm_import_progress):
-			b.label(text=context.scene.lm_import_progress)
-		if len(context.scene.lm_viewlayer_progress):
-			b.label(text=context.scene.lm_viewlayer_progress)
+		# b = layout.box()
+		
+		# if len(scn.lm_asset_list) == 0:
+		# 	text = 'Import all assets'
+		# 	imported = False
+		# else:
+		# 	text = 'Update modified assets'
+		# 	imported = True
+		# b.operator("scene.lm_create_blend_catalog_file", icon='IMPORT', text=text).mode = "ALL"
+		# if len(context.scene.lm_import_message):
+		# 	b.label(text=context.scene.lm_import_message)
+		# if len(context.scene.lm_import_progress):
+		# 	b.label(text=context.scene.lm_import_progress)
+		# if len(context.scene.lm_viewlayer_progress):
+		# 	b.label(text=context.scene.lm_viewlayer_progress)
 		
 
-		if imported:
-			b = layout.box()
-			b.prop(scn, 'lm_precomposite_frames')
-			b.prop(scn, 'lm_override_frames')
+		# if imported:
+		# 	b = layout.box()
+		# 	b.prop(scn, 'lm_precomposite_frames')
+		# 	b.prop(scn, 'lm_override_frames')
 			
-			b.prop(scn, 'lm_force_render', text='Force Render')
-			b.prop(scn, 'lm_pdf_export_last_rendered', text='Export Last rendered asset to pdf')
-			b.operator('scene.lm_update_json', icon='IMPORT', text='Update all Json Data').mode = 'ALL'
-			b.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets').render_list = 'ALL'
-			b.operator("scene.lm_render_assets", icon='OUTPUT', text='Re-Render last rendered assets').render_list = 'LAST_RENDERED'
+		# 	b.prop(scn, 'lm_force_render', text='Force Render')
+		# 	b.prop(scn, 'lm_pdf_export_last_rendered', text='Export Last rendered asset to pdf')
+		# 	b.operator('scene.lm_update_json', icon='IMPORT', text='Update all Json Data').mode = 'ALL'
+		# 	b.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets').render_list = 'ALL'
+		# 	b.operator("scene.lm_render_assets", icon='OUTPUT', text='Re-Render last rendered assets').render_list = 'LAST_RENDERED'
 			
-			if len(context.scene.lm_render_message):
-				b.label(text=context.scene.lm_render_message)
-			if len(context.scene.lm_render_progress):
-				b.label(text=context.scene.lm_render_progress)
-			b = layout.box()
-			b.prop(scn,'lm_force_composite', text='Force Composite')
-			b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'ALL'
-			b = layout.box()
-			b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
-			b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF').mode = 'ALL'
-			if len(context.scene.lm_pdf_message):
-				b.label(text=context.scene.lm_pdf_message)
-			if len(context.scene.lm_pdf_progress):
-				b.label(text=context.scene.lm_pdf_progress)
+		# 	if len(context.scene.lm_render_message):
+		# 		b.label(text=context.scene.lm_render_message)
+		# 	if len(context.scene.lm_render_progress):
+		# 		b.label(text=context.scene.lm_render_progress)
+		# 	b = layout.box()
+		# 	b.prop(scn,'lm_force_composite', text='Force Composite')
+		# 	b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'ALL'
+		# 	b = layout.box()
+		# 	b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
+		# 	b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF').mode = 'ALL'
+		# 	if len(context.scene.lm_pdf_message):
+		# 		b.label(text=context.scene.lm_pdf_message)
+		# 	if len(context.scene.lm_pdf_progress):
+		# 		b.label(text=context.scene.lm_pdf_progress)
 
 
-class LM_PT_CompositLayout(bpy.types.Panel):
-	bl_label = "Composite Layout"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_category = 'Lineup Maker'
-	bl_options = {"DEFAULT_CLOSED"}
-
-	
-	def draw(self, context):
-		scn = context.scene
-		asset_path = bpy.path.abspath(scn.lm_asset_path)
-		render_path = bpy.path.abspath(scn.lm_render_path)
-		layout = self.layout
-
-		col = layout.column(align=True)
-
-		col.prop(scn, 'lm_content_background_color', text='Content Backgroud Color')
-		col.prop(scn, 'lm_text_background_color', text='Text Backgroud Color')
-		col.prop(scn, 'lm_font_color', text='Font Color')
-
-
-class LM_PT_NamingConvention(bpy.types.Panel):
-	bl_label = "Naming Convention"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_category = "Lineup Maker"
-	bl_options = {"DEFAULT_CLOSED"}
+class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
+	bl_label = "3- Naming Convention"
+	bl_parent_id = 'lineup_setup'
 
 	def draw(self, context):
 		scn = context.scene
+		wm = context.window_manager
 		layout = self.layout
+
+		if not wm.lm_is_lineup_scene:
+			layout.label(text=not_a_lineup)
+			return
 
 		# NAMING CONVENTION SETUP
 		col = layout.column(align=True)
@@ -219,16 +231,19 @@ class LM_PT_NamingConvention(bpy.types.Panel):
 		c.separator()
 
 
-class LM_PT_TextureSetSettings(bpy.types.Panel):
-	bl_label = "TextureSet Settings"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_category = "Lineup Maker"
-	bl_options = {"DEFAULT_CLOSED"}
+class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
+	bl_label = "4- TextureSet Settings"
+	bl_parent_id = 'lineup_setup'
 
 	def draw(self, context):
 		scn = context.scene
+		wm = context.window_manager
+
 		layout = self.layout
+
+		if not wm.lm_is_lineup_scene:
+			layout.label(text=not_a_lineup)
+			return
 
 		col = layout.column(align=True)
 		col.label(text='Shader Name')
@@ -313,17 +328,19 @@ class LM_PT_TextureSetSettings(bpy.types.Panel):
 		r.prop(scn, 'lm_default_material_specular',text='')
 
 
-class LM_PT_Cameras(bpy.types.Panel):          
-	bl_label = "Camera Assignment"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_category = 'Lineup Maker'
-	bl_options = {"DEFAULT_CLOSED"}
+class LM_PT_Cameras(LM_PT_LineupSetup, bpy.types.Panel):          
+	bl_label = "5- Camera Assignment"
+	bl_parent_id = 'lineup_setup'
 
 	
 	def draw(self, context):
 		scn = context.scene
+		wm = context.window_manager
 		layout = self.layout
+
+		if not wm.lm_is_lineup_scene:
+			layout.label(text=not_a_lineup)
+			return
 
 		col = layout.column(align=True)
 		b = col.box()
@@ -345,17 +362,40 @@ class LM_PT_Cameras(bpy.types.Panel):
 
 
 
-class LM_PT_Chapter(bpy.types.Panel):          
-	bl_label = "Chapter Definition"
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_category = 'Lineup Maker'
-	bl_options = {"DEFAULT_CLOSED"}
+class LM_PT_CompositeLayout(LM_PT_LineupSetup, bpy.types.Panel):
+	bl_label = "6- Composite Layout"
+	bl_parent_id = 'lineup_setup'
 
 	
 	def draw(self, context):
 		scn = context.scene
+		wm = context.window_manager
 		layout = self.layout
+
+		if not wm.lm_is_lineup_scene:
+			layout.label(text=not_a_lineup)
+			return
+
+		col = layout.column(align=True)
+
+		col.prop(scn, 'lm_content_background_color', text='Content Backgroud Color')
+		col.prop(scn, 'lm_text_background_color', text='Text Backgroud Color')
+		col.prop(scn, 'lm_font_color', text='Font Color')
+
+
+class LM_PT_Chapter(LM_PT_LineupSetup, bpy.types.Panel):          
+	bl_label = "7- Chapter Definition"
+	bl_parent_id = 'lineup_setup'
+
+	
+	def draw(self, context):
+		scn = context.scene
+		wm = context.window_manager
+		layout = self.layout
+
+		if not wm.lm_is_lineup_scene:
+			layout.label(text=not_a_lineup)
+			return
 
 		col = layout.column(align=True)
 		b = col.box()
@@ -384,6 +424,7 @@ class LM_PT_Preset(bpy.types.Panel):
 		scn = context.scene
 		layout = self.layout
 
+
 		col = layout.column(align=True)
 		b = col.box()
 
@@ -400,7 +441,12 @@ class LM_PT_AssetList(bpy.types.Panel):
 	
 	def draw(self, context):
 		scn = context.scene
+		wm = context.window_manager
 		layout = self.layout
+
+		if not wm.lm_is_lineup_scene:
+			layout.label(text=not_a_lineup)
+			return
 
 		col = layout.column(align=True)
 		b = col.box()
