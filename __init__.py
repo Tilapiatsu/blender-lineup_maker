@@ -103,14 +103,14 @@ classes = (
     LM_AssetWarnings_List,
     LM_Asset_List,
     LM_TextureChannels,
-    LM_Channels,
+    LM_ShaderChannels,
     LM_Shaders,
     LM_KeywordValues,
     LM_Keywords,
     LM_CamerasKeywords,
     LM_Cameras,
     LM_UL_TextureSet_UIList,
-    LM_UL_Channel_UIList,
+    LM_UL_ShaderChannels_UIList,
     LM_UL_Shader_UIList,
     LM_UL_Keywords_UIList,
     LM_UL_KeywordValues_UIList,
@@ -167,14 +167,17 @@ classes = (
     LM_UI_RenameKeywordValue,
     LM_UI_ClearKeywordValue,
     LM_UI_RemoveKeywordValue,
+    LM_UI_AddShaderChannel,
     LM_UI_MoveChannel,
     LM_UI_RenameChannel,
     LM_UI_ClearChannel,
     LM_UI_RemoveChannel,
+    LM_UI_AddShader,
     LM_UI_MoveShader,
     LM_UI_RenameShader,
     LM_UI_ClearShader,
     LM_UI_RemoveShader,
+    LM_UI_AddTextureChannel,
     LM_UI_MoveTexture,
     LM_UI_RenameTexture,
     LM_UI_ClearTexture,
@@ -192,10 +195,10 @@ classes = (
 def update_texture_channel_name(self, context):
     def is_valid_textureChannelName(scn):
         valid = False
-        if scn.lm_texture_channel_name and len(scn.lm_channels):
+        if scn.lm_texture_channel_name and len(scn.lm_shader_channels):
             if not len(scn.lm_texture_channels):
                 return True
-            curr_channel_textures = [c.name for c in scn.lm_texture_channels if c.channel == scn.lm_channels[scn.lm_channel_idx].name]
+            curr_channel_textures = [c.name for c in scn.lm_texture_channels if c.channel == scn.lm_shader_channels[scn.lm_shader_channel_idx].name]
             if scn.lm_texture_channel_name not in curr_channel_textures:
                 return True
                     
@@ -210,7 +213,7 @@ def update_texture_channel_name(self, context):
         if is_valid_textureChannelName(scn):
             tc = scn.lm_texture_channels.add()
             tc.name = scn.lm_texture_channel_name
-            tc.channel = scn.lm_channels[scn.lm_channel_idx].name
+            tc.channel = scn.lm_shader_channels[scn.lm_shader_channel_idx].name
             tc.shader = scn.lm_shaders[scn.lm_shader_idx].name
 
             scn.lm_texture_channel_idx = len(scn.lm_texture_channels) - 1
@@ -222,9 +225,9 @@ def update_channel_name(self, context):
     def is_valid_channelName(scn):
         valid = False
         if scn.lm_channel_name and len(scn.lm_shaders):
-            if not len(scn.lm_channels):
+            if not len(scn.lm_shader_channels):
                 return True
-            curr_shader_channels = [c.name for c in scn.lm_channels if c.shader == scn.lm_shaders[scn.lm_shader_idx].name]
+            curr_shader_channels = [c.name for c in scn.lm_shader_channels if c.shader == scn.lm_shaders[scn.lm_shader_idx].name]
             if scn.lm_channel_name not in curr_shader_channels:
                 return True
         
@@ -237,11 +240,11 @@ def update_channel_name(self, context):
 
     else:
         if is_valid_channelName(scn):
-            c = scn.lm_channels.add()
+            c = scn.lm_shader_channels.add()
             c.name = scn.lm_channel_name
             c.shader = scn.lm_shaders[scn.lm_shader_idx].name
 
-            scn.lm_channel_idx = len(scn.lm_texture_channels) - 1
+            scn.lm_shader_channel_idx = len(scn.lm_texture_channels) - 1
 
         scn.lm_avoid_update = True
         scn.lm_channel_name = ""
@@ -444,8 +447,8 @@ def register():
     bpy.types.Scene.lm_keyword_value_idx = bpy.props.IntProperty()
 
     bpy.types.Scene.lm_texture_channel_idx = bpy.props.IntProperty()
-    bpy.types.Scene.lm_channel_idx = bpy.props.IntProperty()
-    bpy.types.Scene.lm_shader_idx = bpy.props.IntProperty()
+    bpy.types.Scene.lm_shader_channel_idx = bpy.props.IntProperty(update=H.update_texture_channels)
+    bpy.types.Scene.lm_shader_idx = bpy.props.IntProperty(update=H.update_shader_channels)
     bpy.types.Scene.lm_camera_idx = bpy.props.IntProperty()
 
     bpy.types.Scene.lm_import_list_idx = bpy.props.IntProperty()
@@ -504,6 +507,8 @@ def register():
 
     bpy.app.handlers.load_post.append(scene_state_handler)
 
+    bpy.types.WindowManager.lm_show_help = bpy.props.BoolProperty(name="Show Help", default=False)
+
     for cls in classes:
         bpy.utils.register_class(cls)
     
@@ -516,7 +521,7 @@ def register():
     bpy.types.Scene.lm_initial_view_layer = bpy.props.StringProperty(name="Initial ViewLayer")
 
     bpy.types.Scene.lm_texture_channels =  bpy.props.CollectionProperty(type=LM_TextureChannels)
-    bpy.types.Scene.lm_channels =  bpy.props.CollectionProperty(type=LM_Channels)
+    bpy.types.Scene.lm_shader_channels =  bpy.props.CollectionProperty(type=LM_ShaderChannels)
     bpy.types.Scene.lm_shaders =  bpy.props.CollectionProperty(type=LM_Shaders)
 
     bpy.types.Scene.lm_keywords =  bpy.props.CollectionProperty(type=LM_Keywords)
@@ -538,9 +543,6 @@ def register():
                                                                     items=V.STATUS,
                                                                     default='NOT_STARTED')
 
-    
-    
-
 
 def unregister():
     del bpy.types.Scene.lm_exported_hd_status
@@ -550,7 +552,7 @@ def unregister():
     del bpy.types.Scene.lm_keyword_values
     del bpy.types.Scene.lm_keywords
     del bpy.types.Scene.lm_shaders
-    del bpy.types.Scene.lm_channels
+    del bpy.types.Scene.lm_shader_channels
     del bpy.types.Scene.lm_texture_channels
     del bpy.types.Scene.lm_initial_view_layer
     del bpy.types.Scene.lm_asset_list
@@ -606,7 +608,7 @@ def unregister():
     del bpy.types.Scene.lm_import_list_idx
     del bpy.types.Scene.lm_camera_idx
     del bpy.types.Scene.lm_channel_name
-    del bpy.types.Scene.lm_channel_idx
+    del bpy.types.Scene.lm_shader_channel_idx
     del bpy.types.Scene.lm_normalMap_channel
     del bpy.types.Scene.lm_linear_channel
     del bpy.types.Scene.lm_inverted_channel

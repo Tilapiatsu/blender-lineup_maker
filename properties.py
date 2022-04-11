@@ -90,20 +90,19 @@ class LM_Asset_List(bpy.types.PropertyGroup):
 
 	checked : bpy.props.BoolProperty(default=True)
 
-class LM_Shaders(bpy.types.PropertyGroup):
+class LM_TextureChannels(bpy.types.PropertyGroup):
 	name: bpy.props.StringProperty()
 
-class LM_Channels(bpy.types.PropertyGroup):
+class LM_ShaderChannels(bpy.types.PropertyGroup):
 	name: bpy.props.StringProperty()
-	shader: bpy.props.StringProperty()
 	linear: bpy.props.BoolProperty()
 	normal_map: bpy.props.BoolProperty()
 	inverted: bpy.props.BoolProperty()
+	texture_channels : bpy.props.CollectionProperty(type=LM_TextureChannels)
 
-class LM_TextureChannels(bpy.types.PropertyGroup):
+class LM_Shaders(bpy.types.PropertyGroup):
 	name: bpy.props.StringProperty()
-	channel : bpy.props.StringProperty()
-	shader: bpy.props.StringProperty()
+	shader_channels : bpy.props.CollectionProperty(type=LM_ShaderChannels)
 
 class LM_KeywordValues(bpy.types.PropertyGroup):
 	keyword_value: bpy.props.StringProperty()
@@ -127,30 +126,30 @@ class LM_UL_Shader_UIList(bpy.types.UIList):
 
 	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
 		row = layout.split(factor=0.7)
-		row.label(text='{}'.format(item.name))
+		row.label(text=f'{item.name}')
 
-class LM_UL_Channel_UIList(bpy.types.UIList):
-	bl_idname = "LM_UL_channels"
+class LM_UL_ShaderChannels_UIList(bpy.types.UIList):
+	bl_idname = "LM_UL_shaderChannels"
 
 	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
 		row = layout.split(factor=0.7)
 		channel_format = ''
 		if item.normal_map:
-			channel_format = channel_format + ' | NormalMap'
+			channel_format = channel_format + ' NormalMap'
 		elif item.linear:
-			channel_format = channel_format + ' | Linear'
+			channel_format = channel_format + ' Linear'
 		else:
-			channel_format = ' | SRGB'
+			channel_format = ' SRGB'
 		if item.inverted:
 			channel_format = channel_format + ' Inverted'
-		row.label(text='{} : {} {}'.format(item.shader, item.name, channel_format))
+		row.label(text=f'{item.name} : {channel_format}')
 
 class LM_UL_TextureSet_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_texturesets"
 
 	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
 		row = layout.split(factor=0.7)
-		row.label(text='{} - {} : {}'.format(item.shader, item.channel, item.name))
+		row.label(text=f'{item.name}')
 
 class LM_UL_Keywords_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_keywords"

@@ -1,8 +1,15 @@
-import bpy
+import bpy, textwrap
 from os import path
 
 not_a_lineup = 'The current scene should be set as a Lineup to acces to this part'
 not_a_catalog = 'The current scene should be set as a Catalog to acces to this part'
+
+def _label_multiline(context, text, parent):
+    chars = int(context.region.width / 7)   # 7 pix on 1 character
+    wrapper = textwrap.TextWrapper(width=chars)
+    text_lines = wrapper.wrap(text=text)
+    for text_line in text_lines:
+        parent.label(text=text_line)
 
 class LM_PT_LineupSetup:          
 	bl_space_type = "VIEW_3D"
@@ -41,9 +48,16 @@ class LM_PT_SceneSetup(LM_PT_LineupSetup, bpy.types.Panel):
 	
 	def draw(self, context):
 		scn = context.scene
+		wm = context.window_manager
 		asset_path = bpy.path.abspath(scn.lm_asset_path)
 		render_path = bpy.path.abspath(scn.lm_render_path)
 		layout = self.layout
+		
+		b = layout.box()
+		b.prop(wm, "lm_show_help", text='', icon='QUESTION')
+		if wm.lm_show_help:
+			text='Here are the main pathes, objects and collection you need to fill for the lineup to work correctly'
+			_label_multiline(context=context, text=text, parent=b)
 
 		b = layout.box()
 		if path.isdir(asset_path):
@@ -126,6 +140,24 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 			layout.label(text=not_a_lineup)
 			return
 
+		b = layout.box()
+		b.prop(wm, "lm_show_help", text='', icon='QUESTION')
+		if wm.lm_show_help:
+			text='Here you need to define the naming convention for your project. It is necessary to organise the output renders into chapters for exemple'
+			_label_multiline(context=context, text=text, parent=b)
+			text='1- Start by defining the what keywords is used in your naming convention, like the project, the team,  the gender or biome'
+			_label_multiline(context=context, text=text, parent=b)
+			text='2- Then for each keyword you can assign multiple keyword values to help for better recognition. It is not mandatory but if you know some specific value can be set for some keywords,  I would recomend to fill them'
+			_label_multiline(context=context, text=text, parent=b)
+			text='3- Finaly for Asset, Mesh and Texture Naming convention, you have to build in which order each keyword is used in your naming convention'
+			_label_multiline(context=context, text=text, parent=b)
+			text='		3-a- Start by selecting a keyword you have created on step1'
+			_label_multiline(context=context, text=text, parent=b)
+			text='		3-b- Then click on "Regular", "Optionnal" or "Excluded" to insert the selected keyword in the good naming convention category'
+			_label_multiline(context=context, text=text, parent=b)
+			text='		3-c- You can also edit the naming convention line directly by adding hard coded text. For exemple if you can add "LOD0" at the end of Mesh naming convention if you know that all of your mesh object finish by that'
+			_label_multiline(context=context, text=text, parent=b)
+
 		# Keywords Setup
 		# Main Box
 		main_box = layout.box()	
@@ -134,7 +166,6 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 		keyword_box.label(text='Keywords')
 		sub_row = keyword_box.row()
 		col = sub_row.column(align=True)
-		
 		
 		rows = len(scn.lm_keywords) if len(scn.lm_keywords) > 2 else 2
 		col.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
@@ -245,13 +276,24 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 			layout.label(text=not_a_lineup)
 			return
 
-		col = layout.column(align=True)
+		b = layout.box()
+		b.prop(wm, "lm_show_help", text='', icon='QUESTION')
+		if wm.lm_show_help:
+			text='Here you need to define the shaders, channel and textureset informations, in case data come from another DCC or if you need to control how textures are linked to the shader'
+			_label_multiline(context=context, text=text, parent=b)
+
+		b = layout.box()
+		col = b.column(align=True)
 		col.label(text='Shader Name')
 		row = col.row()
 		
 		rows = len(scn.lm_shaders) if len(scn.lm_shaders) > 2 else 2
 		row.template_list('LM_UL_shaders', '', scn, 'lm_shaders', scn, 'lm_shader_idx', rows=rows)
+
 		c = row.column(align=True)
+		c.operator('scene.lm_add_shader', text="", icon='ADD')
+
+		c.separator()
 		c.operator("scene.lm_move_shader", text="", icon='TRIA_UP').direction = "UP"
 		c.operator("scene.lm_move_shader", text="", icon='TRIA_DOWN').direction = "DOWN"
 
@@ -261,17 +303,18 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 		c.separator()
 		c.operator("scene.lm_rename_shader", text="", icon='OUTLINER_DATA_FONT')
 
-		col.prop(scn, 'lm_shader_name')
-
-		col = layout.column(align=True)
+		col = b.column(align=True)
 		col.separator()
 		col.separator()
 		col.label(text='Channel Name')
 		row = col.row()
 		
-		rows = len(scn.lm_channels) if len(scn.lm_channels) > 4 else 4
-		row.template_list('LM_UL_channels', '', scn, 'lm_channels', scn, 'lm_channel_idx', rows=rows)
+		rows = len(scn.lm_shader_channels) if len(scn.lm_shader_channels) > 4 else 4
+		row.template_list('LM_UL_shaderChannels', '', scn, 'lm_shader_channels', scn, 'lm_shader_channel_idx', rows=rows)
 		c = row.column(align=True)
+		c.operator('scene.lm_add_shader_channel', text="", icon='ADD')
+
+		c.separator()
 		c.operator("scene.lm_move_channel", text="", icon='TRIA_UP').direction = "UP"
 		c.operator("scene.lm_move_channel", text="", icon='TRIA_DOWN').direction = "DOWN"
 
@@ -281,21 +324,20 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 		c.separator()
 		c.operator("scene.lm_rename_channel", text="", icon='OUTLINER_DATA_FONT')
 
-		row = col.row()
-		row.prop(scn, 'lm_channel_name')
-		row.scale_x = 0.4
-		row.prop(scn, 'lm_linear_channel')
-		row.prop(scn, 'lm_normalMap_channel')
-		row.prop(scn, 'lm_inverted_channel')
+		col.separator()
+		col.separator()
 
-		col.separator()
-		col.separator()
+		col = b.column(align=True)
 		col.label(text='Texture Name')
 		row = col.row()
 		
 		rows = len(scn.lm_texture_channels) if len(scn.lm_texture_channels) > 4 else 4
 		row.template_list('LM_UL_texturesets', '', scn, 'lm_texture_channels', scn, 'lm_texture_channel_idx', rows=rows)
 		c = row.column(align=True)
+
+		c.operator('scene.lm_add_texture_channel', text="", icon='ADD')
+
+		c.separator()
 		c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_UP').direction = "UP"
 		c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_DOWN').direction = "DOWN"
 
@@ -305,11 +347,9 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 		c.separator()
 		c.operator("scene.lm_rename_texture_channel", text="", icon='OUTLINER_DATA_FONT')
 
-		col.prop(scn, 'lm_texture_channel_name')
-
 		col.separator()
 		col.separator()
-		b = col.box()
+		b = layout.box()
 		b.label(text='Material Override')
 
 		r = b.row(align=True)

@@ -631,10 +631,10 @@ class LMAsset(object):
 	def channels(self):
 		if self._channels is None:
 			self._channels = {}
-			if not len(self.param['lm_channels']):
+			if not len(self.param['lm_shader_channels']):
 				self._channels = V.LM_DEFAULT_CHANNELS
 			else:
-				for c in self.param['lm_channels']:
+				for c in self.param['lm_shader_channels']:
 					if c.name not in self._channels:
 						self._channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map, 'inverted':c.inverted}
 

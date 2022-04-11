@@ -567,7 +567,24 @@ def folder_containt_x_files(path, number_of_files):
 
 	
 def update_keyword_values(self, context):
-    context.scene.lm_keyword_values.clear()
-    for k in context.scene.lm_keywords[context.scene.lm_keyword_idx].keyword_values:
-        new_k = context.scene.lm_keyword_values.add()
-        new_k.keyword_value = k.keyword_value
+	context.scene.lm_keyword_values.clear()
+	for k in context.scene.lm_keywords[context.scene.lm_keyword_idx].keyword_values:
+		new_k = context.scene.lm_keyword_values.add()
+		new_k.keyword_value = k.keyword_value
+
+def update_shader_channels(self, context):
+	context.scene.lm_shader_channels.clear()
+	for k in context.scene.lm_shaders[context.scene.lm_shader_idx].shader_channels:
+		new_k = context.scene.lm_shader_channels.add()
+		new_k.name = k.name
+		new_k.linear = k.linear
+		new_k.normal_map = k.normal_map
+		new_k.inverted = k.inverted
+	
+	update_texture_channels(self, context)
+
+def update_texture_channels(self, context):
+	context.scene.lm_texture_channels.clear()
+	for k in  context.scene.lm_shaders[context.scene.lm_shader_idx].shader_channels[context.scene.lm_shader_channel_idx].texture_channels:
+		new_k = context.scene.lm_texture_channels.add()
+		new_k.name = k.name
