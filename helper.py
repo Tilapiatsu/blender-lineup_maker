@@ -564,3 +564,10 @@ def folder_containt_x_files(path, number_of_files):
 		return len(files) == number_of_files
 	else:
 		return False
+
+	
+def update_keyword_values(self, context):
+    context.scene.lm_keyword_values.clear()
+    for k in context.scene.lm_keywords[context.scene.lm_keyword_idx].keyword_values:
+        new_k = context.scene.lm_keyword_values.add()
+        new_k.keyword_value = k.keyword_value

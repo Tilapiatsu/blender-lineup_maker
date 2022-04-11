@@ -105,8 +105,8 @@ classes = (
     LM_TextureChannels,
     LM_Channels,
     LM_Shaders,
-    LM_Keywords,
     LM_KeywordValues,
+    LM_Keywords,
     LM_CamerasKeywords,
     LM_Cameras,
     LM_UL_TextureSet_UIList,
@@ -162,6 +162,7 @@ classes = (
     LM_UI_RenameKeyword,
     LM_UI_ClearKeyword,
     LM_UI_RemoveKeyword,
+    LM_UI_AddKeywordValue,
     LM_UI_MoveKeywordValue,
     LM_UI_RenameKeywordValue,
     LM_UI_ClearKeywordValue,
@@ -382,7 +383,6 @@ def scene_state_handler(scene):
     wm.lm_is_lineup_scene = scn.lm_is_lineup_scene
     wm.lm_is_catalog_scene = scn.lm_is_catalog_scene
     
-
 def register():
     bpy.types.Scene.lm_asset_path = bpy.props.StringProperty(
                                     name="Assets Import Path",
@@ -440,12 +440,9 @@ def register():
     bpy.types.Scene.lm_optionnal_mesh_keyword = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.lm_optionnal_texture_keyword = bpy.props.BoolProperty(default=False)
 
-    bpy.types.Scene.lm_keyword_idx = bpy.props.IntProperty()
+    bpy.types.Scene.lm_keyword_idx = bpy.props.IntProperty(update=H.update_keyword_values)
     bpy.types.Scene.lm_keyword_value_idx = bpy.props.IntProperty()
 
-    bpy.types.Scene.lm_keyword_name = bpy.props.StringProperty(name="Add Keyword", update=update_keyword_name)
-    bpy.types.Scene.lm_keyword_value = bpy.props.StringProperty(name="Add Keyword Value", update=update_keyword_value)
-    
     bpy.types.Scene.lm_texture_channel_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_channel_idx = bpy.props.IntProperty()
     bpy.types.Scene.lm_shader_idx = bpy.props.IntProperty()
@@ -515,7 +512,7 @@ def register():
     bpy.types.Scene.lm_asset_list = bpy.props.CollectionProperty(type=LM_Asset_List)
     bpy.types.Scene.lm_render_queue = bpy.props.CollectionProperty(type=LM_Asset_List)
     bpy.types.Scene.lm_last_render_list = bpy.props.CollectionProperty(type=LM_Asset_List)
-
+    
     bpy.types.Scene.lm_initial_view_layer = bpy.props.StringProperty(name="Initial ViewLayer")
 
     bpy.types.Scene.lm_texture_channels =  bpy.props.CollectionProperty(type=LM_TextureChannels)
@@ -523,7 +520,8 @@ def register():
     bpy.types.Scene.lm_shaders =  bpy.props.CollectionProperty(type=LM_Shaders)
 
     bpy.types.Scene.lm_keywords =  bpy.props.CollectionProperty(type=LM_Keywords)
-    bpy.types.Scene.lm_keyword_values =  bpy.props.CollectionProperty(type=LM_KeywordValues)
+    bpy.types.Scene.lm_keyword_values = bpy.props.CollectionProperty(type=LM_KeywordValues)
+
 
     bpy.types.Scene.lm_cameras = bpy.props.CollectionProperty(type=LM_Cameras)
 

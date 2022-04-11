@@ -2,15 +2,16 @@ import bpy
 from . import logger as L
 
 def get_keywords(context):
-	idx = context.scene.lm_keyword_idx
+	
 	keywords = context.scene.lm_keywords
+	idx = context.scene.lm_keyword_idx if context.scene.lm_keyword_idx < len(keywords) else 0
 
 	active = keywords[idx] if keywords else None
 
 	return idx, keywords, active
 
 class LM_UI_AddKeyword(bpy.types.Operator):
-	bl_idname = "scene.lm_add_keywords"
+	bl_idname = "scene.lm_add_keyword"
 	bl_label = "Add Keyword"
 	bl_options = {'REGISTER', 'UNDO'}
 	bl_description = "Add Keyword"

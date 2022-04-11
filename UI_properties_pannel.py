@@ -127,49 +127,52 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 			return
 
 		# Keywords Setup
-		col = layout.column(align=True)
-		b = col.box()
-		b.label(text='Keywords')
+		# Main Box
+		main_box = layout.box()	
+		main_row = main_box.row(align=True)
+		keyword_box = main_row.box()
+		keyword_box.label(text='Keywords')
+		sub_row = keyword_box.row()
+		col = sub_row.column(align=True)
 		
-		row = b.row()
 		
 		rows = len(scn.lm_keywords) if len(scn.lm_keywords) > 2 else 2
-		row.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
-		c = row.column(align=True)
-		c.operator('scene.lm_add_keywords', text="", icon='ADD')
+		col.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
 
-		c.separator()
-		c.operator("scene.lm_move_keyword", text="", icon='TRIA_UP').direction = "UP"
-		c.operator("scene.lm_move_keyword", text="", icon='TRIA_DOWN').direction = "DOWN"
+		col = sub_row.column(align=True)
+		col.operator('scene.lm_add_keyword', text="", icon='ADD')
 
-		c.separator()
-		c.operator("scene.lm_clear_keywords", text="", icon='TRASH')
+		col.separator()
+		col.operator("scene.lm_move_keyword", text="", icon='TRIA_UP').direction = "UP"
+		col.operator("scene.lm_move_keyword", text="", icon='TRIA_DOWN').direction = "DOWN"
 
-		c.separator()
+		col.separator()
+		col.operator("scene.lm_clear_keywords", text="", icon='TRASH')
 
-		col = layout.column(align=True)
-		b = col.box()
-		b.label(text='Keyword Value')
-		row = b.row()
+		# Keyword Value
+		keyword_value_box = main_row.box()
+		keyword_value_box.label(text=f'"{scn.lm_keywords[scn.lm_keyword_idx].name}" keyword values')
+		sub_row = keyword_value_box.row()
+		col = sub_row.column(align=True)
 		
 		rows = len(scn.lm_keyword_values) if len(scn.lm_keyword_values) > 4 else 4
-		row.template_list('LM_UL_keyword_values', '', scn, 'lm_keyword_values', scn, 'lm_keyword_value_idx', rows=rows)
-		c = row.column(align=True)
-		c.operator("scene.lm_move_keyword_value", text="", icon='TRIA_UP').direction = "UP"
-		c.operator("scene.lm_move_keyword_value", text="", icon='TRIA_DOWN').direction = "DOWN"
+		col.template_list('LM_UL_keyword_values', '', scn, 'lm_keyword_values', scn, 'lm_keyword_value_idx', rows=rows)
 
-		c.separator()
-		c.operator("scene.lm_clear_keyword_values", text="", icon='TRASH')
-		c.operator("scene.lm_remove_keyword_value", text="", icon='X')
-		c.separator()
-		c.operator("scene.lm_rename_keyword_value", text="", icon='OUTLINER_DATA_FONT')
+		col = sub_row.column(align=True)
+		col.operator('scene.lm_add_keyword_value', text="", icon='ADD')
 
+		col.separator()
+		col.operator("scene.lm_move_keyword_value", text="", icon='TRIA_UP').direction = "UP"
+		col.operator("scene.lm_move_keyword_value", text="", icon='TRIA_DOWN').direction = "DOWN"
+
+		col.separator()
+		col.operator("scene.lm_clear_keyword_values", text="", icon='TRASH')
 
 		# NAMING CONVENTION SETUP
 		col = layout.column(align=True)
-
+		col.separator()
 		col.prop(scn, 'lm_separator', text = 'Separator')
-
+		col.separator()
 		b = col.box()
 		b.label(text='Asset Naming Convention')
 		br = b.box()
@@ -178,10 +181,10 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 		op = bbr.operator("scene.lm_add_asset_keyword", text='Regular', icon='ADD')
 		op.optionnal = False
 		op.excluded = False
-		op = bbr.operator("scene.lm_add_asset_keyword", text='Optionnal', icon='ADD')
+		op = bbr.operator("scene.lm_add_asset_keyword", text='Optionnal(?)', icon='ADD')
 		op.optionnal = True
 		op.excluded = False
-		op = bbr.operator("scene.lm_add_asset_keyword", text='Excluded', icon='ADD')
+		op = bbr.operator("scene.lm_add_asset_keyword", text='Excluded(!)', icon='ADD')
 		op.optionnal = False
 		op.excluded = True
 		bbr.operator("scene.lm_remove_asset_keyword", text='Remove Last', icon='REMOVE')
@@ -196,10 +199,10 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 		op = bbr.operator("scene.lm_add_mesh_keyword", text='Regular', icon='ADD')
 		op.optionnal = False
 		op.excluded = False
-		op = bbr.operator("scene.lm_add_mesh_keyword", text='Optionnal', icon='ADD')
+		op = bbr.operator("scene.lm_add_mesh_keyword", text='Optionnal(?)', icon='ADD')
 		op.optionnal = True
 		op.excluded = False
-		op = bbr.operator("scene.lm_add_mesh_keyword", text='Excluded', icon='ADD')
+		op = bbr.operator("scene.lm_add_mesh_keyword", text='Excluded(!)', icon='ADD')
 		op.optionnal = False
 		op.excluded = True
 		bbr.operator("scene.lm_remove_mesh_keyword", text='Remove Last', icon='REMOVE')
@@ -214,10 +217,10 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 		op = bbr.operator("scene.lm_add_texture_keyword", text='Regular', icon='ADD')
 		op.optionnal = False
 		op.excluded = False
-		op = bbr.operator("scene.lm_add_texture_keyword", text='Optionnal', icon='ADD')
+		op = bbr.operator("scene.lm_add_texture_keyword", text='Optionnal(?)', icon='ADD')
 		op.optionnal = True
 		op.excluded = False
-		op = bbr.operator("scene.lm_add_texture_keyword", text='Excluded', icon='ADD')
+		op = bbr.operator("scene.lm_add_texture_keyword", text='Excluded(!)', icon='ADD')
 		op.optionnal = False
 		op.excluded = True
 		bbr.operator("scene.lm_remove_texture_keyword", text='Remove Last', icon='REMOVE')

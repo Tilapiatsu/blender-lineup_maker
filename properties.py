@@ -105,12 +105,12 @@ class LM_TextureChannels(bpy.types.PropertyGroup):
 	channel : bpy.props.StringProperty()
 	shader: bpy.props.StringProperty()
 
+class LM_KeywordValues(bpy.types.PropertyGroup):
+	keyword_value: bpy.props.StringProperty()
+
 class LM_Keywords(bpy.types.PropertyGroup):
 	name: bpy.props.StringProperty()
-
-class LM_KeywordValues(bpy.types.PropertyGroup):
-	name: bpy.props.StringProperty()
-	keyword: bpy.props.StringProperty()
+	keyword_values : bpy.props.CollectionProperty(type=LM_KeywordValues)
 
 class LM_CamerasKeywords(bpy.types.PropertyGroup):
 	keyword: bpy.props.StringProperty()
@@ -122,7 +122,6 @@ class LM_Cameras(bpy.types.PropertyGroup):
 
 
 # UI List
-
 class LM_UL_Shader_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_shaders"
 
@@ -162,15 +161,20 @@ class LM_UL_Keywords_UIList(bpy.types.UIList):
 		row.label(text='{}'.format(item.name))
 		row = layout.row(align=True)
 		row.alignment = 'RIGHT'
-		e=row.operator('scene.lm_rename_keyword', text='', icon='SMALL_CAPS').index = index
+		row.operator('scene.lm_rename_keyword', text='', icon='SMALL_CAPS').index = index
 		row.operator('scene.lm_remove_keyword', text='', icon='X').index = index
 
 class LM_UL_KeywordValues_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_keyword_values"
 
 	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-		row = layout.split(factor=0.7)
-		row.label(text='{} : {}'.format(item.keyword, item.name))
+		row = layout.row(align=True)
+		row.alignment = 'LEFT'
+		row.label(text=f'{item.keyword_value}')
+		row = layout.row(align=True)
+		row.alignment = 'RIGHT'
+		row.operator('scene.lm_rename_keyword_value', text='', icon='SMALL_CAPS').index = index
+		row.operator('scene.lm_remove_keyword_value', text='', icon='X').index = index
 
 class LM_UL_Cameras_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_cameras"
