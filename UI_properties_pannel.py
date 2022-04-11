@@ -3,6 +3,7 @@ from os import path
 
 not_a_lineup = 'The current scene should be set as a Lineup to acces to this part'
 not_a_catalog = 'The current scene should be set as a Catalog to acces to this part'
+
 class LM_PT_LineupSetup:          
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
@@ -427,7 +428,7 @@ class LM_PT_Preset(bpy.types.Panel):
 
 		col = layout.column(align=True)
 		b = col.box()
-
+		
 		b.operator('scene.lm_save_preset', text='Save Preset', icon='OPTIONS')
 		b.operator('scene.lm_load_preset', text='Load Preset', icon='OPTIONS')
 

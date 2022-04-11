@@ -31,6 +31,7 @@
 #      https://www.blog.pythonlibrary.org/2018/06/05/creating-pdfs-with-pyfpdf-and-python/
 
 import bpy
+from bpy.app.handlers import persistent
 from os import path
 from . import variables as V
 from importlib.machinery import SourceFileLoader
@@ -357,16 +358,29 @@ def update_is_lineup_scene(self, context):
         for c in cl:
             bpy.utils.register_class(c)
         self.lm_is_catalog_scene = False
+        context.scene.lm_is_lineup_scene = True
     else:
         for c in cl:
             bpy.utils.unregister_class(c)
+        context.scene.lm_is_lineup_scene = False
     return
 
 def update_is_catalog_scene(self, context):
     if self.lm_is_catalog_scene:
         if self.lm_is_lineup_scene:
             self.lm_is_lineup_scene = False
+        context.scene.lm_is_catalog_scene = True
+    else:
+        context.scene.lm_is_catalog_scene = False
     return
+
+@persistent
+def scene_state_handler(scene):
+    wm = bpy.context.window_manager
+    scn = bpy.context.scene
+    wm.lm_is_lineup_scene = scn.lm_is_lineup_scene
+    wm.lm_is_catalog_scene = scn.lm_is_catalog_scene
+    
 
 def register():
     bpy.types.Scene.lm_asset_path = bpy.props.StringProperty(
@@ -486,7 +500,11 @@ def register():
 
     bpy.types.WindowManager.lm_is_catalog_scene = bpy.props.BoolProperty(name="Is Catalog Scene", default=False, update=update_is_catalog_scene)
     bpy.types.WindowManager.lm_is_lineup_scene = bpy.props.BoolProperty(name="Is Lineup Scene", default=False, update=update_is_lineup_scene)
+    bpy.types.Scene.lm_is_catalog_scene = bpy.props.BoolProperty(name="Is Catalog Scene", default=False)
+    bpy.types.Scene.lm_is_lineup_scene = bpy.props.BoolProperty(name="Is Lineup Scene", default=False)
     bpy.types.Scene.lm_is_catalog_updated = bpy.props.BoolProperty(name="Is Catalog updated", default=False)
+
+    bpy.app.handlers.load_post.append(scene_state_handler)
 
     for cls in classes:
         bpy.utils.register_class(cls)
