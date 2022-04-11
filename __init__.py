@@ -157,6 +157,7 @@ classes = (
     LM_SelectCameraObject,
     LM_UI_AddCamera,
     LM_UI_EditCameraKeywords,
+    LM_UI_AddKeyword,
     LM_UI_MoveKeyword,
     LM_UI_RenameKeyword,
     LM_UI_ClearKeyword,

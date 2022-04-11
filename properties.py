@@ -157,8 +157,13 @@ class LM_UL_Keywords_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_keywords"
 
 	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-		row = layout.split(factor=0.7)
+		row = layout.row(align=True)
+		row.alignment = 'LEFT'
 		row.label(text='{}'.format(item.name))
+		row = layout.row(align=True)
+		row.alignment = 'RIGHT'
+		e=row.operator('scene.lm_rename_keyword', text='', icon='SMALL_CAPS').index = index
+		row.operator('scene.lm_remove_keyword', text='', icon='X').index = index
 
 class LM_UL_KeywordValues_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_keyword_values"

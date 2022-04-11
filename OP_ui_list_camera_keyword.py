@@ -87,7 +87,7 @@ class LM_UI_EditCameraKeywords(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 	bl_description = "Edit Camera Keyword"
 
-	index : bpy.props.IntProperty(name="Camera Name", default=-1, description='Index of the item')
+	index : bpy.props.IntProperty(name="Camera Index", default=-1, description='Index of the item')
 
 	camera = None
 	protected = ['camera', 'index', 'new_camera']
@@ -166,7 +166,7 @@ class LM_UI_AddCamera(bpy.types.Operator):
 	bl_idname = "scene.lm_add_camera_keywords"
 	bl_label = "Add Camera"
 	bl_options = {'REGISTER', 'UNDO'}
-	bl_description = "Edit Camera Keyword"
+	bl_description = "Add Camera Keyword"
 
 	new_camera_name : bpy.props.StringProperty(name="New Camera Name", default="", description='New Camera Name')
 
