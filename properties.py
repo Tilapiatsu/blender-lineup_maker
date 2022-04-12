@@ -125,14 +125,20 @@ class LM_UL_Shader_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_shaders"
 
 	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-		row = layout.split(factor=0.7)
+		row = layout.row(align=True)
+		row.alignment = 'LEFT'
 		row.label(text=f'{item.name}')
+		row = layout.row(align=True)
+		row.alignment = 'RIGHT'
+		row.operator('scene.lm_rename_shader', text='', icon='SMALL_CAPS').index = index
+		row.operator('scene.lm_remove_shader', text='', icon='X').index = index
 
 class LM_UL_ShaderChannels_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_shaderChannels"
 
 	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-		row = layout.split(factor=0.7)
+		row = layout.row(align=True)
+		row.alignment = 'LEFT'
 		channel_format = ''
 		if item.normal_map:
 			channel_format = channel_format + ' NormalMap'
@@ -143,13 +149,22 @@ class LM_UL_ShaderChannels_UIList(bpy.types.UIList):
 		if item.inverted:
 			channel_format = channel_format + ' Inverted'
 		row.label(text=f'{item.name} : {channel_format}')
+		row = layout.row(align=True)
+		row.alignment = 'RIGHT'
+		row.operator('scene.lm_rename_channel', text='', icon='SMALL_CAPS').index = index
+		row.operator('scene.lm_remove_channel', text='', icon='X').index = index
 
 class LM_UL_TextureSet_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_texturesets"
 
 	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-		row = layout.split(factor=0.7)
+		row = layout.row(align=True)
+		row.alignment = 'LEFT'
 		row.label(text=f'{item.name}')
+		row = layout.row(align=True)
+		row.alignment = 'RIGHT'
+		row.operator('scene.lm_rename_texture_channel', text='', icon='SMALL_CAPS').index = index
+		row.operator('scene.lm_remove_texture_channel', text='', icon='X').index = index
 
 class LM_UL_Keywords_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_keywords"

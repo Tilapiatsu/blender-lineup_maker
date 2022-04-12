@@ -147,13 +147,14 @@ class LM_UI_RemoveTexture(bpy.types.Operator):
 		return context.scene.lm_texture_channels
 
 	def execute(self, context):
-		if self.index == -1:
+		if self.index < 0:
 			self.index, texture_channel, _ = get_texture_channels(context)
 		else:
 			_, texture_channel, _ = get_texture_channels(context)
 
 		texture_channel.remove(self.index)
 
-		context.scene.lm_texture_channel_idx = min(self.index, len(context.scene.lm_texture_channels) - 1)
+		context.scene.lm_texture_channel_idx = min(self.index, len(context.scene.lm_texture_channels) - 2)
 		H.update_texture_channels(self, context)
 		return {'FINISHED'}
+

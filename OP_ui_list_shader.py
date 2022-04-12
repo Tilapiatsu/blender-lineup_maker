@@ -66,7 +66,7 @@ class LM_UI_MoveShader(bpy.types.Operator):
 
 class LM_UI_RenameShader(bpy.types.Operator):
 	bl_idname = "scene.lm_rename_shader"
-	bl_label = "Rename Texture shader"
+	bl_label = "Rename Shader"
 	bl_options = {'REGISTER', 'UNDO'}
 	bl_description = "Rename the selected shader Name"
 
@@ -81,7 +81,7 @@ class LM_UI_RenameShader(bpy.types.Operator):
 		layout = self.layout
 
 		column = layout.column()
-		column.prop(self, "new_shader_name")
+		column.prop(self, "new_name")
 
 	def invoke(self, context, event):
 		if self.index == -1:
@@ -135,13 +135,13 @@ class LM_UI_RemoveShader(bpy.types.Operator):
 		return context.scene.lm_shaders
 
 	def execute(self, context):
-		if self.index == -1:
+		if self.index < 0:
 			self.index, shaders, _ = get_shaders(context)
 		else:
 			_, shaders, _ = get_shaders(context)
 
 		shaders.remove(self.index)
 
-		context.scene.lm_shader_idx = min(self.index, len(context.scene.lm_shaders) - 1)
+		context.scene.lm_shader_idx = min(self.index, len(context.scene.lm_shaders) - 2)
 		H.update_shader_channels(self, context)
 		return {'FINISHED'}

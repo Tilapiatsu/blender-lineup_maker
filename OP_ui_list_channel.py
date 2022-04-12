@@ -79,9 +79,9 @@ class LM_UI_MoveChannel(bpy.types.Operator):
 
 class LM_UI_RenameChannel(bpy.types.Operator):
 	bl_idname = "scene.lm_rename_channel"
-	bl_label = "Rename Texture Channel"
+	bl_label = "Rename Shader Channel"
 	bl_options = {'REGISTER', 'UNDO'}
-	bl_description = "Rename the selected Texture Channel Name"
+	bl_description = "Rename the selected Shader Channel Name"
 
 	index : bpy.props.IntProperty(name="Index", default=-1, description='Index of the item')
 	new_channel_name: bpy.props.StringProperty(name="New Name")
@@ -170,14 +170,14 @@ class LM_UI_RemoveChannel(bpy.types.Operator):
 		return context.scene.lm_shader_channels
 
 	def execute(self, context):
-		if self.index == -1:
+		if self.index < 0:
 			self.index, channel, _ = get_channels(context)
 		else:
 			_, channel, _ = get_channels(context)
 
 		channel.remove(self.index)
 
-		context.scene.lm_shader_channel_idx = min(self.index, len(context.scene.lm_shader_channels) - 1)
+		context.scene.lm_shader_channel_idx = min(self.index, len(context.scene.lm_shader_channels) - 2)
 
 		H.update_shader_channels(self, context)
 

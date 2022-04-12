@@ -282,8 +282,9 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 			text='Here you need to define the shaders, channel and textureset informations, in case data come from another DCC or if you need to control how textures are linked to the shader'
 			_label_multiline(context=context, text=text, parent=b)
 
-		b = layout.box()
-		col = b.column(align=True)
+		main_row = layout.row()
+		box1 = main_row.box()
+		col = box1.column(align=True)
 		col.label(text='Shader Name')
 		row = col.row()
 		
@@ -299,13 +300,9 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 
 		c.separator()
 		c.operator("scene.lm_clear_shaders", text="", icon='TRASH')
-		c.operator("scene.lm_remove_shader", text="", icon='X')
-		c.separator()
-		c.operator("scene.lm_rename_shader", text="", icon='OUTLINER_DATA_FONT')
 
-		col = b.column(align=True)
-		col.separator()
-		col.separator()
+		box2 = main_row.box()
+		col = box2.column(align=True)
 		col.label(text='Channel Name')
 		row = col.row()
 		
@@ -320,14 +317,10 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 
 		c.separator()
 		c.operator("scene.lm_clear_channels", text="", icon='TRASH')
-		c.operator("scene.lm_remove_channel", text="", icon='X')
-		c.separator()
-		c.operator("scene.lm_rename_channel", text="", icon='OUTLINER_DATA_FONT')
 
-		col.separator()
-		col.separator()
 
-		col = b.column(align=True)
+		box3 = main_row.box()
+		col = box3.column(align=True)
 		col.label(text='Texture Name')
 		row = col.row()
 		
@@ -343,12 +336,7 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 
 		c.separator()
 		c.operator("scene.lm_clear_texture_channels", text="", icon='TRASH')
-		c.operator("scene.lm_remove_texture_channel", text="", icon='X')
-		c.separator()
-		c.operator("scene.lm_rename_texture_channel", text="", icon='OUTLINER_DATA_FONT')
 
-		col.separator()
-		col.separator()
 		b = layout.box()
 		b.label(text='Material Override')
 
