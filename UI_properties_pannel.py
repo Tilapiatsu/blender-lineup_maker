@@ -147,7 +147,7 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 			_label_multiline(context=context, text=text, parent=b)
 			text='1- Start by defining the what keywords is used in your naming convention, like the project, the team,  the gender or biome'
 			_label_multiline(context=context, text=text, parent=b)
-			text='2- Then for each keyword you can assign multiple keyword values to help for better recognition. It is not mandatory but if you know some specific value can be set for some keywords,  I would recomend to fill them'
+			text='2- Then for each keyword you can assign multiple keyword values to help for better recognition. It is not mandatory but if you know some specific value can be set for some keywords, I would recomend to fill them'
 			_label_multiline(context=context, text=text, parent=b)
 			text='3- Finaly for Asset, Mesh and Texture Naming convention, you have to build in which order each keyword is used in your naming convention'
 			_label_multiline(context=context, text=text, parent=b)
@@ -279,7 +279,18 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 		b = layout.box()
 		b.prop(wm, "lm_show_help", text='', icon='QUESTION')
 		if wm.lm_show_help:
-			text='Here you need to define the shaders, channel and textureset informations, in case data come from another DCC or if you need to control how textures are linked to the shader'
+			text='''Here you need to define the shader, channel and texture name informations,
+in case data comes from another DCC or if you need to control how textures are linked to the shader.'''
+			_label_multiline(context=context, text=text, parent=b)
+			text='''This is reliable only if the assets stored in the asset folder are not Blend files ( .obj, .fbx etc...).
+Otherwise the render will be done with the materials and texture setup from the blend file dirrectly'''
+			_label_multiline(context=context, text=text, parent=b)
+			text='''1- Start by adding a shader ( MetalRough, or Renderman, or any name that will describe the best the use of it)'''
+			_label_multiline(context=context, text=text, parent=b)
+			text='''2- With the shader selected, you can add many channels ( Albedo, Normal, roughness, or any custom input you need to plug). The name of the input have to match the one on the shader slot'''
+			_label_multiline(context=context, text=text, parent=b)
+			text='''3- With the channel selected, you can add many texture names. For each each texture files, this name will be used to identify the channel of the texture taking the texture naming convention into account.
+It means that you need to specify a "channel" keyword in your Texture naming convention'''
 			_label_multiline(context=context, text=text, parent=b)
 
 		main_row = layout.row()
