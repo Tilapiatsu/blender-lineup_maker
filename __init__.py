@@ -191,7 +191,7 @@ classes = (
     LM_UI_SetLineupScene,
     LM_UI_SetCatalogScene
 )
-
+### Update parameter functions
 def update_texture_channel_name(self, context):
     def is_valid_textureChannelName(scn):
         valid = False
@@ -379,13 +379,21 @@ def update_is_catalog_scene(self, context):
         context.scene.lm_is_catalog_scene = False
     return
 
+
+def update_chapter_keyword_trim(self, context):
+    scn = bpy.context.scene
+    scn.lm_chapter_naming_convention = H.trim_string_based_on_separator(scn.lm_asset_naming_convention, scn.lm_separator, scn.lm_chapter_keyword_trim_start, scn.lm_chapter_keyword_trim_end)
+
+
+
 @persistent
 def scene_state_handler(scene):
     wm = bpy.context.window_manager
     scn = bpy.context.scene
     wm.lm_is_lineup_scene = scn.lm_is_lineup_scene
     wm.lm_is_catalog_scene = scn.lm_is_catalog_scene
-    
+
+
 def register():
     bpy.types.Scene.lm_asset_path = bpy.props.StringProperty(
                                     name="Assets Import Path",
@@ -418,7 +426,7 @@ def register():
     bpy.types.Scene.lm_asset_naming_convention = bpy.props.StringProperty(
                                     name="Asset Naming Convetion",
                                     subtype='NONE',
-                                    update = None,
+                                    update = update_chapter_keyword_trim,
                                     description = 'Naming Convention'      
                                     )
     bpy.types.Scene.lm_mesh_naming_convention = bpy.props.StringProperty(
@@ -437,7 +445,7 @@ def register():
 
     bpy.types.Scene.lm_avoid_update = bpy.props.BoolProperty()
 
-    bpy.types.Scene.lm_separator = bpy.props.StringProperty(name="Separator")
+    bpy.types.Scene.lm_separator = bpy.props.StringProperty(name="Separator", update=update_chapter_keyword_trim)
     bpy.types.Scene.lm_asset_in_preview = bpy.props.StringProperty(name="Separator")
     bpy.types.Scene.lm_optionnal_asset_keyword = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.lm_optionnal_mesh_keyword = bpy.props.BoolProperty(default=False)
@@ -463,6 +471,8 @@ def register():
     bpy.types.Scene.lm_shader_name = bpy.props.StringProperty(name="Add Shader", update=update_shader_name)
     bpy.types.Scene.lm_camera_keyword_name = bpy.props.StringProperty(name="Add Keyword for selected Chamera", update=update_camera_keyword_name)
     bpy.types.Scene.lm_chapter_naming_convention = bpy.props.StringProperty(name="Chapter")
+    bpy.types.Scene.lm_chapter_keyword_trim_start = bpy.props.IntProperty(name='Chapter Trim Start', default=0, update=update_chapter_keyword_trim)
+    bpy.types.Scene.lm_chapter_keyword_trim_end = bpy.props.IntProperty(name='Chapter Trim End', default=0, update=update_chapter_keyword_trim)
 
     bpy.types.Scene.lm_linear_channel = bpy.props.BoolProperty(name="Linear Channel")
     bpy.types.Scene.lm_normalMap_channel = bpy.props.BoolProperty(name="NormalMap Channel")
@@ -619,6 +629,8 @@ def unregister():
     del bpy.types.Scene.lm_asset_naming_convention
     del bpy.types.Scene.lm_default_camera
     del bpy.types.Scene.lm_camera_keyword_name
+    del bpy.types.Scene.lm_chapter_keyword_trim_start
+    del bpy.types.Scene.lm_chapter_keyword_trim_end
     del bpy.types.Scene.lm_chapter_naming_convention
     del bpy.types.Scene.lm_camera_collection
     del bpy.types.Scene.lm_asset_collection

@@ -381,6 +381,21 @@ class LM_PT_Cameras(LM_PT_LineupSetup, bpy.types.Panel):
 			layout.label(text=not_a_lineup)
 			return
 
+		b = layout.box()
+		b.prop(wm, "lm_show_help", text='', icon='QUESTION')
+		if wm.lm_show_help:
+			text='''Here you need to define the rules that will determine which camera will be used for the rendering of each asset.
+It is based on the asset naming convention.'''
+			_label_multiline(context=context, text=text, parent=b)
+			text='''For that you need to associate a camera to one or multiple keywords. The script will look at the camera list, from top to bottom,
+ and will select the camera in the first entry that matches all keywords of the current asset.'''
+			_label_multiline(context=context, text=text, parent=b)
+			text='''It means that the order of the list is important to have a good result : The most specific at the top of the list, and the most generic/broad at the bottom.'''
+			_label_multiline(context=context, text=text, parent=b)
+			text='''If no entry matches the current asset keywords, the Default Camera will be used instead.'''
+			_label_multiline(context=context, text=text, parent=b)
+
+
 		col = layout.column(align=True)
 		b = col.box()
 		b.prop(scn, 'lm_default_camera', text='Default Camera')
@@ -435,20 +450,24 @@ class LM_PT_Chapter(LM_PT_LineupSetup, bpy.types.Panel):
 		if not wm.lm_is_lineup_scene:
 			layout.label(text=not_a_lineup)
 			return
+		
+		b = layout.box()
+		b.prop(wm, "lm_show_help", text='', icon='QUESTION')
+		if wm.lm_show_help:
+			text='''Here you need to define how the rendered assets will be organised into different chapters in the exported PDF. It is based on the asset naming convention :
+You need to trim it to select all assets you want to have in the same chapter. Each asset sharing the trimed keyword will be grouped together'''
+			_label_multiline(context=context, text=text, parent=b)
 
 		col = layout.column(align=True)
 		b = col.box()
-		b.label(text='Keywords')
+		b.label(text='Chapter Keywords')
 		
 		row = b.row()
-		
-		rows = 20 if len(scn.lm_keywords) > 20 else len(scn.lm_keywords) + 1
-		row.template_list('LM_UL_keywords', '', scn, 'lm_keywords', scn, 'lm_keyword_idx', rows=rows)
 
-		b.operator('scene.lm_add_chapter_keyword', text='Add selected keyword in chapter')
-		row = b.row()
-		row.prop(scn, 'lm_chapter_naming_convention', text='Chapter Keywords')
-		row.operator('scene.lm_remove_chapter_keyword', icon='X', text="")
+		row.prop(scn, 'lm_chapter_keyword_trim_start')
+		row.prop(scn, 'lm_chapter_keyword_trim_end')
+		b.label(text=f'Chapter naming Convention :')
+		b.label(text=f'{scn.lm_chapter_naming_convention}')
 
 
 class LM_PT_Preset(bpy.types.Panel):

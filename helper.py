@@ -590,3 +590,17 @@ def update_texture_channels(self, context):
 		for k in context.scene.lm_shaders[context.scene.lm_shader_idx].shader_channels[context.scene.lm_shader_channel_idx].texture_channels:
 			new_k = context.scene.lm_texture_channels.add()
 			new_k.name = k.name
+
+def trim_string_based_on_separator(text, separator, trim_start, trim_end):
+	splitted_text = text.split(separator)
+	text_length = len(splitted_text)
+	trimed_text = splitted_text[trim_start:text_length-trim_end]
+	result_text=''
+	for i,t in enumerate(trimed_text):
+		result_text = result_text
+		if i < len(trimed_text):
+			result_text = result_text + t
+
+	result_text = result_text.replace('!', '')
+	result_text = result_text.replace('?', '')
+	return result_text
