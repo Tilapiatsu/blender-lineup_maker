@@ -621,9 +621,10 @@ class LMAsset(object):
 	def texture_channel_names(self):
 		if self._texture_channels is None:
 			self._texture_channels = []
-			for c in self.param['lm_texture_channels']:
-				if c.name not in self._texture_channels:
-					self._texture_channels.append(c.name.lower())
+			for c in self.scn.lm_shaders.shader_channels:
+				for cc in c.texture_channels:
+					if cc.name not in self._texture_channels:
+						self._texture_channels.append(c.name.lower())
 
 		return self._texture_channels
 
@@ -631,10 +632,10 @@ class LMAsset(object):
 	def channels(self):
 		if self._channels is None:
 			self._channels = {}
-			if not len(self.param['lm_shader_channels']):
+			if not len(self.scn.lm_shaders.shader_channels):
 				self._channels = V.LM_DEFAULT_CHANNELS
 			else:
-				for c in self.param['lm_shader_channels']:
+				for c in self.scn.lm_shaders.shader_channels:
 					if c.name not in self._channels:
 						self._channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map, 'inverted':c.inverted}
 

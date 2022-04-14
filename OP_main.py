@@ -67,6 +67,7 @@ class LM_OP_UpdateLineup(bpy.types.Operator):
 
 		return {"PASS_THROUGH"}
 
+
 class LM_OP_InitLineupScene(bpy.types.Operator):
 	bl_idname = "scene.lm_init_scene"
 	bl_label = "Lineup Maker: Init lineup scene"
@@ -80,6 +81,7 @@ class LM_OP_InitLineupScene(bpy.types.Operator):
 			print('Lineup Maker : The folder path "{}" is not valid'.format(self.folder_path))
 
 		return {'FINISHED'}
+
 
 class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 	bl_idname = "scene.lm_create_blend_catalog_file"
@@ -337,6 +339,7 @@ bpy.ops.scene.lm_import_assets("EXEC_DEFAULT", mode="ASSET", asset_name="{curr_a
 		self.stopped = True
 		self.updating_viewlayers = False
 		self.cancelling = False
+
 
 class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_idname = "scene.lm_import_assets"
@@ -647,6 +650,10 @@ class LM_OP_InitRenderParameters(bpy.types.Operator):
 		context.scene.render.film_transparent = True
 		context.scene.frame_start = self.frame_start
 		context.scene.frame_end = self.frame_end
+
+		# register Frame camera to asset bounding box
+		if (self.render_camera == context.scene.lm_default_camera.name and context.scene.lm_autofit_camera_if_no_userdefined_found) or context.scene.lm_autofit_camera_to_asset:
+			bpy.app.handlers.render_pre.append(self.frame_camera_to_asset_bounding_box)
 		# self.build_output_nodegraph(context, self.asset_name, self.view_layer, self.render_path)
 		return {"FINISHED"} 
 	
@@ -676,6 +683,10 @@ class LM_OP_InitRenderParameters(bpy.types.Operator):
 		print('Lineup Maker : Output Node graph built')
 
 		return out
+
+	def frame_camera_to_asset_bounding_box(self, d1, d2):
+		H.select_asset(bpy.context, self.asset_name)
+		bpy.ops.view3d.camera_to_view_selected()
 
 
 class LM_OP_RenderAssets(bpy.types.Operator):
@@ -870,15 +881,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		asset.render_path = self.render_path
 
 		self.render_asset_blendfile(context, asset)
-
-		# switch to the proper view_layer
-		# context.window.view_layer = scn.view_layers[asset.name]
-		
-		# H.set_rendering_camera(context, asset)
-
-		# self.output_node = self.build_output_nodegraph(context, self.asset_number, asset)
-
-		# bpy.ops.render.render("INVOKE_DEFAULT", animation=True, write_still=False, layer=asset.view_layer)
 
 	def render_asset_blendfile(self, context, curr_asset):
 		self.rendering = True

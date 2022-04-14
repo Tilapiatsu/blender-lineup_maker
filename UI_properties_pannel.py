@@ -399,20 +399,24 @@ It is based on the asset naming convention.'''
 		col = layout.column(align=True)
 		b = col.box()
 		b.prop(scn, 'lm_default_camera', text='Default Camera')
-		b.label(text='Cameras')
-		row = b.row()
-		rows = 20 if len(scn.lm_cameras) > 20 else len(scn.lm_cameras) + 1
-		
-		row.template_list('LM_UL_cameras', '', scn, 'lm_cameras', scn, 'lm_camera_idx', rows=rows)
-		c = row.column(align=True)
-		
-		c.operator("scene.lm_add_camera_keywords", text="", icon='ADD')
-		c.operator("scene.lm_move_camera_keyword", text="", icon='TRIA_UP').direction = "UP"
-		c.operator("scene.lm_move_camera_keyword", text="", icon='TRIA_DOWN').direction = "DOWN"
+		b.prop(scn, 'lm_autofit_camera_to_asset')
+		if scn.lm_autofit_camera_to_asset:
+			b.prop(scn, 'lm_autofit_camera_if_no_userdefined_found')
+		if not scn.lm_autofit_camera_to_asset or scn.lm_autofit_camera_if_no_userdefined_found:
+			b.label(text='Camera list')
+			row = b.row()
+			rows = 20 if len(scn.lm_cameras) > 20 else len(scn.lm_cameras) + 1
+			
+			row.template_list('LM_UL_cameras', '', scn, 'lm_cameras', scn, 'lm_camera_idx', rows=rows)
+			c = row.column(align=True)
+			
+			c.operator("scene.lm_add_camera_keywords", text="", icon='ADD')
+			c.operator("scene.lm_move_camera_keyword", text="", icon='TRIA_UP').direction = "UP"
+			c.operator("scene.lm_move_camera_keyword", text="", icon='TRIA_DOWN').direction = "DOWN"
 
-		c.separator()
-		c.operator("scene.lm_clear_camera_keywords", text="", icon='TRASH')
-		c.operator("scene.lm_remove_camera_keyword", text="", icon='X')
+			c.separator()
+			c.operator("scene.lm_clear_camera_keywords", text="", icon='TRASH')
+			c.operator("scene.lm_remove_camera_keyword", text="", icon='X')
 
 
 

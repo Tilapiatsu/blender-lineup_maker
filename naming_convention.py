@@ -125,13 +125,14 @@ class NamingConvention(object):
 	def keywords(self):
 		if self._keywords is None:
 			keywords = {}
+			# keywords.update({k.name:[]})
 			for k in self.param['lm_keywords']:
 				keywords.update({k.name:[]})
-			for k in self.param['lm_keyword_values']:
-				if k.keyword not in keywords.keys():
-					keywords.update({k.keyword:[k.name.lower()]})
-				else:
-					keywords[k.keyword].append(k.name.lower())
+				for kk in k.keyword_values:
+					if k.name not in keywords.keys():
+						keywords.update({k.name:[kk.keyword_value.lower()]})
+					else:
+						keywords[k.name].append(kk.keyword_value.lower())
 
 			self._keywords = keywords
 		

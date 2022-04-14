@@ -381,10 +381,13 @@ def update_is_catalog_scene(self, context):
 
 
 def update_chapter_keyword_trim(self, context):
-    scn = bpy.context.scene
+    scn = context.scene
     scn.lm_chapter_naming_convention = H.trim_string_based_on_separator(scn.lm_asset_naming_convention, scn.lm_separator, scn.lm_chapter_keyword_trim_start, scn.lm_chapter_keyword_trim_end)
 
-
+def update_autofit_camera_to_asset(self, context):
+    scn = context.scene
+    if not scn.lm_autofit_camera_to_asset:
+        scn.lm_autofit_camera_if_no_userdefined_found = False
 
 @persistent
 def scene_state_handler(scene):
@@ -427,20 +430,20 @@ def register():
                                     name="Asset Naming Convetion",
                                     subtype='NONE',
                                     update = update_chapter_keyword_trim,
-                                    description = 'Naming Convention'      
+                                    description = 'Asset Naming Convention'      
                                     )
     bpy.types.Scene.lm_mesh_naming_convention = bpy.props.StringProperty(
                                     name="Mesh Naming Convetion",
                                     subtype='NONE',
                                     update = None,
-                                    description = 'Naming Convention'      
+                                    description = 'Mesh Naming Convention'      
                                     )
     
     bpy.types.Scene.lm_texture_naming_convention = bpy.props.StringProperty(
                                     name="Texture Naming Convetion",
                                     subtype='NONE',
                                     update = None,
-                                    description = 'Naming Convention'
+                                    description = 'Texture Naming Convention'
                                     )
 
     bpy.types.Scene.lm_avoid_update = bpy.props.BoolProperty()
@@ -465,6 +468,9 @@ def register():
 
     bpy.types.Scene.lm_import_autosave_step = bpy.props.IntProperty(name='Number of import before autosave', default=10)
     bpy.types.Scene.lm_simultaneous_render_count = bpy.props.IntProperty(name='Number of asset to render simultaneously', default=4)
+
+    bpy.types.Scene.lm_autofit_camera_to_asset = bpy.props.BoolProperty(name="Autofit Camera to Asset's Bounding box", default=False, description="Autofit Camera to Asset's Bounding box (Discard manual Camera setup)", update=update_autofit_camera_to_asset)
+    bpy.types.Scene.lm_autofit_camera_if_no_userdefined_found = bpy.props.BoolProperty(name="Autofit only if no user-defined camera found", default=False, description="Autofit only if no userdefined camera found")
     
     bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_texture_channel_name)
     bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
@@ -612,6 +618,8 @@ def unregister():
     del bpy.types.Scene.lm_shader_name
     del bpy.types.Scene.lm_shader_idx
     del bpy.types.Scene.lm_asset_list_idx
+    del bpy.types.Scene.lm_autofit_camera_if_no_userdefined_found
+    del bpy.types.Scene.lm_autofit_camera_to_asset
     del bpy.types.Scene.lm_simultaneous_render_count
     del bpy.types.Scene.lm_import_autosave_step
     del bpy.types.Scene.lm_render_queue_idx
