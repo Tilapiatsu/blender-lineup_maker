@@ -643,6 +643,9 @@ class LM_OP_InitRenderParameters(bpy.types.Operator):
 	render_path : bpy.props.StringProperty(name="Render Path", default='', description='Path to save renders')
 	frame_start : bpy.props.IntProperty(name="Frame Start", default=1, description='First frame range to render')
 	frame_end : bpy.props.IntProperty(name="Frame End", default=1, description='Last frame range to render')
+	autofit_camera_to_asset : bpy.props.BoolProperty(name="Autofit Camera to Asset")
+	autofit_camera_if_no_userdefined_found : bpy.props.BoolProperty(name="Autofit Camera if no user-definded found")
+	autofit_frame_overscan : bpy.props.IntProperty(name="Autofit Frame overscan", default=1, description='Autofit Frame overscan')
 
 	def execute(self, context):
 		context.scene.camera = bpy.data.objects[self.render_camera]
@@ -650,10 +653,14 @@ class LM_OP_InitRenderParameters(bpy.types.Operator):
 		context.scene.render.film_transparent = True
 		context.scene.frame_start = self.frame_start
 		context.scene.frame_end = self.frame_end
+		context.scene.lm_autofit_camera_to_asset = self.autofit_camera_to_asset
+		context.scene.lm_autofit_frame_overscan = self.autofit_frame_overscan
+		context.scene.lm_autofit_camera_if_no_userdefined_found = self.autofit_camera_if_no_userdefined_found
 
 		# register Frame camera to asset bounding box
-		if (self.render_camera == context.scene.lm_default_camera.name and context.scene.lm_autofit_camera_if_no_userdefined_found) or context.scene.lm_autofit_camera_to_asset:
-			bpy.app.handlers.render_pre.append(self.frame_camera_to_asset_bounding_box)
+		# if (self.render_camera == context.scene.lm_default_camera.name and self.autofit_camera_if_no_userdefined_found) or self.autofit_camera_to_asset:
+		# 	self.frame_camera_to_asset_bounding_box()
+		# 	bpy.app.handlers.render_pre.append(self.frame_camera_to_asset_bounding_box)
 		# self.build_output_nodegraph(context, self.asset_name, self.view_layer, self.render_path)
 		return {"FINISHED"} 
 	
@@ -684,9 +691,12 @@ class LM_OP_InitRenderParameters(bpy.types.Operator):
 
 		return out
 
-	def frame_camera_to_asset_bounding_box(self, d1, d2):
-		H.select_asset(bpy.context, self.asset_name)
+	def frame_camera_to_asset_bounding_box(self, d1=None, d2=None):
+		H.select_asset(self.asset_name)
 		bpy.ops.view3d.camera_to_view_selected()
+		print(bpy.data.objects[self.render_camera].data.lens)
+		bpy.data.objects[self.render_camera].data.lens = bpy.data.objects[self.render_camera].data.lens * (1 - self.autofit_frame_overscan * 0.01)
+		print(bpy.data.objects[self.render_camera].data.lens)
 
 
 class LM_OP_RenderAssets(bpy.types.Operator):
@@ -886,13 +896,31 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		self.rendering = True
 
 		command = f'''import bpy
-bpy.ops.scene.lm_init_render_parameters("EXEC_DEFAULT", asset_name = "{curr_asset.name}", render_camera="{curr_asset.render_camera}", lineup_blend_path="{bpy.data.filepath}", view_layer="View Layer", render_path="{curr_asset.render_path}", frame_start={context.scene.frame_start}, frame_end={context.scene.frame_end})
-# bpy.ops.render.render("INVOKE_DEFAULT", animation=True, write_still=False, layer="{curr_asset.view_layer}")
-# bpy.ops.wm.quit_blender()
+bpy.ops.scene.lm_init_render_parameters("EXEC_DEFAULT", asset_name = "{curr_asset.name}", render_camera="{curr_asset.render_camera}", lineup_blend_path="{bpy.data.filepath}", view_layer="View Layer", render_path="{curr_asset.render_path}", frame_start={context.scene.frame_start}, frame_end={context.scene.frame_end}, autofit_camera_to_asset={context.scene.lm_autofit_camera_to_asset}, autofit_camera_if_no_userdefined_found={context.scene.lm_autofit_camera_if_no_userdefined_found}, autofit_frame_overscan={context.scene.lm_autofit_frame_overscan})
+current_focal_length = bpy.data.objects["{curr_asset.render_camera}"].data.lens
+def frame_camera_to_asset_bounding_box(d1=None, d2=None):
+	if "{curr_asset.name}" in bpy.data.collections:
+		bpy.ops.object.select_all(action='DESELECT')
+		for o in bpy.data.collections["{curr_asset.name}"].objects:
+			o.select_set(True)
+	
+	bpy.ops.view3d.camera_to_view_selected()
+	bpy.data.objects["{curr_asset.render_camera}"].data.lens = bpy.data.objects["{curr_asset.render_camera}"].data.lens * (1 - bpy.context.scene.lm_autofit_frame_overscan * 0.01)
+	print("set focal length to :", bpy.data.objects["{curr_asset.render_camera}"].data.lens)
+
+def revert_camera_settings(d1=None, d2=None):
+	print("revet focal length to :", current_focal_length)
+	bpy.data.objects["{curr_asset.render_camera}"].data.lens = current_focal_length
+
+if ("{curr_asset.render_camera}" == bpy.context.scene.lm_default_camera.name and bpy.context.scene.lm_autofit_camera_if_no_userdefined_found) or bpy.context.scene.lm_autofit_camera_to_asset:
+	bpy.app.handlers.frame_change_pre.append(frame_camera_to_asset_bounding_box)
+	bpy.app.handlers.render_write.append(revert_camera_settings)
+
 '''
 		subprocess.check_call([bpy.app.binary_path,
 		'--background',
 		curr_asset.catalog_path,
+		'--debug-handlers',
 		'--factory-startup',
 		'--addons', 'lineup_maker',
 		'--python-expr', command,
@@ -1492,7 +1520,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			context.window.view_layer = context.scene.view_layers[self.asset_name]
 			self.export_path = path.join(context.scene.lm_asset_path, self.asset_name)
 
-			H.select_asset(context, self.asset_name)
+			H.select_asset(self.asset_name)
 
 			self.export_asset(context)
 
@@ -1535,7 +1563,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 
 				context.window.view_layer = context.scene.view_layers[self.asset_name]
 				self.export_path = path.join(context.scene.lm_asset_path, self.exporting_asset)
-				H.select_asset(context, self.exporting_asset)
+				H.select_asset(self.exporting_asset)
 
 				self.export_asset(context)
 

@@ -141,7 +141,7 @@ def get_datas_from_collection(collection_name):
 	
 	return datas
 
-def select_asset(context, asset_name):
+def select_asset(asset_name):
 	if asset_name in bpy.data.collections:
 		bpy.ops.object.select_all(action='DESELECT')
 		for o in bpy.data.collections[asset_name].objects:

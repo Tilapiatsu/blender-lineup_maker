@@ -19,7 +19,7 @@ class LM_PT_LineupSetup:
 
 class LM_PT_LineupSetupPanel(LM_PT_LineupSetup, bpy.types.Panel): 
 	bl_label = "Lineup Setup"
-	bl_idname = 'lineup_setup'         
+	bl_idname = 'LM_PT_lineup_setup'         
 
 	def draw(self, context):
 		layout = self.layout
@@ -28,7 +28,7 @@ class LM_PT_LineupSetupPanel(LM_PT_LineupSetup, bpy.types.Panel):
 
 class LM_PT_SceneStatus(LM_PT_LineupSetup, bpy.types.Panel):          
 	bl_label = "1- Scene status"
-	bl_parent_id = 'lineup_setup'
+	bl_parent_id = 'LM_PT_lineup_setup'
 
 
 	def draw(self, context):
@@ -43,7 +43,7 @@ class LM_PT_SceneStatus(LM_PT_LineupSetup, bpy.types.Panel):
 
 class LM_PT_SceneSetup(LM_PT_LineupSetup, bpy.types.Panel): 
 	bl_label = "2- Scene Setup"         
-	bl_parent_id = 'lineup_setup'
+	bl_parent_id = 'LM_PT_lineup_setup'
 
 	
 	def draw(self, context):
@@ -129,7 +129,7 @@ class LM_PT_SceneSetup(LM_PT_LineupSetup, bpy.types.Panel):
 
 class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 	bl_label = "3- Naming Convention"
-	bl_parent_id = 'lineup_setup'
+	bl_parent_id = 'LM_PT_lineup_setup'
 
 	def draw(self, context):
 		scn = context.scene
@@ -264,7 +264,7 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 
 class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 	bl_label = "4- TextureSet Settings"
-	bl_parent_id = 'lineup_setup'
+	bl_parent_id = 'LM_PT_lineup_setup'
 
 	def draw(self, context):
 		scn = context.scene
@@ -369,7 +369,7 @@ It means that you need to specify a "channel" keyword in your Texture naming con
 
 class LM_PT_Cameras(LM_PT_LineupSetup, bpy.types.Panel):          
 	bl_label = "5- Camera Assignment"
-	bl_parent_id = 'lineup_setup'
+	bl_parent_id = 'LM_PT_lineup_setup'
 
 	
 	def draw(self, context):
@@ -401,6 +401,7 @@ It is based on the asset naming convention.'''
 		b.prop(scn, 'lm_default_camera', text='Default Camera')
 		b.prop(scn, 'lm_autofit_camera_to_asset')
 		if scn.lm_autofit_camera_to_asset:
+			b.prop(scn, 'lm_autofit_frame_overscan')
 			b.prop(scn, 'lm_autofit_camera_if_no_userdefined_found')
 		if not scn.lm_autofit_camera_to_asset or scn.lm_autofit_camera_if_no_userdefined_found:
 			b.label(text='Camera list')
@@ -422,7 +423,7 @@ It is based on the asset naming convention.'''
 
 class LM_PT_CompositeLayout(LM_PT_LineupSetup, bpy.types.Panel):
 	bl_label = "6- Composite Layout"
-	bl_parent_id = 'lineup_setup'
+	bl_parent_id = 'LM_PT_lineup_setup'
 
 	
 	def draw(self, context):
@@ -443,7 +444,7 @@ class LM_PT_CompositeLayout(LM_PT_LineupSetup, bpy.types.Panel):
 
 class LM_PT_Chapter(LM_PT_LineupSetup, bpy.types.Panel):          
 	bl_label = "7- Chapter Definition"
-	bl_parent_id = 'lineup_setup'
+	bl_parent_id = 'LM_PT_lineup_setup'
 
 	
 	def draw(self, context):

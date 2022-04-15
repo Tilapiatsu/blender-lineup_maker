@@ -191,6 +191,13 @@ classes = (
     LM_UI_SetLineupScene,
     LM_UI_SetCatalogScene
 )
+dynamic_classes = (LM_PT_NamingConvention,
+          LM_PT_TextureSetSettings,
+          LM_PT_Cameras,
+          LM_PT_CompositeLayout,
+          LM_PT_Chapter,
+          LM_PT_AssetList)
+        
 ### Update parameter functions
 def update_texture_channel_name(self, context):
     def is_valid_textureChannelName(scn):
@@ -265,34 +272,6 @@ def update_shader_name(self, context):
         scn.lm_avoid_update = True
         scn.lm_shader_name = ""
 
-def update_keyword_value(self, context):
-    def is_valid_keyword_value(scn):
-        valid = False
-        if scn.lm_keyword_value and len(scn.lm_keywords):
-            if not len(scn.lm_keywords):
-                return True
-            curr_keyword_values = [k.name for k in scn.lm_keyword_values if k.keyword == scn.lm_keywords[scn.lm_keyword_idx].name]
-            if scn.lm_keyword_value not in curr_keyword_values:
-                return True
-        
-        return valid
-
-    scn = context.scene
-    if scn.lm_avoid_update:
-        scn.lm_avoid_update = False
-        return
-
-    else:
-        if is_valid_keyword_value(scn):
-            c = scn.lm_keyword_values.add()
-            c.name = scn.lm_keyword_value
-            c.keyword = scn.lm_keywords[scn.lm_keyword_idx].name
-
-            scn.lm_keyword_value_idx = len(scn.lm_keyword_values) - 1
-
-        scn.lm_avoid_update = True
-        scn.lm_keyword_value = ""
-
 def update_keyword_name(self, context):
     scn = context.scene
     if scn.lm_avoid_update:
@@ -353,19 +332,13 @@ def update_camera_keyword_name(self, context):
         scn.lm_camera_keyword_name = ""
 
 def update_is_lineup_scene(self, context):
-    cl = (LM_PT_NamingConvention,
-          LM_PT_TextureSetSettings,
-          LM_PT_Cameras,
-          LM_PT_CompositeLayout,
-          LM_PT_Chapter,
-          LM_PT_AssetList)
     if self.lm_is_lineup_scene:
-        for c in cl:
+        for c in dynamic_classes:
             bpy.utils.register_class(c)
         self.lm_is_catalog_scene = False
         context.scene.lm_is_lineup_scene = True
     else:
-        for c in cl:
+        for c in dynamic_classes:
             bpy.utils.unregister_class(c)
         context.scene.lm_is_lineup_scene = False
     return
@@ -471,7 +444,8 @@ def register():
 
     bpy.types.Scene.lm_autofit_camera_to_asset = bpy.props.BoolProperty(name="Autofit Camera to Asset's Bounding box", default=False, description="Autofit Camera to Asset's Bounding box (Discard manual Camera setup)", update=update_autofit_camera_to_asset)
     bpy.types.Scene.lm_autofit_camera_if_no_userdefined_found = bpy.props.BoolProperty(name="Autofit only if no user-defined camera found", default=False, description="Autofit only if no userdefined camera found")
-    
+    bpy.types.Scene.lm_autofit_frame_overscan = bpy.props.IntProperty(name='Autofit Frame Overscan (in %)', default=10)
+
     bpy.types.Scene.lm_texture_channel_name = bpy.props.StringProperty(name="Add Texture Channel", update=update_texture_channel_name)
     bpy.types.Scene.lm_channel_name = bpy.props.StringProperty(name="Add Channel", update=update_channel_name)
     bpy.types.Scene.lm_shader_name = bpy.props.StringProperty(name="Add Shader", update=update_shader_name)
@@ -580,6 +554,12 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
+    for cls in reversed(dynamic_classes):
+        try:
+            bpy.utils.unregister_class(cls)
+        except RuntimeError as e:
+            pass
+    
     del bpy.types.Scene.lm_is_lineup_scene
     del bpy.types.Scene.lm_is_catalog_updated
     del bpy.types.Scene.lm_is_catalog_scene
@@ -607,17 +587,16 @@ def unregister():
     del bpy.types.Scene.lm_optionnal_asset_keyword
     del bpy.types.Scene.lm_optionnal_mesh_keyword
     del bpy.types.Scene.lm_optionnal_texture_keyword
-    del bpy.types.Scene.lm_keyword_name
     del bpy.types.Scene.lm_font_color
     del bpy.types.Scene.lm_text_background_color
     del bpy.types.Scene.lm_content_background_color
     del bpy.types.Scene.lm_default_material_roughness
     del bpy.types.Scene.lm_default_material_color
     del bpy.types.Scene.lm_force_render
-    del bpy.types.Scene.lm_keyword_value
     del bpy.types.Scene.lm_shader_name
     del bpy.types.Scene.lm_shader_idx
     del bpy.types.Scene.lm_asset_list_idx
+    del bpy.types.Scene.lm_autofit_frame_overscan
     del bpy.types.Scene.lm_autofit_camera_if_no_userdefined_found
     del bpy.types.Scene.lm_autofit_camera_to_asset
     del bpy.types.Scene.lm_simultaneous_render_count
