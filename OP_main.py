@@ -128,7 +128,7 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 		if not path.isdir(self.folder_src):
 			self.log.error('The asset path is not valid : \n{} '.format(self.folder_src))
 			self.report({'ERROR	'}, 'Lineup Maker : The asset path is not valid')
-			return {'FINISHED'}
+			return {'CANCELLED'}
 
 		H.set_active_collection(context, bpy.context.scene.collection.name)
 		if context.scene.lm_asset_collection is None:
@@ -262,11 +262,14 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 file_path = "{bpy.data.filepath}"
 datablock_dir = r"\\Collection"
 data_name = "{context.scene.lm_camera_collection.name}"
-print(file_path, datablock_dir, data_name)
 filepath = file_path + datablock_dir + data_name
 directory = file_path + datablock_dir
 bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = data_name, link=True)
 data_name = "{context.scene.lm_lighting_collection.name}"
+filepath = file_path + datablock_dir + data_name
+bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = data_name, link=True)
+data_name = "{context.scene.lm_lighting_world.name}"
+datablock_dir = r"\\World"
 filepath = file_path + datablock_dir + data_name
 bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = data_name, link=True)
 bpy.ops.scene.lm_load_preset("EXEC_DEFAULT", filepath=r"{self.preset_path}")
@@ -339,6 +342,28 @@ bpy.ops.scene.lm_import_assets("EXEC_DEFAULT", mode="ASSET", asset_name="{curr_a
 		self.stopped = True
 		self.updating_viewlayers = False
 		self.cancelling = False
+
+
+class LM_OP_AppendBlendFile(bpy.types.Operator):
+	bl_idname = "import_scene.lm_append_blend_file"
+	bl_label = "Lineup Maker: Append Blend File"
+	bl_options = {'REGISTER'}
+
+	filepath : bpy.props.StringProperty(name="File Path", default='', description='Path to the Blend file to append')
+
+	def execute(self, context):
+		if not path.isfile(self.filepath) or not path.exists(self.filepath):
+			self.log.error('The filepath is not valid : \n{} '.format(self.filepath))
+			self.report({'ERROR	'}, 'Lineup Maker : The filepath is not valid')
+			return {'CANCELLED'}
+
+		with bpy.data.libraries.load(self.filepath) as (data_from, data_to):
+			data_to.objects = data_from.objects
+
+		for obj in data_to.objects:
+			bpy.context.scene.collection.objects.link(obj)
+		
+		return {'FINISHED'}
 
 
 class LM_OP_ImportAssets(bpy.types.Operator):
@@ -912,7 +937,7 @@ def revert_camera_settings(d1=None, d2=None):
 	print("revet focal length to :", current_focal_length)
 	bpy.data.objects["{curr_asset.render_camera}"].data.lens = current_focal_length
 
-if ("{curr_asset.render_camera}" == bpy.context.scene.lm_default_camera.name and bpy.context.scene.lm_autofit_camera_if_no_userdefined_found) or bpy.context.scene.lm_autofit_camera_to_asset:
+if {H.autofit_camera(context, curr_asset)}:
 	bpy.app.handlers.frame_change_pre.append(frame_camera_to_asset_bounding_box)
 	bpy.app.handlers.render_write.append(revert_camera_settings)
 
@@ -1359,6 +1384,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 		for f in os.listdir(context.scene.lm_blend_catalog_path):
 			asset_name = path.splitext(path.basename(f))[0]
 			if asset_name not in context.scene.lm_asset_list:
+				log.info(f'Lineup Maker : Add missing asset : "{f}"')
 				curr_asset = A.LMAsset(context, path.join(context.scene.lm_asset_path, asset_name))
 
 				scn_asset = context.scene.lm_asset_list.add()
@@ -1371,13 +1397,14 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 				scn_asset.need_render = True
 				scn_asset.need_update = False
 				
-				curr_asset.update_json_values(curr_asset.meshes[0], scn_asset)
+				# curr_asset.update_json_values(curr_asset.meshes[0], scn_asset)
 				
 				bpy.ops.scene.lm_add_asset_to_render_queue(asset_name = curr_asset.asset_name)
 
 		# Then update status
 		if self.mode == 'ALL':
 			need_update_list = [a for a in context.scene.lm_asset_list] + [ a for a in context.scene.lm_render_queue]
+
 		elif self.mode == 'QUEUE':
 			need_update_list = [a for a in context.scene.lm_render_queue if a.checked]
 			need_update_list_name = [a.name for a in need_update_list]
@@ -1395,8 +1422,8 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 				pass
 			
 		for asset in need_update_list:
-			self.report({'INFO'}, 'Lineup Maker : Refresh asset status for : "{}"'.format(asset.name))
-			log.info('Lineup Maker : Refresh asset status for : "{}"'.format(asset.name))
+			self.report({'INFO'}, f'Lineup Maker : Refresh asset status for : "{asset.name}"')
+			log.info(f'Lineup Maker : Refresh asset status for : "{asset.name}"')
 			rendered_asset = path.join(context.scene.lm_render_path, asset.name)
 			asset_path = path.join(context.scene.lm_asset_path, asset.name)
 			composite_path = path.join(context.scene.lm_render_path, V.LM_FINAL_COMPOSITE_FOLDER_NAME, '{}{}.jpg'.format(asset.name, V.LM_FINAL_COMPOSITE_SUFFIX))

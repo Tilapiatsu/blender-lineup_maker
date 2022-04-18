@@ -980,8 +980,6 @@ class LMMeshFile(LMFile):
 		kwargs.update({'filepath':self.path})
 		kwargs.update(self.compatible_format[1])
 
-
-		
 		# run Import Command
 		return self.compatible_format[0], kwargs, self.compatible_format[2], H.kwarg_to_string(kwargs)
 

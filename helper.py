@@ -604,3 +604,6 @@ def trim_string_based_on_separator(text, separator, trim_start, trim_end):
 	result_text = result_text.replace('!', '')
 	result_text = result_text.replace('?', '')
 	return result_text
+
+def autofit_camera(context, asset):
+	return (asset.render_camera == context.scene.lm_default_camera.name and context.scene.lm_autofit_camera_if_no_userdefined_found) or context.scene.lm_autofit_camera_to_asset

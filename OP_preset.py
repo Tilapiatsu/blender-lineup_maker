@@ -21,12 +21,10 @@ INCLUDE = ['lm_asset_path',
 			'lm_default_material_roughness',
 			'lm_override_material_specular',
 			'lm_default_material_specular',
-			'lm_texture_channels',
-			'lm_shader_channels',
 			'lm_shaders',
 			'lm_keywords',
 			'lm_keyword_values',
-			# 'lm_cameras',
+			'lm_cameras',
 			'lm_content_background_color',
 			'lm_text_background_color',
 			'lm_font_color',
@@ -125,11 +123,11 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 				cam['scale'] = [scene_cam.scale[0], scene_cam.scale[1], scene_cam.scale[2]]
 			return cam
 		elif isinstance(param, bpy.types.Collection):
-			return {'type': 'bpy.types.Collection', 'value': param.name}
+			return {'datatype': 'bpy.types.Collection', 'value': param.name}
 		elif isinstance(param, bpy.types.Material):
-			return {'type': 'bpy.types.Material', 'value': param.name}
+			return {'datatype': 'bpy.types.Material', 'value': param.name}
 		elif isinstance(param, bpy.types.Object):
-			return {'type': 'bpy.types.Object', 'value': param.name}
+			return {'datatype': 'bpy.types.Object', 'value': param.name}
 		else:
 			return param
 		
@@ -212,7 +210,7 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 				if 'datatype' in v.keys():
 					self.set_property_value(k, v, parent, curr_scene_path)
 				else:
-					self.load_json_data(v, json_data, parent, curr_scene_path)
+					self.load_json_data(json_data, parent, curr_scene_path)
 			else:
 				self.set_property_value(k, v, parent, curr_scene_path)
 
@@ -223,13 +221,14 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 				if sub_prop not in dir(eval(scene_path)):
 					new_prop = eval(scene_path).add()
 					new_prop.name = sub_prop
-					self.set_property_value(new_prop.name, sub_value, eval(scene_path), self.join_scene_path(scene_path, new_prop.name, is_list=True))
+					if not self.set_property_value(new_prop.name, sub_value, value, self.join_scene_path(scene_path, new_prop.name, is_list=True)):
+						eval(scene_path).remove(new_prop)
 				else:
-					self.set_property_value(sub_prop, sub_value, eval(scene_path), self.join_scene_path(scene_path, sub_prop))
+					self.set_property_value(sub_prop, sub_value, value, self.join_scene_path(scene_path, sub_prop))
 		elif isinstance(value, dict):
 			self.load_json_data(value, parent, scene_path)
 		elif value in [bpy.types.StringProperty, bpy.types.FloatProperty, bpy.types.IntProperty, bpy.types.BoolProperty]:
-			exec('{} = {}'.format(scene_path, value))
+			exec(f'{scene_path} = {value}')
 		elif value == Color:
 			eval(scene_path).r = parent[prop_name]['value'][0]
 			eval(scene_path).g = parent[prop_name]['value'][1]
@@ -237,12 +236,15 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 		elif value == bpy.types.Object:
 			ob = parent[prop_name]['value']
 			if ob in bpy.data.objects:
-				parent[prop_name] = bpy.data.objects[ob]
+				exec(f'{scene_path} = bpy.data.objects["{ob}"]')
+			else:
+				print(f"can't find {ob}")
+				return False
 		elif value == bpy.types.Camera:
 			cam = parent[prop_name]['value']
 			if cam in bpy.data.objects:
 				if cam in bpy.data.cameras:
-					exec('{} = bpy.data.cameras["{}"]'.format(scene_path, cam))
+					exec(f'{scene_path} = bpy.data.cameras["{cam}"]')
 			else:
 				bpy.ops.object.camera_add('INVOKE_DEFAULT')
 				new_cam = bpy.context.active_object
@@ -265,9 +267,10 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 				new_cam.scale[0] = parent[prop_name]['scale'][0]
 				new_cam.scale[1] = parent[prop_name]['scale'][1]
 				new_cam.scale[2] = parent[prop_name]['scale'][2]
-				exec('{} = bpy.data.cameras["{}"]'.format(scene_path, new_cam.name))
+				exec(f'{scene_path} = bpy.data.cameras["{new_cam.name}"]')
 		else:
 			if type(value) == str:
-				exec("{} = {}".format(scene_path, repr(value)))
+				exec(f"{scene_path} = {repr(value)}")
 			else:
-				exec('{} = {}'.format(scene_path, value))
+				exec(f'{scene_path} = {value}')
+		return True

@@ -9,8 +9,10 @@ LM_DEPENDENCIES_FOLDER_NAME = 'LineupMakerDependencies'
 LM_DEPENDENCIES_PATH = os.path.join(LM_CURRENT_DIR, LM_DEPENDENCIES_FOLDER_NAME)
 LM_ASSET_COLLECTION = "Assets_Collection"
 LM_PREVIEW_COLLECTION = "Preview_Collection"
+
 LM_COMPATIBLE_MESH_FORMAT = {".fbx":(bpy.ops.import_scene.fbx, {'filter_glob':'*.fbx;', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.import_scene.fbx"),
-								".obj":(bpy.ops.import_scene.obj, {'filter_glob':'*.obj;*.mtl', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.import_scene.obj")}
+								".obj":(bpy.ops.import_scene.obj, {'filter_glob':'*.obj;*.mtl', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.import_scene.obj"),
+								".blend":(bpy.ops.import_scene.lm_append_blend_file, {}, "bpy.ops.import_scene.lm_append_blend_file")}
 LM_COMPATIBLE_EXPORT_FORMAT = ['MESH']
 LM_COMPATIBLE_TEXTURE_FORMAT = {".png":(),
 								".tga":(),

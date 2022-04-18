@@ -607,7 +607,10 @@ class LM_Composite_Image(LM_Composite):
 
 			# Render_Info : Camera
 			self.set_status_color(pdf, V.Status.NOT_SET.value)
-			text = 'Render Camera : {}'.format(self.context.scene.lm_asset_list[name].render_camera)
+			camera_name = self.context.scene.lm_asset_list[name].render_camera
+			if H.autofit_camera(self.context, self.context.scene.lm_asset_list[name]):
+				camera_name += ' (autofited)'
+			text = 'Render Camera : {}'.format(camera_name)
 			position = self.add_position(position, (0, self.character_size_paragraph[1]))
 			pdf.text(x=position[0], y=position[1], txt=text)
 

@@ -81,6 +81,7 @@ class LM_PT_SceneSetup(LM_PT_LineupSetup, bpy.types.Panel):
 		b.prop(scn, 'lm_default_camera', text='Default Camera', icon='CAMERA_DATA')
 		b.prop(scn, 'lm_camera_collection', text='Camera Collection', icon='CAMERA_DATA')
 		b.prop(scn, 'lm_lighting_collection', text='Lighting Collection', icon='LIGHT')
+		b.prop(scn, 'lm_lighting_world', text='Lighting World', icon='LIGHT')
 		
 		
 		# b = layout.box()
@@ -562,8 +563,7 @@ class LM_PT_AssetList(bpy.types.Panel):
 		row.template_list('LM_UL_asset_list', '', scn, 'lm_asset_list', scn, 'lm_asset_list_idx', rows=rows)
 		c = row.column(align=True)
 		c.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').mode='ALL'
-		c.operator('scene.lm_fix_view_layers', text='', icon='MODIFIER_DATA').asset_name=''
-
+		# c.operator('scene.lm_fix_view_layers', text='', icon='MODIFIER_DATA').asset_name=''
 
 		c.separator()
 		c.operator("scene.lm_clear_asset_list", text="", icon='TRASH')

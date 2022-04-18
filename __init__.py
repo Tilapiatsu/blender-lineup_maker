@@ -83,6 +83,7 @@ classes = (
     LM_OP_RenderAssets,
     LM_OP_OpenFolder,
     LM_UI_OpenAssetCatalog,
+    LM_OP_AppendBlendFile,
     LM_OP_CompositeRenders,
     LM_OP_ExportPDF,
     LM_OP_RefreshAssetStatus,
@@ -394,6 +395,7 @@ def register():
                                     description = 'Path to the folder containing the blender catalogs that will be rendered from'      
                                     )
     bpy.types.Scene.lm_lighting_collection = bpy.props.PointerProperty(type=bpy.types.Collection, description = 'Collection containing the lights that will be used for rendering')
+    bpy.types.Scene.lm_lighting_world = bpy.props.PointerProperty(type=bpy.types.World, description = 'Default World that will be use for rendering')
     bpy.types.Scene.lm_asset_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.lm_camera_collection = bpy.props.PointerProperty(type=bpy.types.Collection, description = 'Collection containing the cameras that will be used for rendering')
     bpy.types.Scene.lm_default_camera = bpy.props.PointerProperty(type=bpy.types.Camera, description = 'Default Camera used for rendering if no other suitable one found')
@@ -621,6 +623,7 @@ def unregister():
     del bpy.types.Scene.lm_chapter_naming_convention
     del bpy.types.Scene.lm_camera_collection
     del bpy.types.Scene.lm_asset_collection
+    del bpy.types.Scene.lm_lighting_world
     del bpy.types.Scene.lm_lighting_collection
     del bpy.types.Scene.lm_blend_catalog_path
     del bpy.types.Scene.lm_asset_path
