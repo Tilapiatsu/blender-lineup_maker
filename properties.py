@@ -203,7 +203,7 @@ class LM_UL_Cameras_UIList(bpy.types.UIList):
 		if item.camera:
 			row.label(text='"{}" : {}'.format(item.camera.name, text))
 		else:
-			row.label(text='"{}" : {}'.format('!!!Invalid Item!!!', item.name))
+			row.label(text='"{}"'.format('!!!Invalid Camera!!!'))
 		row = row.row(align=True)
 		row.alignment = 'RIGHT'
 		e=row.operator('scene.lm_edit_camera_keywords', text='', icon='SMALL_CAPS')

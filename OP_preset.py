@@ -223,8 +223,9 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 					new_prop.name = sub_prop
 					self.set_property_value(new_prop.name, sub_value, value, self.join_scene_path(scene_path, new_prop.name, is_list=True))
 				else:
-					if not self.set_property_value(sub_prop, sub_value, value, self.join_scene_path(scene_path, sub_prop)):
-						return False
+					new_name = self.set_property_value(sub_prop, sub_value, value, self.join_scene_path(scene_path, sub_prop))
+					if len(new_name):
+						scene_path = scene_path.replace(prop_name, new_name)
 		elif isinstance(value, dict):
 			return self.load_json_data(value, parent, scene_path)
 		elif value in [bpy.types.StringProperty, bpy.types.FloatProperty, bpy.types.IntProperty, bpy.types.BoolProperty]:
@@ -242,7 +243,7 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 				print(f"can't find '{ob}'")
 				eval(self.get_parent_scene_path(scene_path)).name = ob
 				# self.remove_invalid_element(scene_path)
-				return False
+				return ob
 		elif value == bpy.types.Camera:
 			cam = parent[prop_name]['value']
 			if cam in bpy.data.objects:
@@ -277,7 +278,7 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 			else:
 				exec(f'{scene_path} = {value}')
 		
-		return True
+		return ''
 
 	def remove_invalid_element(self, scene_path):
 		p = eval(scene_path.split('[')[-2])
