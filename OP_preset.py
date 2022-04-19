@@ -198,8 +198,8 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 	def load_json_data(self, json_data={}, parent=None, scene_path=None):
 		if 'datatype' in json_data.keys():
 			value = scene_path.split('.')[-1]
-			self.set_property_value(value, eval(json_data['datatype']), parent, scene_path)
-			return
+			return self.set_property_value(value, eval(json_data['datatype']), parent, scene_path)
+			
 		for k,v in json_data.items():
 			curr_scene_path = self.join_scene_path(scene_path, k)
 			if k in INCLUDE:
@@ -221,12 +221,12 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 				if sub_prop not in dir(eval(scene_path)):
 					new_prop = eval(scene_path).add()
 					new_prop.name = sub_prop
-					if not self.set_property_value(new_prop.name, sub_value, value, self.join_scene_path(scene_path, new_prop.name, is_list=True)):
-						eval(scene_path).remove(new_prop)
+					self.set_property_value(new_prop.name, sub_value, value, self.join_scene_path(scene_path, new_prop.name, is_list=True))
 				else:
-					self.set_property_value(sub_prop, sub_value, value, self.join_scene_path(scene_path, sub_prop))
+					if not self.set_property_value(sub_prop, sub_value, value, self.join_scene_path(scene_path, sub_prop)):
+						return False
 		elif isinstance(value, dict):
-			self.load_json_data(value, parent, scene_path)
+			return self.load_json_data(value, parent, scene_path)
 		elif value in [bpy.types.StringProperty, bpy.types.FloatProperty, bpy.types.IntProperty, bpy.types.BoolProperty]:
 			exec(f'{scene_path} = {value}')
 		elif value == Color:
@@ -235,10 +235,13 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 			eval(scene_path).b = parent[prop_name]['value'][2]
 		elif value == bpy.types.Object:
 			ob = parent[prop_name]['value']
+			
 			if ob in bpy.data.objects:
 				exec(f'{scene_path} = bpy.data.objects["{ob}"]')
 			else:
-				print(f"can't find {ob}")
+				print(f"can't find '{ob}'")
+				eval(self.get_parent_scene_path(scene_path)).name = ob
+				# self.remove_invalid_element(scene_path)
 				return False
 		elif value == bpy.types.Camera:
 			cam = parent[prop_name]['value']
@@ -273,4 +276,20 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 				exec(f"{scene_path} = {repr(value)}")
 			else:
 				exec(f'{scene_path} = {value}')
+		
 		return True
+
+	def remove_invalid_element(self, scene_path):
+		p = eval(scene_path.split('[')[-2])
+		i = eval(scene_path.split('"')[-2])
+		p.remove(i)
+	
+	def get_parent_scene_path(self, scene_path):
+		path = scene_path.split('.')[0:-1]
+		parent_scene_path = ''
+		for i,p in enumerate(path):
+			parent_scene_path += p
+			if i < len(path)-1:
+				parent_scene_path += '.'
+		
+		return parent_scene_path
