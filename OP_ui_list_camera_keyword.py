@@ -118,6 +118,10 @@ class LM_UI_EditCameraKeywords(bpy.types.Operator):
 		self.create_keyword_annotations(context)
 
 		for k in self.__class__.__annotations__:
+			# Cleaning Previous keyword Values
+			for kw in self.camera.keywords:
+				kw = ""
+			# populate each set keyword
 			for kw in self.camera.keywords:
 				if k == kw.keyword:
 					self.populate_property(k, kw.keyword_value)
@@ -131,6 +135,7 @@ class LM_UI_EditCameraKeywords(bpy.types.Operator):
 
 	def execute(self, context):
 		self.camera.camera = context.scene.lm_select_camera_object.camera
+		self.camera.name = str(str(self.index))
 		camera_keywords = [kk.keyword for kk in self.camera.keywords]
 
 		for k in context.scene.lm_keywords:
@@ -214,6 +219,9 @@ class LM_UI_AddCamera(bpy.types.Operator):
 
 		self.camera = context.scene.lm_cameras.add()
 		self.camera.camera = context.scene.lm_select_camera_object.camera
+		for i,c in enumerate(context.scene.lm_cameras):
+			if c == self.camera:
+				self.camera.name = str(i)
 
 		for k in context.scene.lm_keywords:
 			# If keyword is not set, skip

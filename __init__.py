@@ -22,6 +22,8 @@
 #   - Need a feature to support Asset Sets Rendering / Editing
 #   - Need to add lm_asset_per_row in the compositing tab
 #   - Need to add a mode toggle : one asset per page OR all assets in one page ( for real lineup )
+#   - Need to add lm_render_engine to choos which engine to render with
+#   - Split Asset list into multiple Class --> they will be in subpannels
 
 
 #  DEPENDENCIES :

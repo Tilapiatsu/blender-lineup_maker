@@ -194,7 +194,8 @@ class LM_UL_Cameras_UIList(bpy.types.UIList):
 	bl_idname = "LM_UL_cameras"
 
 	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-		row = layout.column_flow(columns=2, align=True)
+		row = layout.row(align=True)
+		row.alignment = 'LEFT'
 		text = ''
 		for i,keyword in enumerate(item.keywords):
 			text += '"{}" = "{}"'.format(keyword.keyword, keyword.keyword_value)
@@ -204,7 +205,7 @@ class LM_UL_Cameras_UIList(bpy.types.UIList):
 			row.label(text='"{}" : {}'.format(item.camera.name, text))
 		else:
 			row.label(text='"{}"'.format('!!!Invalid Camera!!!'))
-		row = row.row(align=True)
+		row = layout.row(align=True)
 		row.alignment = 'RIGHT'
 		e=row.operator('scene.lm_edit_camera_keywords', text='', icon='SMALL_CAPS')
 		e.index = index

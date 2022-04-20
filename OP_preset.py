@@ -31,7 +31,15 @@ INCLUDE = ['lm_asset_path',
 			'lm_precomposite_frames',
 			'lm_override_frames',
 			'lm_force_render',
-			'lm_pdf_export_last_rendered'
+			'lm_pdf_export_last_rendered',
+			'lm_chapter_keyword_trim_start',
+			'lm_chapter_keyword_trim_end',
+			'lm_autofit_camera_to_asset',
+			'lm_autofit_camera_overscan',
+			'lm_autofit_camera_if_no_userdefined_found',
+			'lm_camera_collection',
+			'lm_lighting_collection',
+			'lm_lighting_world'
 			]
 class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 	bl_idname = "scene.lm_save_preset"
@@ -127,6 +135,8 @@ class LM_OP_SavePreset(bpy.types.Operator, ImportHelper):
 			return {'datatype': 'bpy.types.Material', 'value': param.name}
 		elif isinstance(param, bpy.types.Object):
 			return {'datatype': 'bpy.types.Object', 'value': param.name}
+		elif isinstance(param, bpy.types.World):
+			return {'datatype': 'bpy.types.World', 'value': param.name}
 		else:
 			return param
 		
@@ -174,11 +184,13 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 
 		return {'FINISHED'}
 
-	def join_scene_path(self, scene_path, subpath, is_list=False):
-		if is_list:
+	def join_scene_path(self, scene_path, subpath, child_type='CHILDREN'):
+		if child_type == 'LIST':
 			return scene_path + '["' + subpath + '"]'
-		else:
+		elif child_type == 'CHILDREN':
 			return scene_path + '.' + subpath
+		elif child_type == 'INDEX':
+			return scene_path + '[' + subpath + ']'
 
 	def get_json_data(self):
 		json_data = {}
@@ -215,14 +227,33 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 
 
 	def set_property_value(self, prop_name, value, parent=None, scene_path=None):
-		if isinstance(eval(scene_path), (bpy.types.bpy_prop_collection, bpy.types.PropertyGroup, bpy.types.CollectionProperty, bpy.types.Struct)):
+		scene_object = eval(scene_path)
+		if isinstance(scene_object, (bpy.types.bpy_prop_collection, bpy.types.PropertyGroup, bpy.types.CollectionProperty, bpy.types.Struct)):
 			for sub_prop, sub_value in value.items():
-				if sub_prop not in dir(eval(scene_path)):
-					new_prop = eval(scene_path).add()
-					new_prop.name = sub_prop
-					self.set_property_value(new_prop.name, sub_value, value, self.join_scene_path(scene_path, new_prop.name, is_list=True))
+				if isinstance(scene_object, bpy.types.bpy_prop_collection):
+					curr_elements = [e for e in scene_object]
+					try:
+						index = int(sub_prop)
+					except ValueError as e:
+						index = None
+						
+					if index is not None:
+						sub_prop_value = scene_object[index] if index < len(scene_object) else None
+						child_type = 'INDEX'
+					else:
+						sub_prop_value = scene_object[sub_prop] if sub_prop in scene_object else None
+						child_type = 'LIST'
 				else:
-					new_name = self.set_property_value(sub_prop, sub_value, value, self.join_scene_path(scene_path, sub_prop))
+					curr_elements = dir(scene_object)
+					sub_prop_value = sub_prop
+					child_type = 'CHILDREN'
+
+				if sub_prop_value not in curr_elements:
+					new_prop = scene_object.add()
+					new_prop.name = sub_prop
+					self.set_property_value(new_prop.name, sub_value, value, self.join_scene_path(scene_path, new_prop.name, child_type='LIST'))
+				else:
+					new_name = self.set_property_value(sub_prop, sub_value, value, self.join_scene_path(scene_path, sub_prop, child_type=child_type))
 					if len(new_name):
 						scene_path = scene_path.replace(prop_name, new_name)
 		elif isinstance(value, dict):
@@ -230,9 +261,9 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 		elif value in [bpy.types.StringProperty, bpy.types.FloatProperty, bpy.types.IntProperty, bpy.types.BoolProperty]:
 			exec(f'{scene_path} = {value}')
 		elif value == Color:
-			eval(scene_path).r = parent[prop_name]['value'][0]
-			eval(scene_path).g = parent[prop_name]['value'][1]
-			eval(scene_path).b = parent[prop_name]['value'][2]
+			scene_object.r = parent[prop_name]['value'][0]
+			scene_object.g = parent[prop_name]['value'][1]
+			scene_object.b = parent[prop_name]['value'][2]
 		elif value == bpy.types.Object:
 			ob = parent[prop_name]['value']
 			
@@ -271,6 +302,24 @@ class LM_OP_LoadPreset(bpy.types.Operator, ImportHelper):
 				new_cam.scale[1] = parent[prop_name]['scale'][1]
 				new_cam.scale[2] = parent[prop_name]['scale'][2]
 				exec(f'{scene_path} = bpy.data.cameras["{new_cam.name}"]')
+		elif value == bpy.types.Collection:
+			ob = parent[prop_name]['value']
+			if ob in bpy.data.collections:
+				exec(f'{scene_path} = bpy.data.collections["{ob}"]')
+			else:
+				print(f"can't find '{ob}'")
+				eval(self.get_parent_scene_path(scene_path)).name = ob
+				# self.remove_invalid_element(scene_path)
+				return ob
+		elif value == bpy.types.World:
+			ob = parent[prop_name]['value']
+			if ob in bpy.data.worlds:
+				exec(f'{scene_path} = bpy.data.worlds["{ob}"]')
+			else:
+				print(f"can't find '{ob}'")
+				eval(self.get_parent_scene_path(scene_path)).name = ob
+				# self.remove_invalid_element(scene_path)
+				return ob
 		else:
 			if type(value) == str:
 				exec(f"{scene_path} = {repr(value)}")

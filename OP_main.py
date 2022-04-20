@@ -270,8 +270,10 @@ filepath = file_path + datablock_dir + data_name
 bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = data_name, link=True)
 data_name = "{context.scene.lm_lighting_world.name}"
 datablock_dir = r"\\World"
+directory = file_path + datablock_dir
 filepath = file_path + datablock_dir + data_name
 bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = data_name, link=True)
+bpy.context.scene.world = bpy.data.worlds[data_name]
 bpy.ops.scene.lm_load_preset("EXEC_DEFAULT", filepath=r"{self.preset_path}")
 bpy.ops.scene.lm_import_assets("EXEC_DEFAULT", mode="ASSET", asset_name="{curr_asset.asset_name}", asset_path="{context.scene.lm_asset_path}", save_after_import=True, close_after_import=True, save_filepath="{asset_path}", pack_data=True)
 '''
