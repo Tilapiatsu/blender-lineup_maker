@@ -632,12 +632,13 @@ class LMAsset(object):
 	def channels(self):
 		if self._channels is None:
 			self._channels = {}
-			if not len(self.scn.lm_shaders.shader_channels):
-				self._channels = V.LM_DEFAULT_CHANNELS
-			else:
-				for c in self.scn.lm_shaders.shader_channels:
-					if c.name not in self._channels:
-						self._channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map, 'inverted':c.inverted}
+			for s in self.scn.lm_shaders:
+				if not len(s.shader_channels):
+					self._channels = V.LM_DEFAULT_CHANNELS
+				else:
+					for c in s.shader_channels:
+						if c.name not in self._channels:
+							self._channels[c.name] = {'linear':c.linear, 'normal_map':c.normal_map, 'inverted':c.inverted}
 
 		return self._channels
 	

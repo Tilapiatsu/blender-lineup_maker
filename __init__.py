@@ -12,18 +12,16 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: 
-#   - Need to better sort Chapters by name
 #   - Create an operator to update/import render and export PDF in a row
-#   
-# 
 #   - Log and repport
 #       - Pop up message at the end to notify what is happening
 #   - Need to update JSon Exporter to support
 #       - section
 #       - fromFile
 #   - Use Section to create chapters
-
-#   - The addon don't render the proper asset if updated if there is already renders existing in the folder ( check date )
+#   - Need a feature to support Asset Sets Rendering / Editing
+#   - Need to add lm_asset_per_row in the compositing tab
+#   - Need to add a mode toggle : one asset per page OR all assets in one page ( for real lineup )
 
 
 #  DEPENDENCIES :
