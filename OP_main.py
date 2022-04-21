@@ -1382,26 +1382,27 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 		log = L.Logger(context='EXPORT_ASSETS')
 		context.scene.lm_render_path
 
-		# Start by scanning blend_catalog_path to regreate missing assets
-		for f in os.listdir(context.scene.lm_blend_catalog_path):
-			asset_name = path.splitext(path.basename(f))[0]
-			if asset_name not in context.scene.lm_asset_list:
-				log.info(f'Lineup Maker : Add missing asset : "{f}"')
-				curr_asset = A.LMAsset(context, path.join(context.scene.lm_asset_path, asset_name))
+		if not len(self.asset_name):
+			# Start by scanning blend_catalog_path to recreate missing assets
+			for f in os.listdir(context.scene.lm_blend_catalog_path):
+				asset_name = path.splitext(path.basename(f))[0]
+				if asset_name not in context.scene.lm_asset_list:
+					log.info(f'Lineup Maker : Add missing asset : "{f}"')
+					curr_asset = A.LMAsset(context, path.join(context.scene.lm_asset_path, asset_name))
 
-				scn_asset = context.scene.lm_asset_list.add()
-				scn_asset.name = curr_asset.asset_name
-				scn_asset.asset_path = path.dirname(f)
-				scn_asset.catalog_path = path.join(context.scene.lm_blend_catalog_path, f)
-				scn_asset.import_date = path.getmtime(curr_asset.meshes[0].path)
-				scn_asset.is_imported = True
-				scn_asset.asset_folder_exists = True
-				scn_asset.need_render = True
-				scn_asset.need_update = False
-				
-				# curr_asset.update_json_values(curr_asset.meshes[0], scn_asset)
-				
-				bpy.ops.scene.lm_add_asset_to_render_queue(asset_name = curr_asset.asset_name)
+					scn_asset = context.scene.lm_asset_list.add()
+					scn_asset.name = curr_asset.asset_name
+					scn_asset.asset_path = path.dirname(f)
+					scn_asset.catalog_path = path.join(context.scene.lm_blend_catalog_path, f)
+					scn_asset.import_date = path.getmtime(curr_asset.meshes[0].path)
+					scn_asset.is_imported = True
+					scn_asset.asset_folder_exists = True
+					scn_asset.need_render = True
+					scn_asset.need_update = False
+					
+					# curr_asset.update_json_values(curr_asset.meshes[0], scn_asset)
+					
+					bpy.ops.scene.lm_add_asset_to_render_queue(asset_name = curr_asset.asset_name)
 
 		# Then update status
 		if self.mode == 'ALL':

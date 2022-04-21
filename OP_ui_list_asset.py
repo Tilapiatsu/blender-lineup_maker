@@ -133,9 +133,14 @@ class LM_UI_OpenAssetCatalog(bpy.types.Operator):
 	def execute(self, context):
 		asset_path = path.join(bpy.context.scene.lm_blend_catalog_path, self.asset_name + '.blend')
 
-		command = '''import bpy
-bpy.ops.wm.open_mainfile("EXEC_DEFAULT", filepath=r"{}")
-'''.format(asset_path)
+		command = f'''import bpy
+bpy.ops.wm.open_mainfile("EXEC_DEFAULT", filepath=r"{asset_path}")
+bpy.context.scene.camera = bpy.data.objects["{context.scene.lm_asset_list[self.asset_name].render_camera}"]
+# for area in bpy.context.screen.areas:
+#     if area.type == 'VIEW_3D':
+#         area.spaces[0].region_3d.view_perspective = 'CAMERA'
+#         break
+'''
 
 		subprocess.check_call([bpy.app.binary_path, V.LM_CATALOG_PATH, '--python-expr', command])
 
