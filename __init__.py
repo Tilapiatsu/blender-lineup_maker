@@ -1,16 +1,3 @@
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-
 # TODO: 
 #   - Create an operator to update/import render and export PDF in a row
 #   - Log and repport
@@ -20,17 +7,23 @@
 #       - Should I add a lm_export_format
 #   - Need to add lm_render_engine to choos which engine to render with
 #   - Need a feature to support Asset Sets Rendering / Editing
-#   - Need to create a Compositing and PDF editor
-#       - one asset per page 
-#           - image_per_row
-#           - show images count from frame range
-#       - all assets in one page ( for real lineup )
-#           - image_per_row
-#           - max_row_per_page
+#       - add many asset in a set that will be rendered together in the same image
+#       - asset sets should be able to be send to render queue
 #   - Need to add Lighting sets composed of :
 #       - a lighting Collection
 #       - a lighting World
 #       - a lighting Backdrop ?
+#   - Need to create a Compositing and PDF editor
+#       - one asset per page (multiple view of the same asset )
+#           - image_per_row
+#           - show images count from frame range
+#           - Lighting Set to use
+#       - all assets in one page ( for real lineup )
+#           - image_per_row
+#           - max_row_per_page
+#           - Lighting Set to use
+#           - Camera Override
+
 
 
 #  DEPENDENCIES :
