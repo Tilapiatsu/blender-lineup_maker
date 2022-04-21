@@ -11,11 +11,40 @@ def _label_multiline(context, text, parent):
     for text_line in text_lines:
         parent.label(text=text_line)
 
+def draw_render_settings(context, scn, layout, render_list, text):
+	if len(context.scene.lm_render_message) or len(context.scene.lm_render_progress) or len(context.scene.lm_pdf_message) or len(context.scene.lm_pdf_progress):
+		b = layout.box()
+		b.label(text=context.scene.lm_render_message)
+		b.label(text=context.scene.lm_render_progress)
+		b.separator()
+		b.label(text=context.scene.lm_pdf_message)
+		b.label(text=context.scene.lm_pdf_progress)
+
+	b = layout.box()
+	b.label(text='Render Settings')
+	b.prop(scn, 'lm_simultaneous_render_count', text='Simultaneous render count')
+	b.prop(scn, 'lm_override_frames')
+	b.prop(scn, 'lm_force_render', text='Force Render if asset is up to date')
+	b.prop(scn, 'lm_composite_frames')
+	if scn.lm_composite_frames:
+		b.prop(scn, 'lm_force_composite', text='Force Composite')
+	b.prop(scn, 'lm_pdf_export_last_rendered', text='Export Last rendered asset to PDF')
+	b.prop(scn, 'lm_open_pdf_when_exported', text='Open PDF When Exported')
+	b.separator()
+	b.separator()
+	# b.operator('scene.lm_update_json', icon='IMPORT', text='Update Queued Json Data').mode = 'QUEUE'
+	b.operator('scene.lm_render_assets', text=f'Render {text}', icon='OUTPUT').render_list = render_list
+	if len(scn.lm_last_render_list):
+		b.operator("scene.lm_render_assets", icon='OUTPUT', text='Re-Render last rendered assets').render_list = 'LAST_RENDERED'
+	b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text=f'Composite {text}').composite_list = render_list
+	b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text=f'Export PDF from {text}').mode = render_list
+
 class LM_PT_LineupSetup:          
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = 'Lineup Maker'
 	bl_options = {"DEFAULT_CLOSED"}
+
 
 class LM_PT_LineupSetupPanel(LM_PT_LineupSetup, bpy.types.Panel): 
 	bl_label = "Lineup Setup"
@@ -82,50 +111,6 @@ class LM_PT_SceneSetup(LM_PT_LineupSetup, bpy.types.Panel):
 		b.prop(scn, 'lm_camera_collection', text='Camera Collection', icon='CAMERA_DATA')
 		b.prop(scn, 'lm_lighting_collection', text='Lighting Collection', icon='LIGHT')
 		b.prop(scn, 'lm_lighting_world', text='Lighting World', icon='LIGHT')
-		
-		
-		# b = layout.box()
-		
-		# if len(scn.lm_asset_list) == 0:
-		# 	text = 'Import all assets'
-		# 	imported = False
-		# else:
-		# 	text = 'Update modified assets'
-		# 	imported = True
-		# b.operator("scene.lm_create_blend_catalog_file", icon='IMPORT', text=text).mode = "ALL"
-		# if len(context.scene.lm_import_message):
-		# 	b.label(text=context.scene.lm_import_message)
-		# if len(context.scene.lm_import_progress):
-		# 	b.label(text=context.scene.lm_import_progress)
-		# if len(context.scene.lm_viewlayer_progress):
-		# 	b.label(text=context.scene.lm_viewlayer_progress)
-		
-
-		# if imported:
-		# 	b = layout.box()
-		# 	b.prop(scn, 'lm_precomposite_frames')
-		# 	b.prop(scn, 'lm_override_frames')
-			
-		# 	b.prop(scn, 'lm_force_render', text='Force Render')
-		# 	b.prop(scn, 'lm_pdf_export_last_rendered', text='Export Last rendered asset to pdf')
-		# 	b.operator('scene.lm_update_json', icon='IMPORT', text='Update all Json Data').mode = 'ALL'
-		# 	b.operator("scene.lm_render_assets", icon='OUTPUT', text='Render all assets').render_list = 'ALL'
-		# 	b.operator("scene.lm_render_assets", icon='OUTPUT', text='Re-Render last rendered assets').render_list = 'LAST_RENDERED'
-			
-		# 	if len(context.scene.lm_render_message):
-		# 		b.label(text=context.scene.lm_render_message)
-		# 	if len(context.scene.lm_render_progress):
-		# 		b.label(text=context.scene.lm_render_progress)
-		# 	b = layout.box()
-		# 	b.prop(scn,'lm_force_composite', text='Force Composite')
-		# 	b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'ALL'
-		# 	b = layout.box()
-		# 	b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
-		# 	b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF').mode = 'ALL'
-		# 	if len(context.scene.lm_pdf_message):
-		# 		b.label(text=context.scene.lm_pdf_message)
-		# 	if len(context.scene.lm_pdf_progress):
-		# 		b.label(text=context.scene.lm_pdf_progress)
 
 
 class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
@@ -144,8 +129,9 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 		b = layout.box()
 		b.prop(wm, "lm_show_help", text='', icon='QUESTION')
 		if wm.lm_show_help:
-			text='Here you need to define the naming convention for your project. It is necessary to organise the output renders into chapters for exemple'
+			text='Here you need to define the naming convention for your project. It is necessary to organise the output renders into chapters for exemple.'
 			_label_multiline(context=context, text=text, parent=b)
+			b.separator()
 			text='1- Start by defining the what keywords is used in your naming convention, like the project, the team,  the gender or biome'
 			_label_multiline(context=context, text=text, parent=b)
 			text='2- Then for each keyword you can assign multiple keyword values to help for better recognition. It is not mandatory but if you know some specific value can be set for some keywords, I would recomend to fill them'
@@ -261,8 +247,6 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 		col.separator()
 
 
-
-
 class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 	bl_label = "4- TextureSet Settings"
 	bl_parent_id = 'LM_PT_lineup_setup'
@@ -280,24 +264,22 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 		b = layout.box()
 		b.prop(wm, "lm_show_help", text='', icon='QUESTION')
 		if wm.lm_show_help:
-			text='''Here you need to define the shader, channel and texture name informations,
-in case data comes from another DCC or if you need to control how textures are linked to the shader.'''
+			text='''Here you need to define the shader, channel and texture name informations, in case data comes from another DCC or if you need to control how textures are linked to the shader.'''
 			_label_multiline(context=context, text=text, parent=b)
-			text='''This is reliable only if the assets stored in the asset folder are not Blend files ( .obj, .fbx etc...).
-Otherwise the render will be done with the materials and texture setup from the blend file dirrectly'''
+			text='''This is reliable only if the assets stored in the asset folder are not Blend files ( .obj, .fbx etc...). Otherwise the render will be done with the materials and texture setup from the blend file dirrectly.'''
 			_label_multiline(context=context, text=text, parent=b)
+			b.separator()
 			text='''1- Start by adding a shader ( MetalRough, or Renderman, or any name that will describe the best the use of it)'''
 			_label_multiline(context=context, text=text, parent=b)
 			text='''2- With the shader selected, you can add many channels ( Albedo, Normal, roughness, or any custom input you need to plug). The name of the input have to match the one on the shader slot'''
 			_label_multiline(context=context, text=text, parent=b)
-			text='''3- With the channel selected, you can add many texture names. For each each texture files, this name will be used to identify the channel of the texture taking the texture naming convention into account.
-It means that you need to specify a "channel" keyword in your Texture naming convention'''
+			text='''3- With the channel selected, you can add many texture names. For each each texture files, this name will be used to identify the channel of the texture taking the texture naming convention into account. It means that you need to specify a "channel" keyword in your Texture naming convention'''
 			_label_multiline(context=context, text=text, parent=b)
 
 		main_row = layout.row()
 		box1 = main_row.box()
 		col = box1.column(align=True)
-		col.label(text='Shader Name')
+		col.label(text='Shaders')
 		row = col.row()
 		
 		rows = len(scn.lm_shaders) if len(scn.lm_shaders) > 2 else 2
@@ -315,7 +297,7 @@ It means that you need to specify a "channel" keyword in your Texture naming con
 
 		box2 = main_row.box()
 		col = box2.column(align=True)
-		col.label(text='Channel Name')
+		col.label(text=f'Channels for "{scn.lm_shaders[scn.lm_shader_idx].name}" Shader')
 		row = col.row()
 		
 		rows = len(scn.lm_shader_channels) if len(scn.lm_shader_channels) > 4 else 4
@@ -333,7 +315,7 @@ It means that you need to specify a "channel" keyword in your Texture naming con
 
 		box3 = main_row.box()
 		col = box3.column(align=True)
-		col.label(text='Texture Name')
+		col.label(text=f'Texture Names  for "{scn.lm_shader_channels[scn.lm_shader_channel_idx].name}" Channel')
 		row = col.row()
 		
 		rows = len(scn.lm_texture_channels) if len(scn.lm_texture_channels) > 4 else 4
@@ -385,11 +367,9 @@ class LM_PT_Cameras(LM_PT_LineupSetup, bpy.types.Panel):
 		b = layout.box()
 		b.prop(wm, "lm_show_help", text='', icon='QUESTION')
 		if wm.lm_show_help:
-			text='''Here you need to define the rules that will determine which camera will be used for the rendering of each asset.
-It is based on the asset naming convention.'''
+			text='''Here you need to define the rules that will determine which camera will be used for the rendering of each asset. It is based on the asset naming convention.'''
 			_label_multiline(context=context, text=text, parent=b)
-			text='''For that you need to associate a camera to one or multiple keywords. The script will look at the camera list, from top to bottom,
- and will select the camera in the first entry that matches all keywords of the current asset.'''
+			text='''For that you need to associate a camera to one or multiple keywords. The script will look at the camera list, from top to bottom,  and will select the camera in the first entry that matches all keywords of the current asset.'''
 			_label_multiline(context=context, text=text, parent=b)
 			text='''It means that the order of the list is important to have a good result : The most specific at the top of the list, and the most generic/broad at the bottom.'''
 			_label_multiline(context=context, text=text, parent=b)
@@ -460,8 +440,7 @@ class LM_PT_Chapter(LM_PT_LineupSetup, bpy.types.Panel):
 		b = layout.box()
 		b.prop(wm, "lm_show_help", text='', icon='QUESTION')
 		if wm.lm_show_help:
-			text='''Here you need to define how the rendered assets will be organised into different chapters in the exported PDF. It is based on the asset naming convention :
-You need to trim it to select all assets you want to have in the same chapter. Each asset sharing the trimed keyword will be grouped together'''
+			text='''Here you need to define how the rendered assets will be organised into different chapters in the exported PDF. It is based on the asset naming convention : You need to trim it to select all assets you want to have in the same chapter. Each asset sharing the trimed keyword will be grouped together'''
 			_label_multiline(context=context, text=text, parent=b)
 
 		col = layout.column(align=True)
@@ -495,33 +474,42 @@ class LM_PT_Preset(bpy.types.Panel):
 		b.operator('scene.lm_save_preset', text='Save Preset', icon='OPTIONS')
 		b.operator('scene.lm_load_preset', text='Load Preset', icon='OPTIONS')
 
-class LM_PT_AssetList(bpy.types.Panel):          
-	bl_label = "Asset List"
+
+class LM_PT_Assets:          
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = 'Lineup Maker'
 	bl_options = {"DEFAULT_CLOSED"}
 
-	
+
+class LM_PT_AssetsPanel(LM_PT_Assets, bpy.types.Panel): 
+	bl_label = "Assets Panel"
+	bl_idname = 'LM_PT_asset_pannel'     
+
 	def draw(self, context):
+		layout = self.layout
 		scn = context.scene
 		wm = context.window_manager
+		b = layout.box()
+		if len(scn.lm_import_message):
+			b.label(text=scn.lm_import_message)
+		if len(scn.lm_import_progress):
+			b.label(text=scn.lm_import_progress)
+		if len(scn.lm_viewlayer_progress):
+			b.label(text=scn.lm_viewlayer_progress)
+		# layout.label(text='This is where you can configure the lineup. You should start here bofore using it')
+
+
+class LM_PT_ImportList(LM_PT_Assets, bpy.types.Panel):          
+	bl_label = "Import List"
+	bl_parent_id = 'LM_PT_asset_pannel'
+
+
+	def draw(self, context):
 		layout = self.layout
-
-		if not wm.lm_is_lineup_scene:
-			layout.label(text=not_a_lineup)
-			return
-
-		col = layout.column(align=True)
-		b = col.box()
-		
-		if len(context.scene.lm_import_message):
-			b.label(text=context.scene.lm_import_message)
-		if len(context.scene.lm_import_progress):
-			b.label(text=context.scene.lm_import_progress)
-		if len(context.scene.lm_viewlayer_progress):
-			b.label(text=context.scene.lm_viewlayer_progress)
-		
+		scn = context.scene
+		wm = context.window_manager
+		b = layout.box()
 		b.label(text='Import List  |  {} asset(s)'.format(len(scn.lm_import_list)))
 		
 		b.prop(scn, 'lm_import_autosave_step')
@@ -549,8 +537,18 @@ class LM_PT_AssetList(bpy.types.Panel):
 		c.separator()
 		c.operator('scene.lm_import_list', text='', icon='SORT_ASC')
 
-		c.separator()
-		c.separator()
+
+class LM_PT_AssetList(LM_PT_Assets, bpy.types.Panel):          
+	bl_label = "Asset List"
+	bl_parent_id = 'LM_PT_asset_pannel'
+
+
+	def draw(self, context):
+		layout = self.layout
+		scn = context.scene
+		wm = context.window_manager
+		b = layout.box()
+
 		b.label(text='Asset List  |  {} asset(s)'.format(len(scn.lm_asset_list)))
 		row = b.row()
 		
@@ -563,7 +561,6 @@ class LM_PT_AssetList(bpy.types.Panel):
 		row.template_list('LM_UL_asset_list', '', scn, 'lm_asset_list', scn, 'lm_asset_list_idx', rows=rows)
 		c = row.column(align=True)
 		c.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').mode='ALL'
-		# c.operator('scene.lm_fix_view_layers', text='', icon='MODIFIER_DATA').asset_name=''
 
 		c.separator()
 		c.operator("scene.lm_clear_asset_list", text="", icon='X')
@@ -571,8 +568,21 @@ class LM_PT_AssetList(bpy.types.Panel):
 		c.separator()
 		c.operator('scene.lm_add_need_render_to_render_queue', text='', icon='SORT_ASC')
 
+		if len(scn.lm_asset_list):
+			draw_render_settings(context, scn, layout, 'ALL', 'Asset List')
 
-		row.separator()
+
+class LM_PT_AssetQueueList(LM_PT_Assets, bpy.types.Panel):          
+	bl_label = "Asset Render Queue List"
+	bl_parent_id = 'LM_PT_asset_pannel'
+
+
+	def draw(self, context):
+		layout = self.layout
+		scn = context.scene
+		wm = context.window_manager
+		b = layout.box()
+
 		row = b.row()
 		row.label(text='Render Queue  |  {} asset(s)'.format(len(scn.lm_render_queue)))
 		row.label(text='{}'.format(scn.lm_queue_message))
@@ -588,44 +598,20 @@ class LM_PT_AssetList(bpy.types.Panel):
 		c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_UP').direction = "UP"
 		c.operator("scene.lm_move_asset_to_render", text="", icon='TRIA_DOWN').direction = "DOWN"
 		c.separator()
-		c.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').mode='QUEUE'
+		c.operator('scene.lm_refresh_asset_status', text='', icon='FILE_REFRESH').mode='QUEUED'
 		c.separator()
-		c.operator("scene.lm_delete_render_queue_asset", text="", icon='TRASH')
+		# c.operator("scene.lm_delete_render_queue_asset", text="", icon='TRASH')
 		c.operator("scene.lm_clear_asset_from_render_queue_list", text="", icon='X')
 		c.operator("scene.lm_remove_already_rendered_asset_from_render_queue", text="", icon='RENDER_RESULT')
 		
 		c.separator()
-		c.operator("scene.lm_create_blend_catalog_file", text="", icon='IMPORT').mode = "QUEUE"
-		c.operator("scene.lm_export_assets", text="", icon='EXPORT').mode = "QUEUE"
+		c.operator("scene.lm_create_blend_catalog_file", text="", icon='IMPORT').mode = "QUEUED"
+		c.operator("scene.lm_export_assets", text="", icon='EXPORT').mode = "QUEUED"
 		c.separator()
 		c.operator('scene.lm_export_queue_list', text='', icon='SORT_DESC')
-		
-		# c.operator("scene.lm_remove_asset_from_render", text="", icon='X')
 
 		if len(scn.lm_render_queue):
-			b = layout.box()
-			b.prop(scn, 'lm_precomposite_frames')
-			b.prop(scn, 'lm_override_frames')
-			b.prop(scn, 'lm_force_render', text='Force')
-			b.prop(scn, 'lm_pdf_export_last_rendered', text='Export Last rendered asset to pdf')
-			b.prop(scn, 'lm_simultaneous_render_count', text='Simultaneous render count')
-			b.operator('scene.lm_update_json', icon='IMPORT', text='Update Queued Json Data').mode = 'QUEUE'
-			b.operator('scene.lm_render_assets', text='Render queued list', icon='OUTPUT').render_list = 'QUEUED'
-			b.operator("scene.lm_render_assets", icon='OUTPUT', text='Re-Render last rendered assets').render_list = 'LAST_RENDERED'
-			if len(context.scene.lm_render_message):
-				b.label(text=context.scene.lm_render_message)
-			if len(context.scene.lm_render_progress):
-				b.label(text=context.scene.lm_render_progress)
-			b = layout.box()
-			b.prop(scn,'lm_force_composite', text='Force Composite')
-			b.operator("scene.lm_compositerenders", icon='NODE_COMPOSITING', text='Composite rendered assets').composite_list = 'QUEUED'
-			b = layout.box()
-			b.prop(scn, 'lm_open_pdf_when_exported', text='Open When Exported')
-			b.operator("scene.lm_export_pdf", icon='WORDWRAP_ON', text='Export PDF').mode = "QUEUE"
-			if len(context.scene.lm_pdf_message):
-				b.label(text=context.scene.lm_pdf_message)
-			if len(context.scene.lm_pdf_progress):
-				b.label(text=context.scene.lm_pdf_progress)
+			draw_render_settings(context, scn, layout, 'QUEUED', 'Queue List')
 
 
 class LM_PT_ExportAsset(bpy.types.Panel):          

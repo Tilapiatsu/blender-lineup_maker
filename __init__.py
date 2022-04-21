@@ -15,16 +15,22 @@
 #   - Create an operator to update/import render and export PDF in a row
 #   - Log and repport
 #       - Pop up message at the end to notify what is happening
-#   - Need to update JSon Exporter to support
-#       - section
-#       - fromFile
-#   - Use Section to create chapters
-#   - Need a feature to support Asset Sets Rendering / Editing
-#   - Need to add lm_asset_per_row in the compositing tab
-#   - Need to add a mode toggle : one asset per page OR all assets in one page ( for real lineup )
+#   - Need to check if Export Asset still Works with BlendCatalog
+#       - Should it use FBX/OBJ/etc or should it send the selected file to Catalog Automaticaly
+#       - Should I add a lm_export_format
 #   - Need to add lm_render_engine to choos which engine to render with
-#   - Need to add Lighting Collection Sets ? Lighting World Sets ?
-#   - Split Asset list into multiple Class --> they will be in subpannels
+#   - Need a feature to support Asset Sets Rendering / Editing
+#   - Need to create a Compositing and PDF editor
+#       - one asset per page 
+#           - image_per_row
+#           - show images count from frame range
+#       - all assets in one page ( for real lineup )
+#           - image_per_row
+#           - max_row_per_page
+#   - Need to add Lighting sets composed of :
+#       - a lighting Collection
+#       - a lighting World
+#       - a lighting Backdrop ?
 
 
 #  DEPENDENCIES :
@@ -193,12 +199,18 @@ classes = (
     LM_UI_SetLineupScene,
     LM_UI_SetCatalogScene
 )
-dynamic_classes = (LM_PT_NamingConvention,
-          LM_PT_TextureSetSettings,
-          LM_PT_Cameras,
-          LM_PT_CompositeLayout,
-          LM_PT_Chapter,
-          LM_PT_AssetList)
+dynamic_classes = (
+        LM_PT_NamingConvention,
+        LM_PT_TextureSetSettings,
+        LM_PT_Cameras,
+        LM_PT_CompositeLayout,
+        LM_PT_Chapter,
+
+        LM_PT_AssetsPanel,
+        LM_PT_ImportList,
+        LM_PT_AssetList,
+        LM_PT_AssetQueueList
+        )
         
 ### Update parameter functions
 def update_texture_channel_name(self, context):
@@ -336,11 +348,13 @@ def update_camera_keyword_name(self, context):
 def update_is_lineup_scene(self, context):
     if self.lm_is_lineup_scene:
         for c in dynamic_classes:
+            # print('register', c)
             bpy.utils.register_class(c)
         self.lm_is_catalog_scene = False
         context.scene.lm_is_lineup_scene = True
     else:
         for c in dynamic_classes:
+            # print('unregister', c)
             bpy.utils.unregister_class(c)
         context.scene.lm_is_lineup_scene = False
     return
@@ -473,7 +487,7 @@ def register():
     bpy.types.Scene.lm_font_color = bpy.props.FloatVectorProperty(name='Font Color', subtype='COLOR', default=(0.85,0.85,0.85), min=0, max=1)
 
     bpy.types.Scene.lm_override_frames = bpy.props.BoolProperty(name='Override rendered frames', default=True)
-    bpy.types.Scene.lm_precomposite_frames = bpy.props.BoolProperty(name='Precomposite frames', default=True)
+    bpy.types.Scene.lm_composite_frames = bpy.props.BoolProperty(name='Composite frames', default=True)
     bpy.types.Scene.lm_open_pdf_when_exported = bpy.props.BoolProperty(name="Open PDF File When Exported", default=True)
 
     bpy.types.Scene.lm_exported_asset_name = bpy.props.StringProperty(name="Export Name")
@@ -578,7 +592,7 @@ def unregister():
     del bpy.types.Scene.lm_import_message
     del bpy.types.Scene.lm_exported_asset_name
     del bpy.types.Scene.lm_open_pdf_when_exported
-    del bpy.types.Scene.lm_precomposite_frames
+    del bpy.types.Scene.lm_composite_frames
     del bpy.types.Scene.lm_override_frames
     del bpy.types.Scene.lm_override_material_specular
     del bpy.types.Scene.lm_default_material_specular 

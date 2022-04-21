@@ -88,7 +88,7 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 	bl_label = "Lineup Maker: Create Blend Catalog File"
 	bl_options = {'REGISTER'}
 
-	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", ""), ("IMPORT", "Import", ""), ("IMPORT_NEW", "Import New", "")])
+	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUED", "Queued", ""), ("ALL", "All", ""), ("IMPORT", "Import", ""), ("IMPORT_NEW", "Import New", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 
 	folder_src = ''
@@ -166,7 +166,7 @@ class LM_OP_CreateBlendCatalogFile(bpy.types.Operator):
 		elif self.mode == "ALL":
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
 		
-		elif self.mode == "QUEUE":
+		elif self.mode == "QUEUED":
 			queue_asset_name = [a.name for a in context.scene.lm_render_queue if a.checked]
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in queue_asset_name]
 		
@@ -373,7 +373,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 	bl_label = "Lineup Maker: Import all assets from source folder"
 	bl_options = {'REGISTER'}
 
-	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", ""), ("IMPORT", "Import", ""), ("IMPORT_NEW", "Import New", "")])
+	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUED", "Queued", ""), ("ALL", "All", ""), ("IMPORT", "Import", ""), ("IMPORT_NEW", "Import New", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 	asset_path : bpy.props.StringProperty(name="Asset Path", default='', description='Asset path.')
 	save_after_import : bpy.props.BoolProperty(name = "Save file after import", default = False)
@@ -439,7 +439,7 @@ class LM_OP_ImportAssets(bpy.types.Operator):
 		elif self.mode == "ALL":
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f))]
 		
-		elif self.mode == "QUEUE":
+		elif self.mode == "QUEUED":
 			queue_asset_name = [a.name for a in context.scene.lm_render_queue if a.checked]
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in queue_asset_name]
 		
@@ -611,7 +611,7 @@ class LM_OP_UpdateJson(bpy.types.Operator):
 	bl_label = "Lineup Maker: update json data in the current scene"
 	bl_options = {'REGISTER', 'UNDO'}
 
-	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUE", "Queue", ""), ("ALL", "All", "")])
+	mode : bpy.props.EnumProperty(items=[("ASSET", "Asset", ""), ("QUEUED", "Queued", ""), ("ALL", "All", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset update Json data')
 
 	@classmethod
@@ -643,7 +643,7 @@ class LM_OP_UpdateJson(bpy.types.Operator):
 		elif self.mode == "ALL":
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and f in context.scene.lm_asset_list]
 		
-		elif self.mode == "QUEUE":
+		elif self.mode == "QUEUED":
 			queue_asset_name = [a.name for a in context.scene.lm_render_queue if a.checked]
 			self.import_list = [path.join(self.folder_src, f,) for f in os.listdir(self.folder_src) if path.isdir(os.path.join(self.folder_src, f)) and path.basename(os.path.join(self.folder_src, f)) in queue_asset_name]
 
@@ -879,7 +879,7 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 			elif not self.rendering and self.need_render_asset[0].need_render is False and self.need_render_asset[0].rendered is True:
 				asset = self.need_render_asset[0]
-				if context.scene.lm_precomposite_frames:
+				if context.scene.lm_composite_frames:
 					self.unregister_render_handler()
 					
 					composite = C.LM_Composite_Image(context)
@@ -1136,7 +1136,7 @@ class LM_OP_CompositeRenders(bpy.types.Operator):
 
 			elif self.compositing is False: 
 				asset = self.need_composite_assets[0]
-				if context.scene.lm_precomposite_frames:
+				if context.scene.lm_composite_frames:
 					self.unregister_render_handler()
 					
 					composite = C.LM_Composite_Image(context)
@@ -1203,7 +1203,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 	bl_label = "Lineup Maker: Export PDF in the Render Path"
 	bl_options = {'REGISTER', 'UNDO'}
 
-	mode : bpy.props.EnumProperty(items=[("ALL", "All", ""), ("QUEUE", "Queue", ""), ("LAST_RENDERED", "Last Rendered", "")])
+	mode : bpy.props.EnumProperty(items=[("ALL", "All", ""), ("QUEUED", "Queued", ""), ("LAST_RENDERED", "Last Rendered", "")])
 
 	chapter = ''
 	section = ''
@@ -1233,7 +1233,7 @@ class LM_OP_ExportPDF(bpy.types.Operator):
 
 		if self.mode == 'ALL':
 			self.asset_name_list = [a.name for a in context.scene.lm_asset_list if a.composited]
-		elif self.mode == 'QUEUE':
+		elif self.mode == 'QUEUED':
 			self.asset_name_list = [a.name for a in context.scene.lm_render_queue if a.checked and a.composited]
 		elif self.mode == 'LAST_RENDERED':
 			self.asset_name_list = [a.name for a in context.scene.lm_last_render_list]
@@ -1376,7 +1376,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
-	mode : bpy.props.EnumProperty(items=[("ALL", "All", ""), ("QUEUE", "Queue", ""), ("ASSET", "Asset", "")])
+	mode : bpy.props.EnumProperty(items=[("ALL", "All", ""), ("QUEUED", "Queued", ""), ("ASSET", "Asset", "")])
 
 	def execute(self, context):
 		log = L.Logger(context='EXPORT_ASSETS')
@@ -1408,7 +1408,7 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 		if self.mode == 'ALL':
 			need_update_list = [a for a in context.scene.lm_asset_list] + [ a for a in context.scene.lm_render_queue]
 
-		elif self.mode == 'QUEUE':
+		elif self.mode == 'QUEUED':
 			need_update_list = [a for a in context.scene.lm_render_queue if a.checked]
 			need_update_list_name = [a.name for a in need_update_list]
 			need_update_list += [a for a in context.scene.lm_asset_list if a.name in need_update_list_name]
@@ -1507,7 +1507,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 
 	export_path = ''
-	mode : bpy.props.EnumProperty(items=[("SELECTED", "Selected", ""), ("ASSET", "Asset", ""), ("QUEUE", "Queue", "")])
+	mode : bpy.props.EnumProperty(items=[("SELECTED", "Selected", ""), ("ASSET", "Asset", ""), ("QUEUED", "Queued", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 	cancelling = False
 	stopped = False
@@ -1554,7 +1554,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 
 			self.export_asset(context)
 
-		elif self.mode == "QUEUE":
+		elif self.mode == "QUEUED":
 			if not len(context.scene.lm_render_queue):
 				log.warning('Render Queue is empty, add asset to the queue first.')
 				return {'FINISHED'}
@@ -1566,7 +1566,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 
 			return {"RUNNING_MODAL"}
 		
-		if self.mode not in ["QUEUE"]:
+		if self.mode not in ["QUEUED"]:
 			bpy.ops.scene.lm_openfolder(folder_path=self.export_path)
 
 		return {'FINISHED'}
