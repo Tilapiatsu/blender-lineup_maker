@@ -50,7 +50,11 @@ class LM_UI_AddShaderChannel(bpy.types.Operator):
 		col.prop(self, 'name')
 		col.prop(self, 'linear')
 		col.prop(self, 'normal_map')
-		col.prop(self, 'inverted')
+		if self.normal_map:
+			text='Invert Green'
+		else:
+			text='Invert'
+		col.prop(self, 'inverted', text=text)
 
 
 class LM_UI_MoveChannel(bpy.types.Operator):
@@ -104,7 +108,11 @@ class LM_UI_RenameChannel(bpy.types.Operator):
 		column.prop(self, "new_channel_name")
 		column.prop(self, "new_linear_channel")
 		column.prop(self, "new_normal_map_channel")
-		column.prop(self, "new_inverted_channel")
+		if self.new_normal_map_channel:
+			text='Invert Green'
+		else:
+			text='Invert'
+		column.prop(self, "new_inverted_channel", text=text)
 
 	def invoke(self, context, event):
 		if self.index == -1:

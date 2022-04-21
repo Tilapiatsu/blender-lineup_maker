@@ -23,6 +23,7 @@
 #   - Need to add lm_asset_per_row in the compositing tab
 #   - Need to add a mode toggle : one asset per page OR all assets in one page ( for real lineup )
 #   - Need to add lm_render_engine to choos which engine to render with
+#   - Need to add Lighting Collection Sets ? Lighting World Sets ?
 #   - Split Asset list into multiple Class --> they will be in subpannels
 
 
