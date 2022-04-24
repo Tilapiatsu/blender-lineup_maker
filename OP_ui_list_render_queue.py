@@ -44,6 +44,10 @@ class LM_UI_AddNeedRenderToRenderQueue(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 	bl_description = "Add all need render asset to render_queue"
 
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_asset_list
+
 	def execute(self, context):
 		scn = context.scene
 		for a in scn.lm_asset_list:
@@ -61,6 +65,10 @@ class LM_UI_MoveAssetToRender(bpy.types.Operator):
 
 	direction: bpy.props.EnumProperty(items=[("UP", "Up", ""), ("DOWN", "Down", "")])
 
+	@classmethod
+	def poll(cls, context):
+		return context.scene.lm_render_queue
+		
 	def execute(self, context):
 		idx, assets, _ = get_assets(context)
 

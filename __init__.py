@@ -5,7 +5,7 @@
 #   - Need to check if Export Asset still Works with BlendCatalog
 #       - Should it use FBX/OBJ/etc or should it send the selected file to Catalog Automaticaly
 #       - Should I add a lm_export_format
-#   - Need to add lm_render_engine to choos which engine to render with
+#   - Need to add lm_render_engine to choose which engine to render with
 #   - Need a feature to support Asset Sets Rendering / Editing
 #       - add many asset in a set that will be rendered together in the same image
 #       - asset sets should be able to be send to render queue
@@ -23,7 +23,6 @@
 #           - max_row_per_page
 #           - Lighting Set to use
 #           - Camera Override
-
 
 
 #  DEPENDENCIES :

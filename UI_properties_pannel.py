@@ -167,84 +167,84 @@ class LM_PT_NamingConvention(LM_PT_LineupSetup, bpy.types.Panel):
 		col.separator()
 		col.operator("scene.lm_clear_keywords", text="", icon='TRASH')
 
-		# Keyword Value
-		keyword_value_box = main_row.box()
-		keyword_value_box.label(text=f'"{scn.lm_keywords[scn.lm_keyword_idx].name}" keyword values')
-		sub_row = keyword_value_box.row()
-		col = sub_row.column(align=True)
-		
-		rows = len(scn.lm_keyword_values) if len(scn.lm_keyword_values) > 4 else 4
-		col.template_list('LM_UL_keyword_values', '', scn, 'lm_keyword_values', scn, 'lm_keyword_value_idx', rows=rows)
+		if len(scn.lm_keywords):
+			# Keyword Value
+			keyword_value_box = main_row.box()
+			keyword_value_box.label(text=f'"{scn.lm_keywords[scn.lm_keyword_idx].name}" keyword values')
+			sub_row = keyword_value_box.row()
+			col = sub_row.column(align=True)
+			
+			rows = len(scn.lm_keyword_values) if len(scn.lm_keyword_values) > 4 else 4
+			col.template_list('LM_UL_keyword_values', '', scn, 'lm_keyword_values', scn, 'lm_keyword_value_idx', rows=rows)
 
-		col = sub_row.column(align=True)
-		col.operator('scene.lm_add_keyword_value', text="", icon='ADD')
+			col = sub_row.column(align=True)
+			col.operator('scene.lm_add_keyword_value', text="", icon='ADD')
 
-		col.separator()
-		col.operator("scene.lm_move_keyword_value", text="", icon='TRIA_UP').direction = "UP"
-		col.operator("scene.lm_move_keyword_value", text="", icon='TRIA_DOWN').direction = "DOWN"
+			col.separator()
+			col.operator("scene.lm_move_keyword_value", text="", icon='TRIA_UP').direction = "UP"
+			col.operator("scene.lm_move_keyword_value", text="", icon='TRIA_DOWN').direction = "DOWN"
 
-		col.separator()
-		col.operator("scene.lm_clear_keyword_values", text="", icon='TRASH')
+			col.separator()
+			col.operator("scene.lm_clear_keyword_values", text="", icon='TRASH')
 
-		# NAMING CONVENTION SETUP
-		col = layout.column(align=True)
-		col.separator()
-		col.prop(scn, 'lm_separator', text = 'Separator')
-		col.separator()
-		b = col.box()
-		b.label(text='Asset Naming Convention')
-		br = b.box()
-		bbr = br.split(align=True)
-		
-		op = bbr.operator("scene.lm_add_asset_keyword", text='Regular', icon='ADD')
-		op.optionnal = False
-		op.excluded = False
-		op = bbr.operator("scene.lm_add_asset_keyword", text='Optionnal(?)', icon='ADD')
-		op.optionnal = True
-		op.excluded = False
-		op = bbr.operator("scene.lm_add_asset_keyword", text='Excluded(!)', icon='ADD')
-		op.optionnal = False
-		op.excluded = True
-		bbr.operator("scene.lm_remove_asset_keyword", text='Remove Last', icon='REMOVE')
-		
-		b.prop(scn, 'lm_asset_naming_convention', text='')
-		col.separator()
+			# NAMING CONVENTION SETUP
+			col = layout.column(align=True)
+			col.separator()
+			col.prop(scn, 'lm_separator', text = 'Separator')
+			col.separator()
+			b = col.box()
+			b.label(text='Asset Naming Convention')
+			br = b.box()
+			bbr = br.split(align=True)
+			
+			op = bbr.operator("scene.lm_add_asset_keyword", text='Regular', icon='ADD')
+			op.optionnal = False
+			op.excluded = False
+			op = bbr.operator("scene.lm_add_asset_keyword", text='Optionnal(?)', icon='ADD')
+			op.optionnal = True
+			op.excluded = False
+			op = bbr.operator("scene.lm_add_asset_keyword", text='Excluded(!)', icon='ADD')
+			op.optionnal = False
+			op.excluded = True
+			bbr.operator("scene.lm_remove_asset_keyword", text='Remove Last', icon='REMOVE')
+			
+			b.prop(scn, 'lm_asset_naming_convention', text='')
+			col.separator()
 
-		b = col.box()
-		b.label(text='Mesh Naming Convention')
-		br = b.box()
-		bbr = br.split(align=True)
-		op = bbr.operator("scene.lm_add_mesh_keyword", text='Regular', icon='ADD')
-		op.optionnal = False
-		op.excluded = False
-		op = bbr.operator("scene.lm_add_mesh_keyword", text='Optionnal(?)', icon='ADD')
-		op.optionnal = True
-		op.excluded = False
-		op = bbr.operator("scene.lm_add_mesh_keyword", text='Excluded(!)', icon='ADD')
-		op.optionnal = False
-		op.excluded = True
-		bbr.operator("scene.lm_remove_mesh_keyword", text='Remove Last', icon='REMOVE')
+			b = col.box()
+			b.label(text='Mesh Naming Convention')
+			br = b.box()
+			bbr = br.split(align=True)
+			op = bbr.operator("scene.lm_add_mesh_keyword", text='Regular', icon='ADD')
+			op.optionnal = False
+			op.excluded = False
+			op = bbr.operator("scene.lm_add_mesh_keyword", text='Optionnal(?)', icon='ADD')
+			op.optionnal = True
+			op.excluded = False
+			op = bbr.operator("scene.lm_add_mesh_keyword", text='Excluded(!)', icon='ADD')
+			op.optionnal = False
+			op.excluded = True
+			bbr.operator("scene.lm_remove_mesh_keyword", text='Remove Last', icon='REMOVE')
 
-		b.prop(scn, 'lm_mesh_naming_convention', text='')
-		col.separator()
+			b.prop(scn, 'lm_mesh_naming_convention', text='')
+			col.separator()
 
-		b = col.box()
-		b.label(text='Texture Naming Convention')
-		br = b.box()
-		bbr = br.split(align=True)
-		op = bbr.operator("scene.lm_add_texture_keyword", text='Regular', icon='ADD')
-		op.optionnal = False
-		op.excluded = False
-		op = bbr.operator("scene.lm_add_texture_keyword", text='Optionnal(?)', icon='ADD')
-		op.optionnal = True
-		op.excluded = False
-		op = bbr.operator("scene.lm_add_texture_keyword", text='Excluded(!)', icon='ADD')
-		op.optionnal = False
-		op.excluded = True
-		bbr.operator("scene.lm_remove_texture_keyword", text='Remove Last', icon='REMOVE')
+			b = col.box()
+			b.label(text='Texture Naming Convention')
+			br = b.box()
+			bbr = br.split(align=True)
+			op = bbr.operator("scene.lm_add_texture_keyword", text='Regular', icon='ADD')
+			op.optionnal = False
+			op.excluded = False
+			op = bbr.operator("scene.lm_add_texture_keyword", text='Optionnal(?)', icon='ADD')
+			op.optionnal = True
+			op.excluded = False
+			op = bbr.operator("scene.lm_add_texture_keyword", text='Excluded(!)', icon='ADD')
+			op.optionnal = False
+			op.excluded = True
+			bbr.operator("scene.lm_remove_texture_keyword", text='Remove Last', icon='REMOVE')
 
-		b.prop(scn, 'lm_texture_naming_convention', text='')
-		col.separator()
+			b.prop(scn, 'lm_texture_naming_convention', text='')
 
 
 class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
@@ -295,41 +295,42 @@ class LM_PT_TextureSetSettings(LM_PT_LineupSetup, bpy.types.Panel):
 		c.separator()
 		c.operator("scene.lm_clear_shaders", text="", icon='TRASH')
 
-		box2 = main_row.box()
-		col = box2.column(align=True)
-		col.label(text=f'Channels for "{scn.lm_shaders[scn.lm_shader_idx].name}" Shader')
-		row = col.row()
-		
-		rows = len(scn.lm_shader_channels) if len(scn.lm_shader_channels) > 4 else 4
-		row.template_list('LM_UL_shaderChannels', '', scn, 'lm_shader_channels', scn, 'lm_shader_channel_idx', rows=rows)
-		c = row.column(align=True)
-		c.operator('scene.lm_add_shader_channel', text="", icon='ADD')
+		if len(scn.lm_shaders):
+			box2 = main_row.box()
+			col = box2.column(align=True)
+			col.label(text=f'Channels for "{scn.lm_shaders[scn.lm_shader_idx].name}" Shader')
+			row = col.row()
 
-		c.separator()
-		c.operator("scene.lm_move_channel", text="", icon='TRIA_UP').direction = "UP"
-		c.operator("scene.lm_move_channel", text="", icon='TRIA_DOWN').direction = "DOWN"
+			rows = len(scn.lm_shader_channels) if len(scn.lm_shader_channels) > 4 else 4
+			row.template_list('LM_UL_shaderChannels', '', scn, 'lm_shader_channels', scn, 'lm_shader_channel_idx', rows=rows)
+			c = row.column(align=True)
+			c.operator('scene.lm_add_shader_channel', text="", icon='ADD')
 
-		c.separator()
-		c.operator("scene.lm_clear_channels", text="", icon='TRASH')
+			c.separator()
+			c.operator("scene.lm_move_channel", text="", icon='TRIA_UP').direction = "UP"
+			c.operator("scene.lm_move_channel", text="", icon='TRIA_DOWN').direction = "DOWN"
 
+			c.separator()
+			c.operator("scene.lm_clear_channels", text="", icon='TRASH')
 
-		box3 = main_row.box()
-		col = box3.column(align=True)
-		col.label(text=f'Texture Names  for "{scn.lm_shader_channels[scn.lm_shader_channel_idx].name}" Channel')
-		row = col.row()
-		
-		rows = len(scn.lm_texture_channels) if len(scn.lm_texture_channels) > 4 else 4
-		row.template_list('LM_UL_texturesets', '', scn, 'lm_texture_channels', scn, 'lm_texture_channel_idx', rows=rows)
-		c = row.column(align=True)
+			if len(scn.lm_shader_channels):
+				box3 = main_row.box()
+				col = box3.column(align=True)
+				col.label(text=f'Texture Names  for "{scn.lm_shader_channels[scn.lm_shader_channel_idx].name}" Channel')
+				row = col.row()
 
-		c.operator('scene.lm_add_texture_channel', text="", icon='ADD')
+				rows = len(scn.lm_texture_channels) if len(scn.lm_texture_channels) > 4 else 4
+				row.template_list('LM_UL_texturesets', '', scn, 'lm_texture_channels', scn, 'lm_texture_channel_idx', rows=rows)
+				c = row.column(align=True)
 
-		c.separator()
-		c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_UP').direction = "UP"
-		c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_DOWN').direction = "DOWN"
+				c.operator('scene.lm_add_texture_channel', text="", icon='ADD')
 
-		c.separator()
-		c.operator("scene.lm_clear_texture_channels", text="", icon='TRASH')
+				c.separator()
+				c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_UP').direction = "UP"
+				c.operator("scene.lm_move_texture_channel", text="", icon='TRIA_DOWN').direction = "DOWN"
+
+				c.separator()
+				c.operator("scene.lm_clear_texture_channels", text="", icon='TRASH')
 
 		b = layout.box()
 		b.label(text='Material Override')
@@ -471,8 +472,9 @@ class LM_PT_Preset(bpy.types.Panel):
 		col = layout.column(align=True)
 		b = col.box()
 		
-		b.operator('scene.lm_save_preset', text='Save Preset', icon='OPTIONS')
-		b.operator('scene.lm_load_preset', text='Load Preset', icon='OPTIONS')
+		b.operator('scene.lm_save_preset', text='Save Render Preset', icon='OPTIONS').mode = 'RENDER'
+		b.operator('scene.lm_save_preset', text='Save Preset', icon='OPTIONS').mode = 'LINEUP'
+		b.operator('scene.lm_load_preset', text='Load Preset', icon='OPTIONS').mode = 'LINEUP'
 
 
 class LM_PT_Assets:          
@@ -490,13 +492,11 @@ class LM_PT_AssetsPanel(LM_PT_Assets, bpy.types.Panel):
 		layout = self.layout
 		scn = context.scene
 		wm = context.window_manager
-		b = layout.box()
-		if len(scn.lm_import_message):
+		
+		if len(scn.lm_import_message) or len(scn.lm_import_progress):
+			b = layout.box()
 			b.label(text=scn.lm_import_message)
-		if len(scn.lm_import_progress):
 			b.label(text=scn.lm_import_progress)
-		if len(scn.lm_viewlayer_progress):
-			b.label(text=scn.lm_viewlayer_progress)
 		# layout.label(text='This is where you can configure the lineup. You should start here bofore using it')
 
 
