@@ -4,7 +4,6 @@
 #       - Pop up message at the end to notify what is happening
 #   - Need to check if Export Asset still Works with BlendCatalog
 #       - Should it use FBX/OBJ/etc or should it send the selected file to Catalog Automaticaly
-#       - Should I add a lm_export_format
 #   - Need a feature to support Asset Sets Rendering / Editing
 #       - add many asset in a set that will be rendered together in the same image
 #       - asset sets should be able to be send to render queue
