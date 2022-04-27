@@ -640,6 +640,7 @@ class LM_PT_ExportAsset(bpy.types.Panel):
 		b.prop(scn, 'lm_exported_hd_status', text='HD Status')
 		b.prop(scn, 'lm_exported_ld_status', text='LD Status')
 		b.prop(scn, 'lm_exported_baking_status', text='Baking Status')
+		b.prop(scn, 'lm_export_format', text='Export Format')
 		if path.exists(asset_path):
 			export = b.operator('scene.lm_export_assets', text='Export Selected Asset', icon='EXPORT')
 			export.mode = 'SELECTED'

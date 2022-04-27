@@ -5,7 +5,6 @@
 #   - Need to check if Export Asset still Works with BlendCatalog
 #       - Should it use FBX/OBJ/etc or should it send the selected file to Catalog Automaticaly
 #       - Should I add a lm_export_format
-#   - Need to add lm_render_engine to choose which engine to render with
 #   - Need a feature to support Asset Sets Rendering / Editing
 #       - add many asset in a set that will be rendered together in the same image
 #       - asset sets should be able to be send to render queue
@@ -483,6 +482,7 @@ def register():
     bpy.types.Scene.lm_open_pdf_when_exported = bpy.props.BoolProperty(name="Open PDF File When Exported", default=True)
 
     bpy.types.Scene.lm_exported_asset_name = bpy.props.StringProperty(name="Export Name")
+    bpy.types.Scene.lm_export_format = bpy.props.EnumProperty(items=V.LM_COMPATIBLE_EXPORT_FILE_FORMAT)
 
     bpy.types.Scene.lm_import_message = bpy.props.StringProperty(name="Import Message")
     bpy.types.Scene.lm_import_progress = bpy.props.StringProperty(name="Import Progress")
@@ -582,6 +582,7 @@ def unregister():
     del bpy.types.Scene.lm_viewlayer_progress
     del bpy.types.Scene.lm_import_progress
     del bpy.types.Scene.lm_import_message
+    del bpy.types.Scene.lm_export_format
     del bpy.types.Scene.lm_exported_asset_name
     del bpy.types.Scene.lm_open_pdf_when_exported
     del bpy.types.Scene.lm_composite_frames

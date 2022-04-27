@@ -10,10 +10,14 @@ LM_DEPENDENCIES_PATH = os.path.join(LM_CURRENT_DIR, LM_DEPENDENCIES_FOLDER_NAME)
 LM_ASSET_COLLECTION = "Assets_Collection"
 LM_PREVIEW_COLLECTION = "Preview_Collection"
 
-LM_COMPATIBLE_MESH_FORMAT = {".fbx":(bpy.ops.import_scene.fbx, {'filter_glob':'*.fbx;', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.import_scene.fbx"),
-								".obj":(bpy.ops.import_scene.obj, {'filter_glob':'*.obj;*.mtl', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.import_scene.obj"),
-								".blend":(bpy.ops.import_scene.lm_append_blend_file, {}, "bpy.ops.import_scene.lm_append_blend_file")}
-LM_COMPATIBLE_EXPORT_FORMAT = ['MESH']
+LM_COMPATIBLE_MESH_FORMAT = {
+							".blend":(bpy.ops.import_scene.lm_append_blend_file, {}, "bpy.ops.import_scene.lm_append_blend_file"),
+							".fbx":(bpy.ops.import_scene.fbx, {'filter_glob':'*.fbx;', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.import_scene.fbx"),
+							".obj":(bpy.ops.import_scene.obj, {'filter_glob':'*.obj;*.mtl', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.import_scene.obj")
+							}
+
+
+LM_COMPATIBLE_EXPORT_MESH_FORMAT = ['MESH']
 LM_COMPATIBLE_TEXTURE_FORMAT = {".png":(),
 								".tga":(),
 								".psd":()}
@@ -75,3 +79,8 @@ LM_DEFAULT_CHANNELS = {	'Base Color': {'linear':False, 'normal_map':False, 'inve
 						'Roughness': {'linear':True, 'normal_map':False, 'inverted':False},
 						'Metallic': {'linear':True, 'normal_map':False, 'inverted':False},
 						'Opacity': {'linear':False, 'normal_map':False, 'inverted':False}}
+
+def get_compatible_export_file_formats():
+	return [(f.split('.')[1].upper(), f.split('.')[1],'' , f.split('.')[1].upper(), i) for i,f in enumerate(LM_COMPATIBLE_MESH_FORMAT.keys())]
+
+LM_COMPATIBLE_EXPORT_FILE_FORMAT = get_compatible_export_file_formats()
