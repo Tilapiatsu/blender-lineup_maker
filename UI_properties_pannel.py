@@ -472,9 +472,8 @@ class LM_PT_Preset(bpy.types.Panel):
 		col = layout.column(align=True)
 		b = col.box()
 		
-		b.operator('scene.lm_save_preset', text='Save Render Preset', icon='OPTIONS').mode = 'RENDER'
-		b.operator('scene.lm_save_preset', text='Save Preset', icon='OPTIONS').mode = 'LINEUP'
-		b.operator('scene.lm_load_preset', text='Load Preset', icon='OPTIONS').mode = 'LINEUP'
+		b.operator('scene.lm_save_preset', text='Save Preset', icon='OPTIONS')
+		b.operator('scene.lm_load_preset', text='Load Preset', icon='OPTIONS')
 
 
 class LM_PT_Assets:          

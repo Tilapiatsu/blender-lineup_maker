@@ -1,6 +1,6 @@
 from struct import pack_into
 import bpy
-import os, time, math, subprocess, json, tempfile, re, importlib
+import os, time, math, subprocess, json, tempfile, re, importlib, shutil
 from datetime import date
 from os import path
 from . import variables as V
@@ -664,9 +664,11 @@ class LM_OP_InitRenderParameters(bpy.types.Operator):
 	bl_options = {'REGISTER', 'UNDO'}
 	
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to render')
-	view_layer : bpy.props.StringProperty(name="View Layer", default='', description='Name of the View Layer to render')
-	lineup_blend_path : bpy.props.StringProperty(name="Lineup Blend File", default='', description='Path to lineup blend file')
+	lighting_collection : bpy.props.StringProperty(name="Lighting Collection", default='', description='Name of the Lighting Collection')
+	asset_catalog_path : bpy.props.StringProperty(name="Asset Catalog Path", default='', description='Path to Asset Blend file')
+	camera_collection : bpy.props.StringProperty(name="Camera Collection", default='', description='Name of the camera Collection')
 	render_camera : bpy.props.StringProperty(name="Render Camera", default='', description='Name of the camera to render with')
+	lighting_world : bpy.props.StringProperty(name="Lighting World", default='', description='Name of the world to render with')
 	render_path : bpy.props.StringProperty(name="Render Path", default='', description='Path to save renders')
 	frame_start : bpy.props.IntProperty(name="Frame Start", default=1, description='First frame range to render')
 	frame_end : bpy.props.IntProperty(name="Frame End", default=1, description='Last frame range to render')
@@ -675,7 +677,30 @@ class LM_OP_InitRenderParameters(bpy.types.Operator):
 	autofit_frame_overscan : bpy.props.IntProperty(name="Autofit Frame overscan", default=1, description='Autofit Frame overscan')
 
 	def execute(self, context):
+		# Duplicate Scene to Match Render Parameter without all objects
+		bpy.ops.scene.new(type='EMPTY')
+
+		# Link the asset in the scene
+		file_path = self.asset_catalog_path
+		datablock_dir = "Collection"
+		data_name = self.asset_name
+
+		H.link_blend_file(file_path = file_path, datablock_dir = datablock_dir, data_name = data_name)
+
+		# Link Lighting Collection
+		lighting_collection = bpy.data.collections[self.lighting_collection]
+		context.collection.children.link(lighting_collection)
+
+		# Link Camera Collection
+		camera_collection = bpy.data.collections[self.camera_collection]
+		context.collection.children.link(camera_collection)
+
+		# Set Rendering Camera
 		context.scene.camera = bpy.data.objects[self.render_camera]
+
+		# Set World
+		context.scene.world = bpy.data.worlds[self.lighting_world]
+
 		context.scene.use_nodes = True
 		context.scene.render.film_transparent = True
 		context.scene.frame_start = self.frame_start
@@ -765,7 +790,6 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 		for file in os.listdir(self.render_path):
 			render = self.need_render_asset[0].render_list.add()
 			render.render_filepath = os.path.join(self.render_path, file)
-
 
 	def end(self):
 		self.rendered_assets = []
@@ -905,7 +929,9 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 		return {"PASS_THROUGH"}
 
+	
 	def render(self, context):
+		'''Decrepited'''
 		scn = bpy.context.scene 	
 
 		asset = self.need_render_asset[0]
@@ -921,9 +947,42 @@ class LM_OP_RenderAssets(bpy.types.Operator):
 
 	def render_asset_blendfile(self, context, curr_asset):
 		self.rendering = True
+		tmpdir = tempfile.mkdtemp()
+		render_temp_file = path.join(tmpdir, 'LineupRender_Temp.blend').replace('\\', '\\\\')
+		bpy.ops.wm.save_as_mainfile('EXEC_DEFAULT',filepath=render_temp_file, copy=True)
 
+		# Create Render Scene
 		command = f'''import bpy
-bpy.ops.scene.lm_init_render_parameters("EXEC_DEFAULT", asset_name = "{curr_asset.name}", render_camera="{curr_asset.render_camera}", lineup_blend_path="{bpy.data.filepath}", view_layer="View Layer", render_path="{curr_asset.render_path}", frame_start={context.scene.frame_start}, frame_end={context.scene.frame_end}, autofit_camera_to_asset={context.scene.lm_autofit_camera_to_asset}, autofit_camera_if_no_userdefined_found={context.scene.lm_autofit_camera_if_no_userdefined_found}, autofit_frame_overscan={context.scene.lm_autofit_frame_overscan})
+
+bpy.ops.scene.lm_init_render_parameters("EXEC_DEFAULT",
+										asset_name = "{curr_asset.name}",
+										camera_collection="{context.scene.lm_camera_collection.name}",
+										render_camera="{curr_asset.render_camera}",
+										asset_catalog_path="{curr_asset.catalog_path}",
+										lighting_collection="{context.scene.lm_lighting_collection.name}",
+										lighting_world="{context.scene.lm_lighting_world.name}",
+										render_path="{curr_asset.render_path}",
+										frame_start={context.scene.frame_start},
+										frame_end={context.scene.frame_end},
+										autofit_camera_to_asset={context.scene.lm_autofit_camera_to_asset},
+										autofit_camera_if_no_userdefined_found={context.scene.lm_autofit_camera_if_no_userdefined_found},
+										autofit_frame_overscan={context.scene.lm_autofit_frame_overscan}
+										)
+bpy.ops.object.make_override_library()
+bpy.ops.wm.save_as_mainfile('EXEC_DEFAULT',filepath='{render_temp_file}')
+'''
+		subprocess.check_call([bpy.app.binary_path,
+		'--background',
+		render_temp_file,
+		'--debug-handlers',
+		'--factory-startup',
+		'--addons', 'lineup_maker',
+		'--python-expr', command,
+
+		])
+		
+		# Render Asset
+		command = f'''import bpy
 current_focal_length = bpy.data.objects["{curr_asset.render_camera}"].data.lens
 def frame_camera_to_asset_bounding_box(d1=None, d2=None):
 	if "{curr_asset.name}" in bpy.data.collections:
@@ -942,11 +1001,11 @@ def revert_camera_settings(d1=None, d2=None):
 if {H.autofit_camera(context, curr_asset)}:
 	bpy.app.handlers.frame_change_pre.append(frame_camera_to_asset_bounding_box)
 	bpy.app.handlers.render_write.append(revert_camera_settings)
-
 '''
+
 		subprocess.check_call([bpy.app.binary_path,
 		'--background',
-		curr_asset.catalog_path,
+		render_temp_file,
 		'--debug-handlers',
 		'--factory-startup',
 		'--addons', 'lineup_maker',
@@ -956,13 +1015,17 @@ if {H.autofit_camera(context, curr_asset)}:
 		'--frame-start', f'{context.scene.frame_start}',
 		'--frame-end', f'{context.scene.frame_end}',
 		'--render-output', path.join(curr_asset.render_path, curr_asset.name + '_' + context.scene.camera.name + '_' + '####'),
-		'--render-anim'
+		'--render-anim',
 		])
+
+		# Remove Temmp Render File
+		shutil.rmtree(tmpdir)
 
 	def print_render_log(self):
 		self.report({'INFO'}, "Lineup Maker : {} assets rendered".format(len(self.rendered_assets)))
 		for a in self.rendered_assets:
 			self.report({'INFO'}, "Lineup Maker : {} rendered".format(a.name))
+
 
 	def clear_composite_tree(self, context):
 		tree = context.scene.node_tree

@@ -553,9 +553,9 @@ def kwarg_to_string(kwarg):
 
 
 def link_blend_file(file_path, datablock_dir, data_name):
-	filepath = file_path + datablock_dir + data_name
-	directory = file_path + datablock_dir
-	bpy.ops.wm.link('EXEC_DEFAULT', filepath = filepath, directory = directory, filename = data_name, link = True)
+	filepath = os.path.join(file_path, datablock_dir, data_name)
+	directory = os.path.join(file_path, datablock_dir)
+	bpy.ops.wm.link(filepath = filepath, directory = directory, filename = data_name, link = True)
 
 
 def folder_containt_x_files(path, number_of_files):

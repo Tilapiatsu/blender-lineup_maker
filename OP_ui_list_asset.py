@@ -170,7 +170,7 @@ class LM_UI_ShowAsset(bpy.types.Operator):
 			H.set_active_collection(context, V.LM_PREVIEW_COLLECTION)
 
 			asset_filepath = context.scene.lm_asset_list[self.asset_name].catalog_path
-			datablock_dir = '\\Collection\\'
+			datablock_dir = 'Collection'
 
 			H.link_blend_file(asset_filepath, datablock_dir, self.asset_name)
 
