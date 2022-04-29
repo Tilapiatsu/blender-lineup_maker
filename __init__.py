@@ -27,11 +27,16 @@
 #      pyfpdf : pip install fpdf
 #      https://www.blog.pythonlibrary.org/2018/06/05/creating-pdfs-with-pyfpdf-and-python/
 
-import bpy
+import bpy, addon_utils
 from bpy.app.handlers import persistent
 from os import path
 from . import variables as V
 from importlib.machinery import SourceFileLoader
+
+success = addon_utils.enable('export_as_blend')
+if not success:
+    from .export_as_blend import register as export_as_blend_register
+    from .export_as_blend import unregister as export_as_blend_unregister
 
 try:
     fpdf = SourceFileLoader(V.LM_DEPENDENCIES_FOLDER_NAME, path.join(V.LM_DEPENDENCIES_PATH, 'fpdf', '__init__.py')).load_module()
@@ -201,7 +206,7 @@ dynamic_classes = (
         LM_PT_AssetList,
         LM_PT_AssetQueueList
         )
-        
+
 ### Update parameter functions
 def update_texture_channel_name(self, context):
     def is_valid_textureChannelName(scn):
@@ -377,6 +382,7 @@ def scene_state_handler(scene):
 
 
 def register():
+    export_as_blend_register()
     bpy.types.Scene.lm_asset_path = bpy.props.StringProperty(
                                     name="Assets Import Path",
                                     subtype='DIR_PATH',
@@ -638,6 +644,8 @@ def unregister():
     del bpy.types.Scene.lm_blend_catalog_path
     del bpy.types.Scene.lm_asset_path
     del bpy.types.Scene.lm_render_path
+
+    export_as_blend_unregister()
       
 
 if __name__ == "__main__":
