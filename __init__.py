@@ -482,6 +482,8 @@ def register():
 
     bpy.types.Scene.lm_exported_asset_name = bpy.props.StringProperty(name="Export Name")
     bpy.types.Scene.lm_export_format = bpy.props.EnumProperty(items=V.LM_COMPATIBLE_EXPORT_FILE_FORMAT)
+    bpy.types.Scene.lm_export_section = bpy.props.StringProperty(name="Section",
+                                                                 description='Section is used to categorized assets in lineup:  Asset it the same section will be grouped together')
 
     bpy.types.Scene.lm_import_message = bpy.props.StringProperty(name="Import Message")
     bpy.types.Scene.lm_import_progress = bpy.props.StringProperty(name="Import Progress")
@@ -581,6 +583,7 @@ def unregister():
     del bpy.types.Scene.lm_viewlayer_progress
     del bpy.types.Scene.lm_import_progress
     del bpy.types.Scene.lm_import_message
+    del bpy.types.Scene.lm_export_section
     del bpy.types.Scene.lm_export_format
     del bpy.types.Scene.lm_exported_asset_name
     del bpy.types.Scene.lm_open_pdf_when_exported

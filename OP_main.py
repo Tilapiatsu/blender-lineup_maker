@@ -1592,7 +1592,7 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			else:
 				found = False
 				for o in context.selected_objects:
-					if o.type in V.LM_COMPATIBLE_EXPORT_FORMAT:
+					if o.type in V.LM_COMPATIBLE_EXPORT_MESH_FORMAT:
 						found = True
 				if not found:
 					self.report({'ERROR'}, 'Lineup Maker : Select at least one Mesh object')
@@ -1677,10 +1677,18 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 		self.json_data = []
 		self.total_assets = 0
 		self.percent = 0
-
+	
 	def export_asset(self, context):
 		self.report({'INFO'}, 'Lineup Maker : Exporting {}'.format(self.asset_name))
 
+		if context.scene.lm_export_format == "BLEND":
+			self.export_blend(context)
+		else:
+			self.export_formats(context, V.LM_COMPATIBLE_EXPORT_FORMAT[context.scene.lm_export_format])
+
+		self.post(context)
+
+	def export_formats(self, context, format):
 		texture_list = self.get_textures(context)
 		tmpdir = tempfile.mkdtemp()
 
@@ -1706,9 +1714,13 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 			bpy.ops.object.select_all(action='DESELECT')
 			bpy.data.objects[o.name].select_set(True)
 			context.view_layer.objects.active = o
-			export_filename = path.join(self.export_path, o.name + '.fbx')
-	
-			bpy.ops.export_scene.fbx(filepath=export_filename, use_selection=True, bake_anim=False, check_existing=False, embed_textures=False)
+			export_filename = path.join(self.export_path, o.name + format[0])
+			
+			# Run Export Command
+			kwargs = {}
+			kwargs.update({'filepath':export_filename, 'use_selection':True, 'bake_anim':False, 'check_existing':False, 'embed_textures':False})
+			kwargs.update(format[2])
+			format[1](**kwargs)
 
 			# Register Mesh List
 			if self.scene_asset is not None:
@@ -1721,7 +1733,8 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 
 		self.write_json(context)
 
-		self.post(context)
+	def export_blend(self, context):
+		pass
 
 	def copy_textures(self, context, source, destination):
 		for mesh, textures in source.items():

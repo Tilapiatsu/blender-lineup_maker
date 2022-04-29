@@ -89,20 +89,12 @@ class LM_PT_SceneSetup(LM_PT_LineupSetup, bpy.types.Panel):
 			_label_multiline(context=context, text=text, parent=b)
 
 		b = layout.box()
-		if path.isdir(asset_path):
-			icon = "DOWNARROW_HLT"
-		else:
-			icon = "BLANK1"
-		b.prop(scn, 'lm_asset_path', text='Asset Path', icon=icon)
+		b.prop(scn, 'lm_asset_path', text='Asset Path', icon='SNAP_VOLUME')
 		b.prop(scn, 'lm_blend_catalog_path', text='BlenderCatalog Path', icon="FILE_BLEND")
 		
 		row = b.row(align=True)
-		if path.isdir(render_path):
-			icon = "DOWNARROW_HLT"
-		else:
-			icon = "BLANK1"
 		
-		row.prop(scn, 'lm_render_path', text='Render Path', icon=icon)
+		row.prop(scn, 'lm_render_path', text='Render Path', icon='RENDER_RESULT')
 		
 		if path.isdir(render_path):
 			row.operator("scene.lm_openfolder", icon='WINDOW', text='Open Folder').folder_path = render_path
@@ -628,19 +620,14 @@ class LM_PT_ExportAsset(bpy.types.Panel):
 
 		col = layout.column(align=True)
 		b = col.box()
-
-		if path.isdir(asset_path):
-			icon = "DOWNARROW_HLT"
-		else:
-			icon = "BLANK1"
 			
-		b.prop(scn, 'lm_asset_path', text='Asset Path', icon=icon)
-		
+		b.prop(scn, 'lm_asset_path', text='Asset Path', icon='SNAP_VOLUME')
+		b.prop(scn, 'lm_export_format', text='Export Format')
 		b.prop(scn, 'lm_exported_asset_name', text='Export Name')
 		b.prop(scn, 'lm_exported_hd_status', text='HD Status')
 		b.prop(scn, 'lm_exported_ld_status', text='LD Status')
 		b.prop(scn, 'lm_exported_baking_status', text='Baking Status')
-		b.prop(scn, 'lm_export_format', text='Export Format')
+		b.prop(scn, 'lm_export_section', text = 'Section')
 		if path.exists(asset_path):
 			export = b.operator('scene.lm_export_assets', text='Export Selected Asset', icon='EXPORT')
 			export.mode = 'SELECTED'

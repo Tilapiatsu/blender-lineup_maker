@@ -692,7 +692,7 @@ class LMAsset(object):
 	@check_asset_folder_exist
 	def meshes(self):
 		if self._meshes is None:
-			self._meshes = [LMMeshFile(path.join(self.root_folder, f)) for f in listdir(self.root_folder) if path.isfile(path.join(self.root_folder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_MESH_FORMAT.keys()]
+			self._meshes = [LMMeshFile(path.join(self.root_folder, f)) for f in listdir(self.root_folder) if path.isfile(path.join(self.root_folder, f)) and path.splitext(f)[1].lower() in V.LM_COMPATIBLE_IMPORT_FORMAT.keys()]
 		
 		return self._meshes
 	
@@ -756,7 +756,7 @@ class LMAssetFiles(object):
 		if self._files is None:
 			if self.is_valid:
 				self._files = []
-				files = [f for f in listdir(self.asset_root) if path.splitext(f)[1] in V.LM_COMPATIBLE_MESH_FORMAT.keys()]
+				files = [f for f in listdir(self.asset_root) if path.splitext(f)[1] in V.LM_COMPATIBLE_IMPORT_FORMAT.keys()]
 				for f in files:
 					file = path.basename(f)
 					name, ext = path.splitext(file)
@@ -909,7 +909,7 @@ class LMMeshFile(LMFile):
 
 	@property
 	def compatible_formats(self):
-		return V.LM_COMPATIBLE_MESH_FORMAT
+		return V.LM_COMPATIBLE_IMPORT_FORMAT
 		
 	@property
 	def texture_file_path(self):
