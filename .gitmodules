@@ -1,0 +1,3 @@
+[submodule "export_as_blend"]
+	path = export_as_blend
+	url = https://github.com/Tilapiatsu/blender-export_as_blend.git
