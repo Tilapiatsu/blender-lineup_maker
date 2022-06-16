@@ -3,7 +3,17 @@
 #   - Log and repport
 #       - Pop up message at the end to notify what is happening
 #   - Need to check if Export Asset still Works with BlendCatalog
-#       - Should it use FBX/OBJ/etc or should it send the selected file to Catalog Automaticaly
+#       - Need to think about how and why assets need to be exported to better design the Export Feature
+#           - Should it use FBX/OBJ/etc or should it send the selected file to Catalog Automaticaly
+#       	- NO : Should it stay Blend File only ? --> but it is limitative if need to be used by another DCC
+#       	- Should it set export path automatically based on the mode ( Selected /Asset/ Queued ) ? 
+#        	- Does it still need the Asset Folder and the Catalog Folder separation ?  --> Maybe once the FBX/OBJ/Etc File converted to catalog it replace the asset folder ? Risk of file override if reexported from other DCC
+#           - Inside asset folder --> Create BlenderAsset and ImportAsset SubFolder ?
+#       - Export Features:
+#           - Export to folder
+#               - Ask Folder and format
+#           - Export to Lineup
+#               - Don't ask folder nor Format --> In blender format and in the proper catalog folder
 #   - Need a feature to support Asset Sets Rendering / Editing
 #       - add many asset in a set that will be rendered together in the same image
 #       - asset sets should be able to be send to render queue
@@ -390,7 +400,13 @@ def register():
                                     update = None,
                                     description = 'Path to the folder containing the assets that will be imported'      
                                     )
-    
+    bpy.types.Scene.lm_export_path = bpy.props.StringProperty(
+                                    name="Assets Export Path",
+                                    subtype='DIR_PATH',
+                                    default="",
+                                    update = None,
+                                    description = 'Path to the folder where the asset will be exported'      
+                                    )
     bpy.types.Scene.lm_render_path = bpy.props.StringProperty(
                                     name="Rendered Asset Path",
                                     subtype='DIR_PATH',
@@ -642,6 +658,7 @@ def unregister():
     del bpy.types.Scene.lm_lighting_world
     del bpy.types.Scene.lm_lighting_collection
     del bpy.types.Scene.lm_blend_catalog_path
+    del bpy.types.Scene.lm_export_path
     del bpy.types.Scene.lm_asset_path
     del bpy.types.Scene.lm_render_path
 

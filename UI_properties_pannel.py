@@ -597,7 +597,6 @@ class LM_PT_AssetQueueList(LM_PT_Assets, bpy.types.Panel):
 		
 		c.separator()
 		c.operator("scene.lm_create_blend_catalog_file", text="", icon='IMPORT').mode = "QUEUED"
-		c.operator("scene.lm_export_assets", text="", icon='EXPORT').mode = "QUEUED"
 		c.separator()
 		c.operator('scene.lm_export_queue_list', text='', icon='SORT_DESC')
 
@@ -621,7 +620,7 @@ class LM_PT_ExportAsset(bpy.types.Panel):
 		col = layout.column(align=True)
 		b = col.box()
 			
-		b.prop(scn, 'lm_asset_path', text='Asset Path', icon='SNAP_VOLUME')
+		b.prop(scn, 'lm_export_path', text='Export Path', icon='SNAP_VOLUME')
 		b.prop(scn, 'lm_export_format', text='Export Format')
 		b.prop(scn, 'lm_exported_asset_name', text='Export Name')
 		b.prop(scn, 'lm_exported_hd_status', text='HD Status')

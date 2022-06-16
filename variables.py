@@ -17,7 +17,7 @@ LM_COMPATIBLE_IMPORT_FORMAT = {
 							}
 
 LM_COMPATIBLE_EXPORT_FORMAT = {
-							"BLEND":('.blend', bpy.ops.import_scene.lm_append_blend_file, {}, "bpy.ops.import_scene.lm_append_blend_file"),
+							"BLEND":('.blend', bpy.ops.export_scene.tila_export_as_blend, {'source':'SELECTED_OBJECTS', 'mode':'APPEND', 'create_collection_hierarchy':True, 'export_to_clean_file':True, 'dependencies_in_dedicated_collection':False, 'pack_external_data':True, 'export_object_children':True, 'export_in_new_collection':True, 'export_mode':'APPEND', 'file_override':'OVERRIDE', 'source':'OBJECTS'}, "bpy.ops.export_scene.tila_export_as_blend"),
 							"FBX":('.fbx', bpy.ops.export_scene.fbx, {'filter_glob':'*.fbx;', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.export_scene.fbx"),
 							"OBJ":('.obj', bpy.ops.export_scene.obj, {'filter_glob':'*.obj;*.mtl', 'axis_forward':'-Z', 'axis_up':'Y'}, "bpy.ops.export_scene.obj")
 							}

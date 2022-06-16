@@ -1,6 +1,7 @@
 from struct import pack_into
 import bpy
 import os, time, math, subprocess, json, tempfile, re, importlib, shutil
+from bpy_extras.io_utils import ExportHelper
 from datetime import date
 from os import path
 from . import variables as V
@@ -1564,13 +1565,14 @@ class LM_OP_RefreshAssetStatus(bpy.types.Operator):
 			return ''
 
 
-class LM_OP_ExportAsset(bpy.types.Operator):
+class LM_OP_ExportAsset(bpy.types.Operator, ExportHelper):
 	bl_idname = "scene.lm_export_assets"
 	bl_label = "Lineup Maker: Export Asset"
 	bl_options = {'REGISTER', 'UNDO'}
 
 	export_path = ''
 	mode : bpy.props.EnumProperty(items=[("SELECTED", "Selected", ""), ("ASSET", "Asset", ""), ("QUEUED", "Queued", "")])
+	target : bpy.props.EnumProperty(items=[("FOLDER", "Folder", ""), ("LINEUP", "Lineup", "")])
 	asset_name : bpy.props.StringProperty(name="Asset Name", default='', description='Name of the asset to export')
 	cancelling = False
 	stopped = False
@@ -1578,6 +1580,13 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 	export_list = []
 	percent = 0
 	total_assets = 0
+
+	def invoke(self, context, event):
+		wm = context.window_manager
+		if self.target == 'FOLDER':
+			return wm.invoke_props_dialog(self)
+		elif self.target == 'LINEUP':
+			self.execute()
 
 	def execute(self, context):
 		log = L.Logger(context='EXPORT_ASSETS')
@@ -1734,7 +1743,34 @@ class LM_OP_ExportAsset(bpy.types.Operator):
 		self.write_json(context)
 
 	def export_blend(self, context):
-		pass
+		format = V.LM_COMPATIBLE_EXPORT_FORMAT['BLEND']
+
+		export_filename = path.join(self.export_path, o.name + format[0])
+
+		kwargs = {}
+		kwargs.update({'filepath':export_filename, 'use_selection':True, 'bake_anim':False, 'check_existing':False, 'embed_textures':False})
+		kwargs.update(format[2])
+		V.LM_COMPATIBLE_EXPORT_FORMAT['BLEND'][1]()
+
+
+	@property
+	def export_path(self):
+		if self.mode == 'SELECTED':
+			p =  path.join(bpy.context.scene.lm_export_path, bpy.context.scene.lm_exported_asset_name)
+			if bpy.context.scene.lm_export_format == 'BLEND':
+				p += '.blend'
+			return p
+		elif self.mode == 'ASSET':
+			root = bpy.context.scene.lm_asset_path
+			p = path.join(bpy.context.scene.lm_export_path, self.asset_name)
+			if bpy.context.scene.lm_export_format == 'BLEND':
+				p += '.blend'
+			return p
+		elif self.mode == 'QUEUED':
+			p = path.join(bpy.context.scene.lm_export_path, self.exporting_asset)
+			if bpy.context.scene.lm_export_format == 'BLEND':
+				p += '.blend'
+			return p
 
 	def copy_textures(self, context, source, destination):
 		for mesh, textures in source.items():
