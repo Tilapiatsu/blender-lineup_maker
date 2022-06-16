@@ -43,18 +43,20 @@ from os import path
 from . import variables as V
 from importlib.machinery import SourceFileLoader
 
-success = addon_utils.enable('export_as_blend')
-if not success:
-    from .export_as_blend import register as export_as_blend_register
-    from .export_as_blend import unregister as export_as_blend_unregister
+
 
 try:
     fpdf = SourceFileLoader(V.LM_DEPENDENCIES_FOLDER_NAME, path.join(V.LM_DEPENDENCIES_PATH, 'fpdf', '__init__.py')).load_module()
     PIL = SourceFileLoader(V.LM_DEPENDENCIES_FOLDER_NAME, path.join(V.LM_DEPENDENCIES_PATH, 'PIL', '__init__.py')).load_module()
-except (ModuleNotFoundError, ImportError) as e:
+except (ModuleNotFoundError, ImportError, FileNotFoundError) as e:
     from . import setup
-    setup.install_dependencies()
-
+    setup.install_dependencies(V)
+    
+success = addon_utils.enable('export_as_blend')
+if not success:
+    from .export_as_blend import register as export_as_blend_register
+    from .export_as_blend import unregister as export_as_blend_unregister
+    
 from .OP_main import *
 from .OP_files import *
 from .UI_properties_pannel import *

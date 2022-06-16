@@ -1,5 +1,4 @@
 import bpy, os
-from . import preferences as P
 from enum import Enum
 
 LM_DEPENDENCIES = ['Pillow', 'fpdf']
